@@ -30,13 +30,13 @@ export default function Header() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/logo-mark.svg"
-              alt="fortunetab"
+              alt="FortuneTab"
               width={32}
               height={32}
               className="rounded-lg group-hover:opacity-80 transition-opacity"
             />
             <span className="text-xl font-bold text-[#f0c040] tracking-tight group-hover:opacity-80 transition-opacity">
-              fortunetab
+              FortuneTab
             </span>
             <span className="hidden sm:inline text-xs text-indigo-300 mt-1">
               사주·운세 플래너

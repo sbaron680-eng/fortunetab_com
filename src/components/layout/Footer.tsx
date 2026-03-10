@@ -10,7 +10,7 @@ export default function Footer() {
           {/* 브랜드 */}
           <div className="lg:col-span-2">
             <Link href="/" className="text-xl font-bold text-[#f0c040]">
-              fortunetab
+              FortuneTab
             </Link>
             <p className="mt-3 text-sm leading-relaxed text-indigo-300 max-w-xs">
               사주·운세의 흐름으로 설계하는 나만의 플래너.<br />
@@ -57,7 +57,7 @@ export default function Footer() {
 
         {/* 사업자 정보 */}
         <div className="mt-8 pt-8 border-t border-indigo-700 text-xs text-indigo-400 space-y-1">
-          <p>FortuneTab | 사업자등록번호: 000-00-00000 (준비 중)</p>
+          <p>FortuneTab | 사업자등록번호: 238-18-00745</p>
           <p>통신판매업신고: 제 0000-서울-0000호 (준비 중)</p>
           <p>고객센터: fortunetab@gmail.com | 운영시간: 평일 10:00 - 18:00</p>
           <p className="pt-2 text-indigo-500">
