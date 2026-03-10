@@ -1,0 +1,54 @@
+name: Deploy to Cloudflare Pages
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# main 브랜치에 동시 배포가 겹치지 않도록 직렬 실행
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Build & Deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    permissions:
+      contents: read
+      deployments: write   # Cloudflare Pages deployment status
+
+    steps:
+      # ── 1. 소스 체크아웃 ─────────────────────────────────────────────────────
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── 2. Node.js 설정 (npm 캐시 포함) ─────────────────────────────────────
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      # ── 3. 의존성 설치 (lockfile 기반 재현성 보장) ──────────────────────────
+      - name: Install dependencies
+        run: npm ci
+
+      # ── 4. Next.js 정적 빌드 (output: 'export' → ./out/) ────────────────────
+      - name: Build
+        run: npm run build
+        env:
+          NODE_ENV: production
+          # 빌드 시 필요한 환경 변수는 여기에 추가
+          # NEXT_PUBLIC_SOMETHING: ${{ secrets.SOMETHING }}
+
+      # ── 5. Cloudflare Pages 배포 ─────────────────────────────────────────────
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy out/ --project-name=fortunetab-landing --commit-dirty=true

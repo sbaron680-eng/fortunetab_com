@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+@theme {
+  --color-indigo-deep: #1e1b4b;
+  --color-indigo-mid: #312e81;
+  --color-indigo-light: #4338ca;
+  --color-gold: #f0c040;
+  --color-gold-light: #f5d060;
+  --color-gold-dark: #c09020;
+  --color-warm-white: #fefce8;
+  --color-cream: #fffbeb;
+
+  --font-sans: 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-in-right {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* 쇼핑몰 스타일: 흰 배경 기반 */
+body {
+  background-color: #f8f8fc;
+  color: #1a1a2e;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 라인 클램프 유틸리티 */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* 스크롤바 스타일 */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+::-webkit-scrollbar-thumb {
+  background: #c5c5d5;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #9999bb;
+}
+
+/* 포커스 링 일관성 */
+:focus-visible {
+  outline: 2px solid #4338ca;
+  outline-offset: 2px;
+}

@@ -1,0 +1,23 @@
+# Next.js
+.next/
+out/
+node_modules/
+
+# Environment
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Wrangler
+.wrangler/
+
+# PDF 생성 서버 - 가상환경 제외 (소스코드는 포함)
+pdf_server/.venv/
+pdf_server/__pycache__/
+pdf_server/*.pyc
+
+# 중간 생성물 PNG (용량 큰 파일, 재생성 가능)
+pdf-planner/*.png

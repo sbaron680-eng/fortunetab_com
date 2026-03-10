@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node --version)",
+      "Bash(npm --version)",
+      "Bash(npx --version)",
+      "Bash(npm show next version)",
+      "Bash(npm show @cloudflare/next-on-pages version)",
+      "Bash(npm show next@16.1.6 peerDependencies)",
+      "Bash(npm show @cloudflare/next-on-pages@1.13.16 peerDependencies)",
+      "Bash(npm show tailwindcss version)",
+      "Bash(npm show @tailwindcss/typography version)",
+      "Bash(npm show next@15.2.3 version)",
+      "Bash(npm show next dist-tags)",
+      "Bash(npm show react version)",
+      "Bash(npm show react-dom version)",
+      "Bash(npm show @cloudflare/next-on-pages peerDependencies)",
+      "Bash(npm show wrangler version)"
+    ]
+  }
+}
