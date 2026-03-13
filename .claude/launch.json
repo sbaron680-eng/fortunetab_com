@@ -3,10 +3,9 @@
   "configurations": [
     {
       "name": "fortunetab-dev",
-      "runtimeExecutable": "C:\\Program Files\\nodejs\\npm.cmd",
-      "runtimeArgs": ["run", "dev"],
-      "port": 3000,
-      "autoPort": true
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["node_modules/next/dist/bin/next", "dev", "--port", "3000"],
+      "port": 3000
     }
   ]
 }

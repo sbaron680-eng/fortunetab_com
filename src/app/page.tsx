@@ -55,10 +55,16 @@ export default function HomePage() {
     <>
       {/* ── 히어로 섹션 ───────────────────────────────────── */}
       <section className="relative bg-gradient-to-b from-[#1e1b4b] via-[#312e81] to-[#4338ca] text-white py-20 px-4 overflow-hidden">
+        {/* 배경 광원 효과 */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-indigo-500/20 blur-3xl" />
           <div className="absolute bottom-0 -left-24 w-72 h-72 rounded-full bg-purple-500/20 blur-3xl" />
         </div>
+        {/* 별 장식 */}
+        <span aria-hidden="true" className="absolute top-8 left-10 text-[#f0c040]/25 text-3xl select-none">✦</span>
+        <span aria-hidden="true" className="absolute top-20 right-16 text-[#f0c040]/20 text-xl select-none">✧</span>
+        <span aria-hidden="true" className="absolute bottom-16 left-1/4 text-[#f0c040]/15 text-2xl select-none">✦</span>
+        <span aria-hidden="true" className="absolute bottom-24 right-12 text-[#f0c040]/20 text-lg select-none">✧</span>
 
         <div className="relative max-w-6xl mx-auto text-center">
           <span className="inline-block px-3 py-1 text-xs font-semibold bg-[#f0c040]/20 text-[#f0c040] rounded-full border border-[#f0c040]/40 mb-6">
@@ -96,11 +102,12 @@ export default function HomePage() {
       </section>
 
       {/* ── 상품 섹션 ─────────────────────────────────────── */}
-      <section className="py-16 px-4">
+      <section className="py-16 px-4 bg-gradient-to-b from-[#f8f7ff] to-white relative">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-10">
-            <h2 className="text-2xl sm:text-3xl font-black text-[#1e1b4b]">플래너 라인업</h2>
-            <p className="mt-2 text-gray-500 text-sm sm:text-base">목적에 맞는 플래너를 선택하세요</p>
+            <p className="text-xs font-semibold text-indigo-400 uppercase tracking-widest mb-2">✨ 플래너 라인업</p>
+            <h2 className="text-2xl sm:text-3xl font-black text-[#1e1b4b]">나에게 맞는 플래너를 선택하세요</h2>
+            <p className="mt-2 text-gray-500 text-sm sm:text-base">무료 체험판부터 사주 맞춤 플래너까지</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {PRODUCTS.map((product) => (
@@ -115,22 +122,79 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ── 무료 사주 계산기 티저 ─────────────────────────── */}
+      <section className="py-16 px-4 bg-gradient-to-br from-[#0f0e17] to-[#1e1b4b] relative overflow-hidden">
+        {/* 별 장식 */}
+        <span aria-hidden="true" className="absolute top-10 right-20 text-[#f0c040]/20 text-3xl select-none">✦</span>
+        <span aria-hidden="true" className="absolute bottom-12 left-16 text-[#f0c040]/15 text-2xl select-none">✧</span>
+        <div className="max-w-4xl mx-auto text-center relative">
+          <span className="inline-block px-3 py-1 text-xs font-semibold bg-[#f0c040]/20 text-[#f0c040] rounded-full border border-[#f0c040]/40 mb-5">
+            ✨ 무료 서비스
+          </span>
+          <h2 className="text-2xl sm:text-3xl font-black text-white mb-4">
+            지금 바로 사주팔자를 계산해보세요
+          </h2>
+          <p className="text-indigo-300 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed mb-8">
+            생년월일만 입력하면 사주팔자 4기둥, 오행 분포, 용신,
+            그리고 <span className="text-[#f0c040] font-semibold">2026년 12개월 운세</span>를 무료로 확인하세요.
+          </p>
+
+          {/* 미리보기 카드들 */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8 max-w-2xl mx-auto">
+            {[
+              { icon: '🏛', label: '사주팔자', desc: '4기둥 천간지지' },
+              { icon: '🌿', label: '오행분포', desc: '목화토금수 분석' },
+              { icon: '⭐', label: '용신', desc: '나를 돕는 기운' },
+              { icon: '📅', label: '월운', desc: '2026 12개월 운세' },
+            ].map(({ icon, label, desc }) => (
+              <div key={label}
+                   className="rounded-xl p-4 text-center"
+                   style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                <div className="text-2xl mb-2">{icon}</div>
+                <div className="text-sm font-semibold text-white">{label}</div>
+                <div className="text-xs text-indigo-400 mt-1">{desc}</div>
+              </div>
+            ))}
+          </div>
+
+          <Link
+            href="/saju"
+            className="inline-flex items-center gap-2 px-8 py-4 font-bold text-[#1e1b4b] bg-[#f0c040] rounded-2xl hover:bg-[#e0b030] transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 text-base"
+          >
+            🔮 무료 사주 계산하기
+          </Link>
+          <p className="text-xs text-indigo-500 mt-4">회원가입 없이 즉시 이용 가능</p>
+        </div>
+      </section>
+
       {/* ── 이용 방법 ─────────────────────────────────────── */}
-      <section id="how-it-works" className="py-16 px-4 bg-white">
-        <div className="max-w-6xl mx-auto">
+      <section id="how-it-works" className="py-16 px-4 bg-[#0c0b14] relative overflow-hidden">
+        {/* 별 장식 */}
+        <span aria-hidden="true" className="absolute top-12 left-16 text-[#f0c040]/15 text-4xl select-none">✦</span>
+        <span aria-hidden="true" className="absolute top-8 right-24 text-[#f0c040]/10 text-2xl select-none">✧</span>
+        <span aria-hidden="true" className="absolute bottom-12 left-1/3 text-[#f0c040]/10 text-3xl select-none">✦</span>
+        <span aria-hidden="true" className="absolute bottom-8 right-16 text-[#f0c040]/15 text-xl select-none">✧</span>
+
+        <div className="max-w-6xl mx-auto relative">
           <div className="text-center mb-12">
-            <h2 className="text-2xl sm:text-3xl font-black text-[#1e1b4b]">이렇게 만들어집니다</h2>
-            <p className="mt-2 text-gray-500 text-sm sm:text-base">간단한 4단계로 나만의 플래너가 완성됩니다</p>
+            <p className="text-xs font-semibold text-[#f0c040]/70 uppercase tracking-widest mb-2">🌙 제작 과정</p>
+            <h2 className="text-2xl sm:text-3xl font-black text-white">이렇게 만들어집니다</h2>
+            <p className="mt-2 text-indigo-400 text-sm sm:text-base">간단한 4단계로 나만의 플래너가 완성됩니다</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {HOW_IT_WORKS.map(({ step, icon, title, desc }) => (
-              <div key={step} className="text-center">
-                <div className="w-14 h-14 mx-auto mb-4 flex items-center justify-center rounded-2xl bg-indigo-50 text-2xl">
+            {HOW_IT_WORKS.map(({ step, icon, title, desc }, idx) => (
+              <div key={step} className="text-center relative">
+                {/* 연결선 (마지막 제외) */}
+                {idx < HOW_IT_WORKS.length - 1 && (
+                  <div className="hidden lg:block absolute top-7 left-[calc(50%+28px)] w-[calc(100%-56px)] h-px bg-gradient-to-r from-[#f0c040]/30 to-transparent" />
+                )}
+                <div className="w-14 h-14 mx-auto mb-4 flex items-center justify-center rounded-2xl text-2xl relative z-10"
+                     style={{ background: 'rgba(240,192,64,0.1)', border: '1px solid rgba(240,192,64,0.25)' }}>
                   {icon}
                 </div>
-                <span className="block text-xs font-bold text-indigo-300 mb-1">STEP {step}</span>
-                <h3 className="font-bold text-[#1e1b4b] mb-2">{title}</h3>
-                <p className="text-sm text-gray-500 leading-relaxed">{desc}</p>
+                <span className="block text-xs font-bold text-[#f0c040]/60 mb-1">STEP {step}</span>
+                <h3 className="font-bold text-white mb-2">{title}</h3>
+                <p className="text-sm text-indigo-400 leading-relaxed">{desc}</p>
               </div>
             ))}
           </div>
@@ -138,25 +202,36 @@ export default function HomePage() {
       </section>
 
       {/* ── 플래너 미리보기 ──────────────────────────────── */}
-      <section className="py-16 px-4 bg-gradient-to-br from-indigo-50 to-purple-50">
-        <div className="max-w-6xl mx-auto">
+      <section className="py-16 px-4 bg-gradient-to-b from-[#1a1535] to-[#0f0e17] relative overflow-hidden">
+        {/* 별 장식 */}
+        <span aria-hidden="true" className="absolute top-8 right-16 text-[#f0c040]/20 text-4xl select-none">✦</span>
+        <span aria-hidden="true" className="absolute bottom-16 left-8 text-[#f0c040]/10 text-5xl select-none">✧</span>
+        <span aria-hidden="true" className="absolute top-1/2 left-4 text-[#f0c040]/10 text-2xl select-none">✦</span>
+
+        <div className="max-w-6xl mx-auto relative">
           <div className="text-center mb-10">
-            <h2 className="text-2xl sm:text-3xl font-black text-[#1e1b4b]">플래너 미리보기</h2>
-            <p className="mt-2 text-gray-500 text-sm">실제 PDF 플래너 템플릿 일부를 미리 확인하세요</p>
+            <p className="text-xs font-semibold text-[#f0c040]/70 uppercase tracking-widest mb-2">📄 샘플 미리보기</p>
+            <h2 className="text-2xl sm:text-3xl font-black text-white">플래너 미리보기</h2>
+            <p className="mt-2 text-indigo-400 text-sm">실제 PDF 플래너 템플릿 일부를 미리 확인하세요</p>
+            <span className="inline-block mt-3 px-4 py-1.5 text-xs font-semibold rounded-full border"
+                  style={{ background: 'rgba(240,192,64,0.12)', color: '#f0c040', borderColor: 'rgba(240,192,64,0.35)' }}>
+              📐 세로형 샘플
+            </span>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {PREVIEW_IMAGES.map(({ src, label }) => (
-              <div key={label} className="relative rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-shadow group">
-                <div className="relative aspect-[3/4] bg-indigo-50">
+              <div key={label} className="relative rounded-xl overflow-hidden group"
+                   style={{ border: '1px solid rgba(240,192,64,0.15)', boxShadow: '0 4px 24px rgba(0,0,0,0.4)' }}>
+                <div className="relative aspect-[3/4] bg-[#1e1b4b]">
                   <Image
                     src={src}
                     alt={`${label} 플래너 미리보기`}
                     fill
-                    className="object-cover"
+                    className="object-cover group-hover:scale-[1.03] transition-transform duration-300"
                     sizes="(max-width: 640px) 50vw, 20vw"
                   />
                 </div>
-                <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent p-2">
+                <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent p-2">
                   <span className="text-white text-xs font-medium">{label}</span>
                 </div>
               </div>
@@ -174,21 +249,25 @@ export default function HomePage() {
       </section>
 
       {/* ── 후기 ──────────────────────────────────────────── */}
-      <section className="py-16 px-4 bg-white">
-        <div className="max-w-6xl mx-auto">
+      <section className="py-16 px-4 bg-[#13111d] relative overflow-hidden">
+        <span aria-hidden="true" className="absolute top-10 right-12 text-[#f0c040]/15 text-4xl select-none">✦</span>
+        <span aria-hidden="true" className="absolute bottom-10 left-12 text-[#f0c040]/10 text-3xl select-none">✧</span>
+        <div className="max-w-6xl mx-auto relative">
           <div className="text-center mb-10">
-            <h2 className="text-2xl sm:text-3xl font-black text-[#1e1b4b]">사용 후기</h2>
+            <p className="text-xs font-semibold text-[#f0c040]/70 uppercase tracking-widest mb-2">⭐ 실제 후기</p>
+            <h2 className="text-2xl sm:text-3xl font-black text-white">사용 후기</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             {REVIEWS.map(({ name, rating, text }) => (
-              <div key={name} className="bg-indigo-50 rounded-2xl p-6">
+              <div key={name} className="rounded-2xl p-6"
+                   style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
                 <div className="flex items-center gap-1 mb-3">
                   {Array.from({ length: rating }).map((_, i) => (
                     <span key={i} className="text-[#f0c040] text-sm">★</span>
                   ))}
                 </div>
-                <p className="text-gray-700 text-sm leading-relaxed mb-4">&ldquo;{text}&rdquo;</p>
-                <span className="text-xs font-medium text-gray-500">{name}</span>
+                <p className="text-indigo-200 text-sm leading-relaxed mb-4">&ldquo;{text}&rdquo;</p>
+                <span className="text-xs font-medium text-indigo-400">{name}</span>
               </div>
             ))}
           </div>
@@ -196,16 +275,18 @@ export default function HomePage() {
       </section>
 
       {/* ── FAQ ───────────────────────────────────────────── */}
-      <section id="faq" className="py-16 px-4 bg-gray-50">
+      <section id="faq" className="py-16 px-4 bg-[#0c0b14]">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-10">
-            <h2 className="text-2xl sm:text-3xl font-black text-[#1e1b4b]">자주 묻는 질문</h2>
+            <p className="text-xs font-semibold text-[#f0c040]/70 uppercase tracking-widest mb-2">💬 자주 묻는 질문</p>
+            <h2 className="text-2xl sm:text-3xl font-black text-white">FAQ</h2>
           </div>
           <div className="space-y-4">
             {FAQS.map(({ q, a }) => (
-              <div key={q} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                <h3 className="font-bold text-[#1e1b4b] mb-2">Q. {q}</h3>
-                <p className="text-gray-600 text-sm leading-relaxed">A. {a}</p>
+              <div key={q} className="rounded-2xl p-6"
+                   style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <h3 className="font-bold text-white mb-2">Q. {q}</h3>
+                <p className="text-indigo-300 text-sm leading-relaxed">A. {a}</p>
               </div>
             ))}
           </div>
@@ -213,8 +294,10 @@ export default function HomePage() {
       </section>
 
       {/* ── CTA ───────────────────────────────────────────── */}
-      <section className="py-16 px-4 bg-gradient-to-r from-[#1e1b4b] to-[#312e81] text-white text-center">
-        <div className="max-w-2xl mx-auto">
+      <section className="py-16 px-4 bg-gradient-to-r from-[#1e1b4b] to-[#312e81] text-white text-center relative overflow-hidden">
+        <span aria-hidden="true" className="absolute top-8 left-12 text-[#f0c040]/20 text-3xl select-none">✦</span>
+        <span aria-hidden="true" className="absolute bottom-8 right-16 text-[#f0c040]/15 text-4xl select-none">✧</span>
+        <div className="max-w-2xl mx-auto relative">
           <h2 className="text-2xl sm:text-3xl font-black mb-4">2026년을 운세와 함께 시작하세요</h2>
           <p className="text-indigo-200 mb-8">지금 무료 플래너를 받아보고, 내 사주로 맞춤 제작된 플래너를 경험해보세요.</p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
