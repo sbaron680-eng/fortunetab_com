@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { generatePlannerPDF, PageType, Orientation } from '@/lib/pdf-generator';
+import { useSajuStore } from '@/lib/store';
 
 // ── 페이지 선택 옵션 ─────────────────────────────────────────────────────────
 const PAGE_OPTIONS: { type: PageType; label: string; sublabel: string; icon: string }[] = [
@@ -21,6 +22,8 @@ const PRESETS: { label: string; pages: PageType[] }[] = [
 ];
 
 export default function DownloadPage() {
+  const savedSaju = useSajuStore((s) => s.savedSaju);
+
   const [orientation, setOrientation] = useState<Orientation>('portrait');
   const [selectedPages, setSelectedPages] = useState<Set<PageType>>(
     new Set(['cover', 'year-index', 'monthly', 'weekly', 'daily'])
@@ -65,6 +68,7 @@ export default function DownloadPage() {
         pages: PAGE_OPTIONS
           .filter((o) => selectedPages.has(o.type))
           .map((o) => o.type),
+        saju: savedSaju ?? undefined,
         onProgress: (current, total, label) => {
           setProgress({ current, total, label });
         },
@@ -171,6 +175,30 @@ export default function DownloadPage() {
           />
           <p className="text-xs text-indigo-400 mt-2">커버 페이지에 표시됩니다. 비워두면 &quot;나의 플래너&quot;로 표시됩니다.</p>
         </section>
+
+        {/* ── 사주 데이터 연동 배지 ─────────────────────────────────────────────── */}
+        {savedSaju ? (
+          <div className="flex items-center gap-3 px-4 py-3 bg-indigo-500/10 border border-indigo-500/30 rounded-xl text-sm">
+            <span className="text-xl">🔮</span>
+            <div className="flex-1 min-w-0">
+              <span className="text-indigo-200 font-medium">사주 데이터 연동됨</span>
+              <span className="ml-2 text-indigo-400 text-xs truncate">{savedSaju.ganzhi}</span>
+            </div>
+            <button
+              onClick={() => useSajuStore.getState().clearSaju()}
+              className="text-indigo-500 hover:text-indigo-300 transition-colors text-xs flex-shrink-0"
+            >
+              해제
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-3 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-sm text-indigo-400">
+            <span className="text-xl">💡</span>
+            <span>
+              <a href="/saju" className="underline underline-offset-2 hover:text-indigo-200 transition-colors">사주 계산기</a>에서 생년월일을 입력하면 커버에 사주 정보가 자동으로 추가됩니다.
+            </span>
+          </div>
+        )}
 
         {/* ── 카드: 템플릿 선택 ─────────────────────────────────────────────────── */}
         <section className="bg-white/5 border border-white/10 rounded-2xl p-6">

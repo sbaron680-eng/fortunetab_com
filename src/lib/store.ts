@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { CartItem, Product, User } from '@/types';
+import type { SajuData } from '@/lib/pdf-generator';
 
 // ── Cart Store ────────────────────────────────────────────────────────────────
 
@@ -137,6 +138,28 @@ export const useAuthStore = create<AuthStore>()(
     {
       name: 'fortunetab-auth',
       partialize: (state) => ({ user: state.user }),
+    }
+  )
+);
+
+// ── Saju Store ────────────────────────────────────────────────────────────────
+
+interface SajuStore {
+  savedSaju: SajuData | null;
+  setSaju: (data: SajuData) => void;
+  clearSaju: () => void;
+}
+
+export const useSajuStore = create<SajuStore>()(
+  persist(
+    (set) => ({
+      savedSaju: null,
+      setSaju: (data) => set({ savedSaju: data }),
+      clearSaju: () => set({ savedSaju: null }),
+    }),
+    {
+      name: 'fortunetab-saju',
+      partialize: (state) => ({ savedSaju: state.savedSaju }),
     }
   )
 );

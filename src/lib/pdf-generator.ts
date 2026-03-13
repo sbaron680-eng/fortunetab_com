@@ -9,11 +9,23 @@
 export type Orientation = 'portrait' | 'landscape';
 export type PageType = 'cover' | 'year-index' | 'monthly' | 'weekly' | 'daily';
 
+export interface SajuData {
+  ganzhi: string;        // e.g. "갑자년 무진월 경술일 자시"
+  dayElem: string;       // e.g. "금"
+  yongsin: string;       // e.g. "수"
+  yearPillar:  string;   // e.g. "갑자(甲子)"
+  monthPillar: string;   // e.g. "무진(戊辰)"
+  dayPillar:   string;   // e.g. "경술(庚戌)"
+  hourPillar:  string;   // e.g. "자시" | "시간미상"
+  elemSummary: string;   // e.g. "금 3 · 수 2 · 목 1"
+}
+
 export interface PlannerOptions {
   orientation: Orientation;
   year: number;
   name: string;
   pages: PageType[];
+  saju?: SajuData;       // 사주 데이터 (있으면 커버에 표시)
   onProgress?: (current: number, total: number, label: string) => void;
 }
 
@@ -260,11 +272,40 @@ function drawCover(ctx: CanvasRenderingContext2D, W: number, H: number, opts: Pl
       ctx.fillText(opts.name, FX+8, H*0.888);
     }
 
+    // 사주 정보 (있을 때만 표시)
+    if (opts.saju) {
+      const s = opts.saju;
+      const SX = (W - 520) / 2;
+      const SY = H * 0.91;
+
+      // 사주 4기둥
+      ctx.fillStyle = 'rgba(245,158,11,0.15)';
+      roundRect(ctx, SX, SY, 520, 95, 8);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(245,158,11,0.4)';
+      ctx.lineWidth = 1;
+      roundRect(ctx, SX, SY, 520, 95, 8);
+      ctx.stroke();
+
+      ctx.fillStyle = C.goldFaint;
+      ctx.font = `16px ${KO_FONT}`;
+      centeredText(ctx, '사주팔자', SY + 18, W);
+
+      ctx.fillStyle = C.white;
+      ctx.font = `bold 20px ${KO_FONT}`;
+      centeredText(ctx, `${s.yearPillar}년  ${s.monthPillar}월  ${s.dayPillar}일  ${s.hourPillar}시`, SY + 46, W);
+
+      ctx.fillStyle = C.goldDim;
+      ctx.font = `15px ${KO_FONT}`;
+      centeredText(ctx, `일간 ${s.dayElem} · 용신 ${s.yongsin} · ${s.elemSummary}`, SY + 72, W);
+    }
+
     // 하단 태그라인
-    drawRule(ctx, H*0.948, W, 200, C.goldDim, false);
+    const tagY = opts.saju ? H * 0.972 : H * 0.948;
+    drawRule(ctx, tagY - 0.018 * H, W, 200, C.goldDim, false);
     ctx.fillStyle = C.goldDim;
     ctx.font = `18px ${KO_FONT}`;
-    centeredText(ctx, 'FORTUNE · TAB · '+opts.year, H*0.966, W);
+    centeredText(ctx, 'FORTUNE · TAB · '+opts.year, tagY, W);
   }
 }
 
