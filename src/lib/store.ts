@@ -79,68 +79,81 @@ interface AuthStore {
   user: User | null;
   isLoading: boolean;
   error: string | null;
+  setUser: (user: User | null) => void;
   login: (email: string, password: string) => Promise<boolean>;
   register: (name: string, email: string, password: string) => Promise<boolean>;
-  logout: () => void;
+  logout: () => Promise<void>;
   clearError: () => void;
 }
 
-export const useAuthStore = create<AuthStore>()(
-  persist(
-    (set) => ({
-      user: null,
-      isLoading: false,
-      error: null,
+export const useAuthStore = create<AuthStore>()((set) => ({
+  user: null,
+  isLoading: false,
+  error: null,
 
-      // Mock login — 추후 Supabase/Firebase로 교체
-      login: async (email, _password) => {
-        set({ isLoading: true, error: null });
-        await new Promise((r) => setTimeout(r, 800)); // 로딩 시뮬레이션
+  setUser: (user) => set({ user }),
 
-        // TODO: 실제 인증 API 연동
-        if (email.includes('@')) {
-          const mockUser: User = {
-            id: `user_${Date.now()}`,
-            name: email.split('@')[0],
-            email,
-            createdAt: new Date().toISOString(),
-          };
-          set({ user: mockUser, isLoading: false });
-          return true;
-        }
-        set({ error: '이메일 또는 비밀번호가 올바르지 않습니다.', isLoading: false });
-        return false;
-      },
-
-      // Mock register — 추후 실제 API로 교체
-      register: async (name, email, _password) => {
-        set({ isLoading: true, error: null });
-        await new Promise((r) => setTimeout(r, 1000));
-
-        // TODO: 실제 회원가입 API 연동
-        if (email.includes('@')) {
-          const mockUser: User = {
-            id: `user_${Date.now()}`,
-            name,
-            email,
-            createdAt: new Date().toISOString(),
-          };
-          set({ user: mockUser, isLoading: false });
-          return true;
-        }
-        set({ error: '이미 사용 중인 이메일입니다.', isLoading: false });
-        return false;
-      },
-
-      logout: () => set({ user: null, error: null }),
-      clearError: () => set({ error: null }),
-    }),
-    {
-      name: 'fortunetab-auth',
-      partialize: (state) => ({ user: state.user }),
+  login: async (email, password) => {
+    // supabase를 동적으로 import하여 SSR 환경에서 안전하게 처리
+    const { supabase } = await import('@/lib/supabase');
+    set({ isLoading: true, error: null });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error || !data.user) {
+      set({ error: '이메일 또는 비밀번호가 올바르지 않습니다.', isLoading: false });
+      return false;
     }
-  )
-);
+    // profiles 테이블에서 name, is_admin 가져오기
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('name, is_admin, created_at')
+      .eq('id', data.user.id)
+      .single();
+    set({
+      user: {
+        id: data.user.id,
+        email: data.user.email!,
+        name: profile?.name ?? email.split('@')[0],
+        isAdmin: profile?.is_admin ?? false,
+        createdAt: profile?.created_at ?? data.user.created_at,
+      },
+      isLoading: false,
+    });
+    return true;
+  },
+
+  register: async (name, email, password) => {
+    const { supabase } = await import('@/lib/supabase');
+    set({ isLoading: true, error: null });
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { name } }, // handle_new_user 트리거가 name을 profiles에 저장
+    });
+    if (error || !data.user) {
+      set({ error: error?.message ?? '회원가입에 실패했습니다.', isLoading: false });
+      return false;
+    }
+    set({
+      user: {
+        id: data.user.id,
+        email: data.user.email!,
+        name,
+        isAdmin: false,
+        createdAt: data.user.created_at,
+      },
+      isLoading: false,
+    });
+    return true;
+  },
+
+  logout: async () => {
+    const { supabase } = await import('@/lib/supabase');
+    await supabase.auth.signOut();
+    set({ user: null, error: null });
+  },
+
+  clearError: () => set({ error: null }),
+}));
 
 // ── Saju Store ────────────────────────────────────────────────────────────────
 
