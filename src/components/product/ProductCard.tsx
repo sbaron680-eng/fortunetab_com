@@ -85,12 +85,12 @@ export default function ProductCard({ product }: Props) {
             상세보기
           </Link>
           {product.price === 0 ? (
-            <button
-              onClick={() => addItem(product)}
-              className="flex-1 py-2.5 text-sm font-medium bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors"
+            <Link
+              href="/download"
+              className="flex-1 py-2.5 text-sm font-medium bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors text-center"
             >
-              무료 신청
-            </button>
+              무료 다운로드
+            </Link>
           ) : (
             <button
               onClick={() => addItem(product)}

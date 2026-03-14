@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useCartStore } from '@/lib/store';
 import type { Product } from '@/types';
 
@@ -29,17 +30,13 @@ export default function AddToCartButton({ product }: Props) {
   if (product.price === 0) {
     return (
       <div className="space-y-3">
-        <button
-          onClick={handleAdd}
-          className={`w-full py-4 font-bold rounded-2xl transition-all ${
-            added
-              ? 'bg-emerald-100 text-emerald-700 border border-emerald-300'
-              : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg hover:shadow-xl'
-          }`}
+        <Link
+          href="/download"
+          className="block w-full py-4 text-center font-bold bg-emerald-600 text-white rounded-2xl hover:bg-emerald-700 shadow-lg hover:shadow-xl transition-all"
         >
-          {added ? '✓ 신청 완료! 이메일을 확인하세요' : '무료로 받기'}
-        </button>
-        <p className="text-xs text-gray-400 text-center">이메일 주소로 즉시 다운로드 링크를 보내드립니다</p>
+          무료 다운로드 →
+        </Link>
+        <p className="text-xs text-gray-400 text-center">브라우저에서 즉시 PDF 생성 — 이메일 없이 바로 다운로드</p>
       </div>
     );
   }
