@@ -162,30 +162,55 @@ export default function CheckoutPage() {
           </h1>
           <p className="text-gray-500 text-sm mb-2">주문번호: <span className="font-medium text-gray-700">{orderNumber}</span></p>
           <p className="text-gray-500 text-sm mb-8">
-            <span className="font-medium text-gray-700">{form.email}</span>로<br />
-            {hasPaidItem
-              ? '영업일 기준 3~7일 내에 플래너를 발송해 드립니다.'
-              : '곧 이메일 다운로드 링크를 발송해 드립니다.'}
+            {hasPaidItem ? (
+              <>
+                <span className="font-medium text-gray-700">{form.email}</span>로<br />
+                영업일 기준 3~7일 내에 플래너를 발송해 드립니다.
+              </>
+            ) : (
+              '아래 버튼을 눌러 지금 바로 PDF를 다운로드하세요.'
+            )}
           </p>
 
-          <div className="bg-indigo-50 rounded-2xl p-4 text-left text-sm text-gray-600 mb-6 space-y-1.5">
-            <p>📧 이메일 수신함(스팸 포함)을 확인해 주세요.</p>
-            <p>💬 문의: fortunetab.official@gmail.com</p>
-            {hasSajuProduct && (
-              <p>🔮 사주 분석 후 맞춤 제작되어 발송 기간이 소요됩니다.</p>
-            )}
-          </div>
+          {!hasPaidItem && (
+            <div className="bg-emerald-50 rounded-2xl p-4 text-left text-sm text-emerald-700 mb-6 space-y-1.5 border border-emerald-200">
+              <p className="font-medium">브라우저에서 즉시 PDF가 생성됩니다.</p>
+              <p className="text-emerald-600">서버 전송 없이 내 기기에서 바로 다운로드됩니다.</p>
+            </div>
+          )}
+
+          {hasPaidItem && (
+            <div className="bg-indigo-50 rounded-2xl p-4 text-left text-sm text-gray-600 mb-6 space-y-1.5">
+              <p>📧 이메일 수신함(스팸 포함)을 확인해 주세요.</p>
+              <p>💬 문의: fortunetab.official@gmail.com</p>
+              {hasSajuProduct && (
+                <p>🔮 사주 분석 후 맞춤 제작되어 발송 기간이 소요됩니다.</p>
+              )}
+            </div>
+          )}
 
           <div className="flex flex-col gap-3">
+            {!hasPaidItem && (
+              <Link
+                href="/download"
+                className="block w-full py-3.5 font-bold text-[#1e1b4b] bg-[#f0c040] rounded-xl hover:bg-[#e0b030] transition-colors text-center"
+              >
+                PDF 다운로드 →
+              </Link>
+            )}
             <Link
               href="/"
-              className="block w-full py-3.5 font-bold text-[#1e1b4b] bg-[#f0c040] rounded-xl hover:bg-[#e0b030] transition-colors"
+              className={`block w-full text-center rounded-xl transition-colors ${
+                hasPaidItem
+                  ? 'py-3.5 font-bold text-[#1e1b4b] bg-[#f0c040] hover:bg-[#e0b030]'
+                  : 'py-3 text-sm text-gray-600 border border-gray-200 hover:bg-gray-50'
+              }`}
             >
               홈으로 가기
             </Link>
             <Link
               href="/products"
-              className="block w-full py-3 text-sm text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
+              className="block w-full py-3 text-sm text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors text-center"
             >
               다른 플래너 보기
             </Link>
