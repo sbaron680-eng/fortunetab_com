@@ -29,7 +29,7 @@ export async function createOrder(
     .single();
 
   if (orderErr || !order) {
-    console.error('[createOrder] 주문 생성 실패:', orderErr);
+    console.error('[createOrder] 주문 생성 실패:', orderErr?.message, orderErr?.code, orderErr?.details, orderErr?.hint);
     return null;
   }
 
