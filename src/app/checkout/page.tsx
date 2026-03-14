@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useCartStore, useAuthStore } from '@/lib/store';
 import { formatPrice } from '@/lib/products';
+import { createOrder } from '@/lib/orders';
 
 type Step = 'info' | 'payment' | 'complete';
 
@@ -90,10 +91,14 @@ export default function CheckoutPage() {
 
     try {
       if (!hasPaidItem) {
-        // 무료 상품: 이메일 발송 API 호출 (TODO: 실제 엔드포인트 연결)
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-        const fakeOrderNum = `FT-FREE-${Date.now()}`;
-        setOrderNumber(fakeOrderNum);
+        // 무료 상품: 주문 저장 후 이메일 발송 (Toss 결제 불필요)
+        await new Promise((resolve) => setTimeout(resolve, 800));
+        let orderNum = `FT-FREE-${Date.now()}`;
+        if (user) {
+          const result = await createOrder(user.id, items, 0);
+          if (result) orderNum = result.orderNumber;
+        }
+        setOrderNumber(orderNum);
         clearCart();
         setStep('complete');
         return;
@@ -105,10 +110,14 @@ export default function CheckoutPage() {
       // 3) 성공 시 /checkout/success?orderId=...&paymentKey=... 로 리다이렉트
       // 4) Cloudflare Workers에서 Toss Payments confirm API 호출하여 최종 승인
       //
-      // 아래는 UI 데모용 시뮬레이션:
+      // 아래는 UI 데모용 시뮬레이션 (결제 완료 후 주문 DB 저장):
       await new Promise((resolve) => setTimeout(resolve, 2000));
-      const fakeOrderNum = `FT-${Date.now()}`;
-      setOrderNumber(fakeOrderNum);
+      let orderNum = `FT-${Date.now()}`;
+      if (user) {
+        const result = await createOrder(user.id, items, total);
+        if (result) orderNum = result.orderNumber;
+      }
+      setOrderNumber(orderNum);
       clearCart();
       setStep('complete');
     } finally {

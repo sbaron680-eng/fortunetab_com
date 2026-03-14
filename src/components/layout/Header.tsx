@@ -92,9 +92,17 @@ export default function Header() {
             {/* 로그인/마이페이지 */}
             {user ? (
               <div className="hidden md:flex items-center gap-2">
+                {user.isAdmin && (
+                  <Link
+                    href="/admin"
+                    className="text-xs px-2 py-1 rounded bg-indigo-800 text-indigo-200 hover:bg-indigo-700 transition-colors"
+                  >
+                    관리자
+                  </Link>
+                )}
                 <span className="text-xs text-indigo-300">{user.name}님</span>
                 <button
-                  onClick={logout}
+                  onClick={() => logout()}
                   className="text-xs text-indigo-300 hover:text-white transition-colors"
                 >
                   로그아웃
@@ -148,7 +156,18 @@ export default function Header() {
             <div className="pt-2 border-t border-indigo-700">
               {user ? (
                 <div className="flex items-center justify-between px-2 py-2">
-                  <span className="text-xs text-indigo-300">{user.name}님</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-indigo-300">{user.name}님</span>
+                    {user.isAdmin && (
+                      <Link
+                        href="/admin"
+                        onClick={() => setMobileOpen(false)}
+                        className="text-xs px-2 py-0.5 rounded bg-indigo-800 text-indigo-200"
+                      >
+                        관리자
+                      </Link>
+                    )}
+                  </div>
                   <button
                     onClick={() => { logout(); setMobileOpen(false); }}
                     className="text-xs text-indigo-300 hover:text-white"
