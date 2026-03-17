@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import { generatePlannerPDF, PageType, Orientation } from '@/lib/pdf-generator';
 import { THEMES } from '@/lib/pdf-themes';
 import { useSajuStore } from '@/lib/store';
+import PlannerPreviewCanvas from '@/components/planner/PlannerPreviewCanvas';
 
 // ── 페이지 선택 옵션 ─────────────────────────────────────────────────────────
 const PAGE_OPTIONS: { type: PageType; label: string; sublabel: string; icon: string }[] = [
@@ -328,6 +329,41 @@ export default function DownloadPage() {
               예상 페이지 수: <span className="text-[#f59e0b] font-medium">{estimatedPages}p</span>
             </div>
           )}
+        </section>
+
+        {/* ── 카드: 실시간 미리보기 ────────────────────────────────────────────── */}
+        <section className="bg-white/5 border border-white/10 rounded-2xl p-6">
+          <h2 className="text-white font-semibold text-sm uppercase tracking-widest mb-4 flex items-center gap-2">
+            <span className="w-1.5 h-4 bg-[#f59e0b] rounded-full inline-block" />
+            실시간 미리보기
+            <span className="text-indigo-400 font-normal normal-case tracking-normal text-xs ml-1">— 실제 PDF와 동일</span>
+          </h2>
+
+          <div className="overflow-x-auto pb-2">
+            <div className="flex gap-4 min-w-max">
+              {([
+                { type: 'cover'      as PageType, label: '커버',   idx: 0 },
+                { type: 'year-index' as PageType, label: '연간',   idx: 0 },
+                { type: 'monthly'    as PageType, label: '월간',   idx: 0 },
+                { type: 'weekly'     as PageType, label: '주간',   idx: 1 },
+                { type: 'daily'      as PageType, label: '일간',   idx: 0 },
+              ]).map(({ type, label, idx }) => (
+                <div key={type} className="flex flex-col items-center gap-2">
+                  <PlannerPreviewCanvas
+                    pageType={type}
+                    pageIdx={idx}
+                    opts={{ orientation, year, name: name.trim() || '나의 플래너', theme }}
+                    displayWidth={140}
+                  />
+                  <span className="text-xs text-indigo-400">{label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <p className="text-xs text-indigo-500 mt-3 text-center">
+            테마·연도·방향 변경 시 자동으로 업데이트됩니다
+          </p>
         </section>
 
         {/* ── 생성 버튼 & 진행 상태 ─────────────────────────────────────────────── */}

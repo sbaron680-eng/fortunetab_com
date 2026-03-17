@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { PRODUCTS, getProductBySlug, formatPrice } from '@/lib/products';
-import ProductGallery from '@/components/product/ProductGallery';
+import PlannerProductPreview from '@/components/product/PlannerProductPreview';
 import AddToCartButton from './AddToCartButton';
 
 // 정적 사이트 내보내기: 빌드 시 모든 slug를 사전 렌더링
@@ -57,9 +57,9 @@ export default async function ProductDetailPage({ params }: Props) {
 
         {/* 메인 컨텐츠: 갤러리 + 구매 영역 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mb-12">
-          {/* 갤러리 */}
+          {/* 갤러리 — 실시간 캔버스 미리보기 */}
           <div>
-            <ProductGallery images={product.images} productName={product.name} />
+            <PlannerProductPreview year={2026} theme="rose" />
           </div>
 
           {/* 구매 영역 */}

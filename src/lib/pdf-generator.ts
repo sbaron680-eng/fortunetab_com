@@ -864,6 +864,30 @@ function drawDaily(
 //  PUBLIC API
 // ════════════════════════════════════════════════════════════════════════════
 
+/**
+ * 단일 페이지를 캔버스에 렌더링 (미리보기용)
+ * canvas.width / height를 직접 설정하면 원하는 해상도로 렌더링
+ */
+export function renderPreviewPage(
+  canvas: HTMLCanvasElement,
+  pageType: PageType,
+  pageIdx: number,     // month 0-11 | week 1-52
+  opts: PlannerOptions,
+): void {
+  T = getTheme(opts.theme);
+  const ctx = canvas.getContext('2d')!;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const W = canvas.width;
+  const H = canvas.height;
+
+  if (pageType === 'cover')      drawCover(ctx, W, H, opts);
+  else if (pageType === 'year-index') drawYearIndex(ctx, W, H, opts);
+  else if (pageType === 'monthly')    drawMonthly(ctx, W, H, opts, pageIdx);
+  else if (pageType === 'weekly')     drawWeekly(ctx, W, H, opts, pageIdx || 1);
+  else if (pageType === 'daily')      drawDaily(ctx, W, H, opts);
+}
+
 export async function generatePlannerPDF(opts: PlannerOptions): Promise<void> {
   const { jsPDF } = await import('jspdf');
 
