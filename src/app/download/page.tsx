@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { generatePlannerPDF, PageType, Orientation } from '@/lib/pdf-generator';
+import { THEMES } from '@/lib/pdf-themes';
 import { useSajuStore } from '@/lib/store';
 
 // ── 페이지 선택 옵션 ─────────────────────────────────────────────────────────
@@ -15,11 +16,13 @@ const PAGE_OPTIONS: { type: PageType; label: string; sublabel: string; icon: str
 
 // ── 미리 정의된 묶음 프리셋 ──────────────────────────────────────────────────
 const PRESETS: { label: string; pages: PageType[] }[] = [
-  { label: '전체',          pages: ['cover', 'year-index', 'monthly', 'weekly', 'daily'] },
-  { label: '가벼운 버전',    pages: ['cover', 'year-index', 'monthly'] },
-  { label: '월간+주간',      pages: ['monthly', 'weekly'] },
-  { label: '커버만',         pages: ['cover'] },
+  { label: '전체',       pages: ['cover', 'year-index', 'monthly', 'weekly', 'daily'] },
+  { label: '가벼운 버전', pages: ['cover', 'year-index', 'monthly'] },
+  { label: '월간+주간',  pages: ['monthly', 'weekly'] },
+  { label: '커버만',     pages: ['cover'] },
 ];
+
+const YEARS = [2025, 2026, 2027];
 
 export default function DownloadPage() {
   const savedSaju = useSajuStore((s) => s.savedSaju);
@@ -28,12 +31,13 @@ export default function DownloadPage() {
   const [selectedPages, setSelectedPages] = useState<Set<PageType>>(
     new Set(['cover', 'year-index', 'monthly', 'weekly', 'daily'])
   );
-  const [name, setName] = useState('');
-  const [year] = useState(2026);
+  const [name, setName]       = useState('');
+  const [year, setYear]       = useState(2026);
+  const [theme, setTheme]     = useState('rose');
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [progress, setProgress] = useState<{ current: number; total: number; label: string } | null>(null);
-  const [done, setDone] = useState(false);
+  const [done, setDone]   = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // ── 페이지 토글 ─────────────────────────────────────────────────────────────
@@ -68,6 +72,7 @@ export default function DownloadPage() {
         pages: PAGE_OPTIONS
           .filter((o) => selectedPages.has(o.type))
           .map((o) => o.type),
+        theme,
         saju: savedSaju ?? undefined,
         onProgress: (current, total, label) => {
           setProgress({ current, total, label });
@@ -81,7 +86,7 @@ export default function DownloadPage() {
       setIsGenerating(false);
       setProgress(null);
     }
-  }, [orientation, selectedPages, name, year]);
+  }, [orientation, selectedPages, name, year, theme, savedSaju]);
 
   // ── 예상 페이지 수 계산 ──────────────────────────────────────────────────────
   const estimatedPages = [...selectedPages].reduce((acc, t) => {
@@ -100,7 +105,7 @@ export default function DownloadPage() {
           🎁 무료 다운로드
         </div>
         <h1 className="text-3xl sm:text-4xl font-bold text-white mb-3">
-          2026 운세 플래너
+          운세 플래너
         </h1>
         <p className="text-indigo-300 text-base sm:text-lg leading-relaxed">
           템플릿과 방향을 선택하면 브라우저에서 즉시 PDF가 생성됩니다.
@@ -111,6 +116,65 @@ export default function DownloadPage() {
 
       <div className="max-w-2xl mx-auto space-y-6">
 
+        {/* ── 카드: 연도 선택 ───────────────────────────────────────────────────── */}
+        <section className="bg-white/5 border border-white/10 rounded-2xl p-6">
+          <h2 className="text-white font-semibold text-sm uppercase tracking-widest mb-4 flex items-center gap-2">
+            <span className="w-1.5 h-4 bg-[#f59e0b] rounded-full inline-block" />
+            연도
+          </h2>
+          <div className="grid grid-cols-3 gap-3">
+            {YEARS.map((y) => {
+              const isSel = year === y;
+              return (
+                <button
+                  key={y}
+                  onClick={() => { setYear(y); setDone(false); }}
+                  className={`py-3 rounded-xl border-2 font-bold text-sm transition-all ${
+                    isSel
+                      ? 'border-[#f59e0b] bg-[#f59e0b]/10 text-[#f59e0b]'
+                      : 'border-white/10 bg-white/5 text-white hover:border-white/30'
+                  }`}
+                >
+                  {y}년
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* ── 카드: 컬러 테마 ──────────────────────────────────────────────────── */}
+        <section className="bg-white/5 border border-white/10 rounded-2xl p-6">
+          <h2 className="text-white font-semibold text-sm uppercase tracking-widest mb-4 flex items-center gap-2">
+            <span className="w-1.5 h-4 bg-[#f59e0b] rounded-full inline-block" />
+            컬러 테마
+          </h2>
+          <div className="grid grid-cols-4 sm:grid-cols-7 gap-3">
+            {THEMES.map((t) => {
+              const isSel = theme === t.id;
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => { setTheme(t.id); setDone(false); }}
+                  title={t.name}
+                  className={`flex flex-col items-center gap-1.5 p-2 rounded-xl border-2 transition-all ${
+                    isSel
+                      ? 'border-[#f59e0b] bg-[#f59e0b]/10'
+                      : 'border-white/10 bg-white/5 hover:border-white/30'
+                  }`}
+                >
+                  <span
+                    className="w-8 h-8 rounded-full border-2 border-white/20 shadow-md"
+                    style={{ backgroundColor: t.swatch }}
+                  />
+                  <span className={`text-xs font-medium ${isSel ? 'text-[#f59e0b]' : 'text-indigo-300'}`}>
+                    {t.name}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
         {/* ── 카드: 방향 선택 ──────────────────────────────────────────────────── */}
         <section className="bg-white/5 border border-white/10 rounded-2xl p-6">
           <h2 className="text-white font-semibold text-sm uppercase tracking-widest mb-4 flex items-center gap-2">
@@ -118,7 +182,7 @@ export default function DownloadPage() {
             용지 방향
           </h2>
           <div className="grid grid-cols-2 gap-3">
-            {([ 'portrait', 'landscape'] as Orientation[]).map((ori) => {
+            {(['portrait', 'landscape'] as Orientation[]).map((ori) => {
               const isSelected = orientation === ori;
               return (
                 <button
@@ -130,13 +194,9 @@ export default function DownloadPage() {
                       : 'border-white/10 bg-white/5 hover:border-white/30'
                   }`}
                 >
-                  {/* 미니 용지 아이콘 */}
                   <div
                     className={`rounded border-2 ${isSelected ? 'border-[#f59e0b]' : 'border-indigo-400'} bg-indigo-900/60`}
-                    style={ori === 'portrait'
-                      ? { width: 32, height: 44 }
-                      : { width: 44, height: 32 }
-                    }
+                    style={ori === 'portrait' ? { width: 32, height: 44 } : { width: 44, height: 32 }}
                   />
                   <div>
                     <div className={`text-sm font-semibold ${isSelected ? 'text-[#f59e0b]' : 'text-white'}`}>
@@ -335,7 +395,7 @@ export default function DownloadPage() {
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                 </svg>
-                PDF 생성 &amp; 다운로드
+                {year}년 {THEMES.find(t => t.id === theme)?.name} 테마 PDF 생성
               </>
             )}
           </button>
