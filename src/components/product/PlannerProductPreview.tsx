@@ -8,6 +8,7 @@
 
 import { useState } from 'react';
 import PlannerPreviewCanvas from '@/components/planner/PlannerPreviewCanvas';
+import PreviewLightbox from '@/components/ui/PreviewLightbox';
 import type { PageType } from '@/lib/pdf-generator';
 
 const PAGES: { type: PageType; label: string; icon: string; idx: number }[] = [
@@ -25,6 +26,7 @@ interface Props {
 
 export default function PlannerProductPreview({ year = 2026, theme = 'rose' }: Props) {
   const [activeIdx, setActiveIdx] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
   const active = PAGES[activeIdx];
 
   const prev = () => setActiveIdx((i) => (i === 0 ? PAGES.length - 1 : i - 1));
@@ -48,13 +50,19 @@ export default function PlannerProductPreview({ year = 2026, theme = 'rose' }: P
           </svg>
         </button>
 
-        <PlannerPreviewCanvas
-          pageType={active.type}
-          pageIdx={active.idx}
-          opts={opts}
-          displayWidth={220}
-          className="mx-auto"
-        />
+        <button
+          onClick={() => setLightboxOpen(true)}
+          className="cursor-zoom-in focus:outline-none"
+          aria-label={`${active.label} 크게 보기`}
+        >
+          <PlannerPreviewCanvas
+            pageType={active.type}
+            pageIdx={active.idx}
+            opts={opts}
+            displayWidth={220}
+            className="mx-auto"
+          />
+        </button>
 
         <button
           onClick={next}
@@ -70,7 +78,27 @@ export default function PlannerProductPreview({ year = 2026, theme = 'rose' }: P
         <div className="absolute bottom-3 right-3 px-2 py-0.5 bg-black/40 text-white text-xs rounded-full">
           {active.icon} {active.label} {activeIdx + 1}/{PAGES.length}
         </div>
+
+        {/* 확대 힌트 */}
+        <div className="absolute top-3 right-3 px-2 py-0.5 bg-black/30 text-white text-xs rounded-full pointer-events-none">
+          🔍 클릭해서 크게 보기
+        </div>
       </div>
+
+      {/* 라이트박스 */}
+      <PreviewLightbox
+        open={lightboxOpen}
+        onClose={() => setLightboxOpen(false)}
+        label={`${active.icon} ${active.label} 미리보기`}
+      >
+        <PlannerPreviewCanvas
+          pageType={active.type}
+          pageIdx={active.idx}
+          opts={opts}
+          displayWidth={400}
+          className="mx-auto"
+        />
+      </PreviewLightbox>
 
       {/* 썸네일 탭 */}
       <div className="flex gap-2 overflow-x-auto pb-1">

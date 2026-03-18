@@ -87,7 +87,7 @@ export default function HomePage() {
             </Link>
             <Link
               href="/products/common-planner"
-              className="w-full sm:w-auto px-8 py-4 font-medium text-white border border-white/40 rounded-2xl hover:bg-white/10 transition-all"
+              className="w-full sm:w-auto px-8 py-4 font-medium text-white border border-white/40 rounded-2xl hover:bg-white/20 hover:border-white/80 hover:scale-[1.02] transition-all"
             >
               무료 체험판 받기
             </Link>
