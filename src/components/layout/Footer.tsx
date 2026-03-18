@@ -57,7 +57,7 @@ export default function Footer() {
 
         {/* 사업자 정보 */}
         <div className="mt-8 pt-8 border-t border-indigo-700 text-xs text-indigo-400 space-y-1">
-          <p>FortuneTab | 사업자등록번호: 238-18-00745</p>
+          <p>상호: 비포에이 | 서비스명: FortuneTab | 사업자등록번호: 238-18-00745</p>
           <p>통신판매업신고: 신고 접수 중 (사업자등록번호 238-18-00745)</p>
           <p>고객센터: sbaron680@gmail.com | 운영시간: 평일 10:00 - 18:00</p>
           <p className="pt-2 text-indigo-500">
