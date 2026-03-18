@@ -18,10 +18,10 @@ export const PRODUCTS: Product[] = [
       '/products/planner-daily.png',
     ],
     thumbnailImage: '/products/planner-cover.png',
-    shortDescription: '이메일 신청 시 즉시 다운로드. 5종 템플릿 완성본 PDF.',
+    shortDescription: '브라우저에서 즉시 PDF 생성 — 이메일 없이 바로 다운로드.',
     description: `운세의 흐름을 담아 설계한 2026년 공통 플래너입니다. 커버 페이지부터 연간 인덱스, 월간·주간·일간 플래너까지 5종 템플릿이 하나의 PDF에 담겨 있습니다.
 
-이메일 주소를 등록하면 즉시 다운로드 링크를 보내드립니다. 직접 인쇄하거나 태블릿·PDF 앱에서 바로 사용할 수 있습니다.`,
+버튼 하나로 브라우저에서 즉시 PDF를 생성합니다. 이메일 입력 없이 바로 다운로드할 수 있습니다. 직접 인쇄하거나 태블릿·PDF 앱에서 바로 사용할 수 있습니다.`,
     features: [
       {
         icon: '🌙',
@@ -49,14 +49,14 @@ export const PRODUCTS: Product[] = [
       { label: '페이지 수', value: '5종 템플릿 (커버+연간+월간+주간+일간)' },
       { label: '크기', value: 'A4 (210×297mm), 고화질' },
       { label: '언어', value: '한국어' },
-      { label: '배송 방법', value: '이메일 발송 (즉시)' },
+      { label: '배송 방법', value: '브라우저 즉시 다운로드 (이메일 불필요)' },
       { label: '가격', value: '무료' },
     ],
     downloadUrl: '/download',
     category: 'free',
     inStock: true,
     seo: {
-      title: '무료 PDF 플래너 2026 - 운세 흐름 플래너 무료 다운로드 | FortuneTab',
+      title: '무료 PDF 플래너 2026 - 운세 흐름 플래너 무료 다운로드',
       description:
         '2026년 운세 흐름으로 설계한 PDF 플래너 무료 다운로드. 커버·연간·월간·주간·일간 5종 템플릿. 이메일 신청 시 즉시 발송.',
       keywords: [
@@ -123,7 +123,7 @@ export const PRODUCTS: Product[] = [
     category: 'basic',
     inStock: true,
     seo: {
-      title: '사주 플래너 기본 - 내 사주로 설계한 2026년 맞춤 플래너 | FortuneTab',
+      title: '사주 플래너 기본 - 내 사주로 설계한 2026년 맞춤 플래너',
       description:
         '사주팔자 분석으로 맞춤 제작되는 2026년 PDF 플래너. 운세 흐름 캘린더·월간·주간·일간 플래너 포함. 얼리버드 19,000원.',
       keywords: [
@@ -192,7 +192,7 @@ export const PRODUCTS: Product[] = [
     category: 'premium',
     inStock: true,
     seo: {
-      title: '사주 플래너 프리미엄 - 플래너+개인 사주 리포트 패키지 | FortuneTab',
+      title: '사주 플래너 프리미엄 - 플래너+개인 사주 리포트 패키지',
       description:
         '사주 맞춤 플래너 + 20페이지 개인 사주 심층 리포트. 2026 월별 운세, 대운 분석 포함. 얼리버드 29,000원.',
       keywords: [

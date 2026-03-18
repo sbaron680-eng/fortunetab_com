@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import ProductFilterGrid from '@/components/product/ProductFilterGrid';
 
 export const metadata: Metadata = {
-  title: '플래너 상품 목록 | FortuneTab',
+  title: '플래너 상품 목록',
   description:
     '사주팔자로 맞춤 제작되는 2026년 PDF 플래너 상품 목록. 무료 공통 플래너부터 사주 분석 리포트 포함 프리미엄까지. 지금 선택하세요.',
   keywords: ['사주 플래너', '운세 플래너', 'PDF 플래너', '2026 다이어리', '사주팔자 플래너'],

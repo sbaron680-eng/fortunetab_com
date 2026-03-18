@@ -59,7 +59,18 @@ export default async function ProductDetailPage({ params }: Props) {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mb-12">
           {/* 갤러리 — 실시간 캔버스 미리보기 */}
           <div>
-            <PlannerProductPreview year={2026} theme="rose" />
+            <PlannerProductPreview
+              year={2026}
+              theme={
+                slug === 'common-planner'
+                  ? 'blue'
+                  : slug === 'saju-planner-basic'
+                  ? 'rose'
+                  : slug === 'saju-planner-premium'
+                  ? 'gold'
+                  : 'rose'
+              }
+            />
           </div>
 
           {/* 구매 영역 */}

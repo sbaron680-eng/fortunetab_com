@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import Image from 'next/image';
 import ProductCard from '@/components/product/ProductCard';
+import PreviewImageCard from '@/components/home/PreviewImageCard';
 import { PRODUCTS } from '@/lib/products';
 
 export const metadata: Metadata = {
-  title: '사주·운세로 설계한 나만의 2026 플래너 | FortuneTab',
+  title: '사주·운세로 설계한 나만의 2026 플래너',
   description:
     '사주팔자로 맞춤 제작되는 2026년 PDF 플래너. 운세 흐름 캘린더 + 월간/주간/일간 플래너. 무료 체험판 다운로드 가능.',
 };
@@ -110,8 +110,8 @@ export default function HomePage() {
             <p className="mt-2 text-gray-500 text-sm sm:text-base">무료 체험판부터 사주 맞춤 플래너까지</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {PRODUCTS.map((product, i) => (
-              <ProductCard key={product.id} product={product} priority={i === 0} />
+            {PRODUCTS.map((product) => (
+              <ProductCard key={product.id} product={product} priority={true} />
             ))}
           </div>
           <div className="text-center mt-8">
@@ -220,21 +220,7 @@ export default function HomePage() {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {PREVIEW_IMAGES.map(({ src, label }) => (
-              <div key={label} className="relative rounded-xl overflow-hidden group"
-                   style={{ border: '1px solid rgba(240,192,64,0.15)', boxShadow: '0 4px 24px rgba(0,0,0,0.4)' }}>
-                <div className="relative aspect-[3/4] bg-[#1e1b4b]">
-                  <Image
-                    src={src}
-                    alt={`${label} 플래너 미리보기`}
-                    fill
-                    className="object-cover group-hover:scale-[1.03] transition-transform duration-300"
-                    sizes="(max-width: 640px) 50vw, 20vw"
-                  />
-                </div>
-                <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent p-2">
-                  <span className="text-white text-xs font-medium">{label}</span>
-                </div>
-              </div>
+              <PreviewImageCard key={label} src={src} label={label} />
             ))}
           </div>
           <div className="text-center mt-8">

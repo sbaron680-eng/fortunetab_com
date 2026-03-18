@@ -145,7 +145,15 @@ export default function RegisterPage() {
         </div>
 
         <p className="mt-4 text-center text-xs text-gray-400">
-          회원가입 시 FortuneTab 이용약관 및 개인정보처리방침에 동의합니다.
+          회원가입 시 FortuneTab{' '}
+          <Link href="/terms" target="_blank" className="underline hover:text-gray-600 transition-colors">
+            이용약관
+          </Link>{' '}
+          및{' '}
+          <Link href="/privacy" target="_blank" className="underline hover:text-gray-600 transition-colors">
+            개인정보처리방침
+          </Link>
+          에 동의합니다.
         </p>
       </div>
     </div>

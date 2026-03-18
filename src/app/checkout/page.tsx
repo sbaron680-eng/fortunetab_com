@@ -77,6 +77,14 @@ export default function CheckoutPage() {
 
   const handleInfoSubmit = (e: FormEvent) => {
     e.preventDefault();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      alert('올바른 이메일 주소를 입력해 주세요.');
+      return;
+    }
+    if (hasPaidItem && !form.phone.trim()) {
+      alert('유료 상품 구매 시 연락처를 입력해 주세요.');
+      return;
+    }
     setStep('payment');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -290,11 +298,12 @@ export default function CheckoutPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                        연락처
+                        연락처{hasPaidItem && <span className="text-red-500"> *</span>}
                       </label>
                       <input
                         type="tel"
                         name="phone"
+                        required={hasPaidItem}
                         value={form.phone}
                         onChange={handleFormChange}
                         placeholder="010-0000-0000"
@@ -475,8 +484,14 @@ export default function CheckoutPage() {
                       className="mt-0.5 w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 flex-shrink-0"
                     />
                     <span className="text-sm text-gray-600 leading-relaxed">
-                      <span className="font-medium text-gray-900">이용약관</span> 및{' '}
-                      <span className="font-medium text-gray-900">개인정보 처리방침</span>에 동의합니다.
+                      <Link href="/terms" target="_blank" className="font-medium text-gray-900 underline hover:text-indigo-700 transition-colors">
+                        이용약관
+                      </Link>{' '}
+                      및{' '}
+                      <Link href="/privacy" target="_blank" className="font-medium text-gray-900 underline hover:text-indigo-700 transition-colors">
+                        개인정보 처리방침
+                      </Link>
+                      에 동의합니다.
                       디지털 콘텐츠 특성상 다운로드 이후 환불이 불가함을 확인합니다.
                     </span>
                   </label>
