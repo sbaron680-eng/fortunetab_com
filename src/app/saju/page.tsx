@@ -153,40 +153,103 @@ const GRADE_STYLE: Record<string, { bg: string; text: string; border: string }> 
   '어려움': { bg: 'rgba(239,68,68,0.12)',   text: '#f87171', border: 'rgba(239,68,68,0.3)' },
 };
 
-function MonthFortuneCard({ fm }: { fm: FortuneMonth }) {
+const GRADE_ADVICE: Record<string, string> = {
+  '대길':   '이 달은 운기가 최고조에 달합니다. 새로운 시작, 중요한 결정, 대인관계 확장에 최적의 시기입니다. 적극적으로 행동하세요.',
+  '길':     '전반적으로 순탄한 흐름입니다. 계획한 일을 추진하기 좋은 달이며, 노력한 만큼 결과가 따릅니다.',
+  '평':     '큰 변동 없이 안정적인 달입니다. 현상 유지에 집중하고 무리한 도전보다는 내실을 다지는 시간으로 활용하세요.',
+  '주의':   '예상치 못한 변수가 생길 수 있습니다. 충동적 결정을 피하고 신중하게 판단하며 주변의 조언에 귀 기울이세요.',
+  '어려움': '다소 힘든 시기입니다. 무리한 확장보다 수비에 집중하고 건강과 관계에 각별히 신경 쓰는 것이 좋습니다.',
+};
+
+interface MonthFortuneCardProps {
+  fm: FortuneMonth;
+  isExpanded: boolean;
+  onToggle: () => void;
+}
+
+function MonthFortuneCard({ fm, isExpanded, onToggle }: MonthFortuneCardProps) {
   const style = GRADE_STYLE[fm.grade];
+  const advice = GRADE_ADVICE[fm.grade];
   return (
     <div
-      className="rounded-xl p-4 border transition-all hover:scale-[1.02]"
-      style={{ background: style.bg, borderColor: style.border }}
+      className="rounded-xl border transition-all hover:scale-[1.01] cursor-pointer"
+      style={{ background: style.bg, borderColor: isExpanded ? style.text : style.border }}
+      onClick={onToggle}
+      role="button"
+      aria-expanded={isExpanded}
     >
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-sm font-bold text-white">{fm.month}월</span>
-        <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
-              style={{ background: style.border, color: style.text }}>
-          {fm.grade}
-        </span>
+      <div className="p-4">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm font-bold text-white">{fm.month}월</span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                  style={{ background: style.border, color: style.text }}>
+              {fm.grade}
+            </span>
+            <span className="text-xs text-indigo-400 transition-transform duration-200"
+                  style={{ display: 'inline-block', transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+              ▼
+            </span>
+          </div>
+        </div>
+        {/* 점수 바 */}
+        <div className="w-full bg-indigo-900 rounded-full h-1.5 mb-3">
+          <div
+            className="h-1.5 rounded-full transition-all duration-700"
+            style={{ width: `${fm.score}%`, background: fm.color }}
+          />
+        </div>
+        {/* 오행 + 키워드 */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs px-1.5 py-0.5 rounded"
+                style={{ background: fm.color + '33', color: fm.color }}>
+            {ELEM_EMOJI[ELEM_KO.indexOf(fm.monthElem)]} {fm.monthElem}
+          </span>
+          {fm.keywords.map(kw => (
+            <span key={kw} className="text-xs text-indigo-300">#{kw}</span>
+          ))}
+        </div>
+        <p className="text-xs text-indigo-300 mt-2 leading-relaxed line-clamp-2">
+          {fm.description}
+        </p>
       </div>
-      {/* 점수 바 */}
-      <div className="w-full bg-indigo-900 rounded-full h-1.5 mb-3">
+
+      {/* 펼쳐진 상세 내용 */}
+      {isExpanded && (
         <div
-          className="h-1.5 rounded-full transition-all duration-700"
-          style={{ width: `${fm.score}%`, background: fm.color }}
-        />
-      </div>
-      {/* 오행 + 키워드 */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-xs px-1.5 py-0.5 rounded"
-              style={{ background: fm.color + '33', color: fm.color }}>
-          {ELEM_EMOJI[ELEM_KO.indexOf(fm.monthElem)]} {fm.monthElem}
-        </span>
-        {fm.keywords.map(kw => (
-          <span key={kw} className="text-xs text-indigo-300">#{kw}</span>
-        ))}
-      </div>
-      <p className="text-xs text-indigo-300 mt-2 leading-relaxed line-clamp-2">
-        {fm.description}
-      </p>
+          className="px-4 pb-4 border-t"
+          style={{ borderColor: style.border }}
+          onClick={e => e.stopPropagation()}
+        >
+          <div className="pt-3 space-y-3">
+            {/* 운세 점수 */}
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-indigo-400 w-14 flex-shrink-0">운세 점수</span>
+              <div className="flex-1 bg-indigo-900 rounded-full h-2">
+                <div
+                  className="h-2 rounded-full"
+                  style={{ width: `${fm.score}%`, background: fm.color }}
+                />
+              </div>
+              <span className="text-xs font-bold w-8 text-right" style={{ color: fm.color }}>
+                {fm.score}점
+              </span>
+            </div>
+            {/* 상세 설명 */}
+            <div>
+              <span className="text-xs text-indigo-400 block mb-1">이달의 운세</span>
+              <p className="text-xs text-indigo-200 leading-relaxed">{fm.description}</p>
+            </div>
+            {/* 조언 */}
+            <div className="rounded-lg p-3" style={{ background: 'rgba(99,102,241,0.15)' }}>
+              <span className="text-xs font-semibold mb-1 block" style={{ color: style.text }}>
+                💡 조언
+              </span>
+              <p className="text-xs text-indigo-200 leading-relaxed">{advice}</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -200,6 +263,7 @@ export default function SajuPage() {
   const [fortune, setFortune] = useState<FortuneMonth[]>([]);
   const [error, setError]     = useState('');
   const [calculated, setCalculated] = useState(false);
+  const [expandedMonth, setExpandedMonth] = useState<number | null>(null);
 
   const handleChange = (key: keyof BirthForm, val: string) => {
     setForm(prev => ({ ...prev, [key]: val }));
@@ -412,7 +476,12 @@ export default function SajuPage() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {fortune.map(fm => (
-                  <MonthFortuneCard key={fm.month} fm={fm} />
+                  <MonthFortuneCard
+                    key={fm.month}
+                    fm={fm}
+                    isExpanded={expandedMonth === fm.month}
+                    onToggle={() => setExpandedMonth(prev => prev === fm.month ? null : fm.month)}
+                  />
                 ))}
               </div>
             </section>

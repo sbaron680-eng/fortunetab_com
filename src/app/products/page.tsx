@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
-import ProductCard from '@/components/product/ProductCard';
-import { PRODUCTS } from '@/lib/products';
+import ProductFilterGrid from '@/components/product/ProductFilterGrid';
 
 export const metadata: Metadata = {
   title: '플래너 상품 목록 | FortuneTab',
@@ -8,13 +7,6 @@ export const metadata: Metadata = {
     '사주팔자로 맞춤 제작되는 2026년 PDF 플래너 상품 목록. 무료 공통 플래너부터 사주 분석 리포트 포함 프리미엄까지. 지금 선택하세요.',
   keywords: ['사주 플래너', '운세 플래너', 'PDF 플래너', '2026 다이어리', '사주팔자 플래너'],
 };
-
-const CATEGORIES = [
-  { id: 'all', label: '전체' },
-  { id: 'free', label: '무료' },
-  { id: 'basic', label: '기본' },
-  { id: 'premium', label: '프리미엄' },
-];
 
 export default function ProductsPage() {
   return (
@@ -28,28 +20,8 @@ export default function ProductsPage() {
           </p>
         </div>
 
-        {/* 카테고리 탭 (정적 UI - 필터링은 추후 클라이언트 컴포넌트로 분리) */}
-        <div className="flex gap-2 mb-8 overflow-x-auto pb-2">
-          {CATEGORIES.map(({ id, label }) => (
-            <span
-              key={id}
-              className={`flex-shrink-0 px-4 py-2 text-sm font-medium rounded-full border transition-colors ${
-                id === 'all'
-                  ? 'bg-[#1e1b4b] text-white border-[#1e1b4b]'
-                  : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300 cursor-pointer'
-              }`}
-            >
-              {label}
-            </span>
-          ))}
-        </div>
-
-        {/* 상품 그리드 */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {PRODUCTS.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
+        {/* 카테고리 탭 + 상품 그리드 (클라이언트 컴포넌트) */}
+        <ProductFilterGrid />
 
         {/* 비교 안내 */}
         <div className="mt-12 bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
