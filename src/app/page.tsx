@@ -107,7 +107,7 @@ export default function HomePage() {
           <div className="text-center mb-10">
             <p className="text-xs font-semibold text-indigo-400 uppercase tracking-widest mb-2">✨ 플래너 라인업</p>
             <h2 className="text-2xl sm:text-3xl font-black text-[#1e1b4b]">나에게 맞는 플래너를 선택하세요</h2>
-            <p className="mt-2 text-gray-500 text-sm sm:text-base">무료 체험판부터 사주 맞춤 플래너까지</p>
+            <p className="mt-2 text-[#4a4a6a] text-sm sm:text-base">무료 체험판부터 사주 맞춤 플래너까지</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {PRODUCTS.map((product) => (

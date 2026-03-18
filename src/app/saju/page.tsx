@@ -275,7 +275,7 @@ export default function SajuPage() {
     const m = parseInt(form.month);
     const d = parseInt(form.day);
 
-    if (!y || !m || !d || y < 1900 || y > 2100 || m < 1 || m > 12 || d < 1 || d > 31) {
+    if (isNaN(y) || isNaN(m) || isNaN(d) || y < 1900 || y > 2100 || m < 1 || m > 12 || d < 1 || d > 31) {
       setError('올바른 생년월일을 입력해주세요 (1900–2100년)');
       return;
     }
