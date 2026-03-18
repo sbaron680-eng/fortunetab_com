@@ -28,10 +28,6 @@
   to   { transform: translateX(0); }
 }
 
-html {
-  scroll-behavior: smooth;
-}
-
 /* 쇼핑몰 스타일: 흰 배경 기반 */
 body {
   background-color: #f8f8fc;

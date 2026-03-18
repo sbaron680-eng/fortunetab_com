@@ -2,15 +2,18 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useCartStore } from '@/lib/store';
 import { useAuthStore } from '@/lib/store';
 
 export default function Header() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const { totalItems, openCart } = useCartStore();
   const { user, logout } = useAuthStore();
+
+  useEffect(() => { setMounted(true); }, []);
 
   const navLinks = [
     { href: '/', label: '홈' },
@@ -82,7 +85,7 @@ export default function Header() {
                   d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z"
                 />
               </svg>
-              {totalItems() > 0 && (
+              {mounted && totalItems() > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center w-4 h-4 text-xs font-bold bg-[#f0c040] text-[#1e1b4b] rounded-full">
                   {totalItems()}
                 </span>
@@ -90,7 +93,7 @@ export default function Header() {
             </button>
 
             {/* 로그인/마이페이지 */}
-            {user ? (
+            {mounted && (user ? (
               <div className="hidden md:flex items-center gap-2">
                 {user.isAdmin && (
                   <Link
@@ -115,7 +118,7 @@ export default function Header() {
               >
                 로그인
               </Link>
-            )}
+            ))}
 
             {/* 모바일 햄버거 */}
             <button
@@ -154,7 +157,7 @@ export default function Header() {
               </Link>
             ))}
             <div className="pt-2 border-t border-indigo-700">
-              {user ? (
+              {mounted && (user ? (
                 <div className="flex items-center justify-between px-2 py-2">
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-indigo-300">{user.name}님</span>
@@ -183,7 +186,7 @@ export default function Header() {
                 >
                   로그인 / 회원가입
                 </Link>
-              )}
+              ))}
             </div>
           </div>
         )}
