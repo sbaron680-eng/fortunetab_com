@@ -5,14 +5,49 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store';
 
+interface LoginErrors {
+  email?: string;
+  password?: string;
+}
+
+function validateEmail(value: string): string | undefined {
+  if (!value.trim()) return '이메일을 입력해 주세요';
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return '올바른 이메일 주소를 입력해 주세요';
+  return undefined;
+}
+
+function validatePassword(value: string): string | undefined {
+  if (!value) return '비밀번호를 입력해 주세요';
+  return undefined;
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const { login, isLoading, error, clearError } = useAuthStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [errors, setErrors] = useState<LoginErrors>({});
+
+  const handleEmailBlur = () => {
+    const msg = validateEmail(email);
+    setErrors((prev) => ({ ...prev, email: msg }));
+  };
+
+  const handlePasswordBlur = () => {
+    const msg = validatePassword(password);
+    setErrors((prev) => ({ ...prev, password: msg }));
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    const emailErr = validateEmail(email);
+    const passwordErr = validatePassword(password);
+    const newErrors: LoginErrors = {};
+    if (emailErr) newErrors.email = emailErr;
+    if (passwordErr) newErrors.password = passwordErr;
+    setErrors(newErrors);
+    if (emailErr || passwordErr) return;
+
     clearError();
     const success = await login(email, password);
     if (success) router.push('/');
@@ -32,7 +67,7 @@ export default function LoginPage() {
             <p className="mt-1 text-sm text-gray-500">계정에 로그인하세요</p>
           </div>
 
-          {/* 에러 */}
+          {/* 서버 에러 */}
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">
               {error}
@@ -40,7 +75,7 @@ export default function LoginPage() {
           )}
 
           {/* 폼 */}
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} noValidate className="space-y-4">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1.5">
                 이메일
@@ -48,13 +83,22 @@ export default function LoginPage() {
               <input
                 id="email"
                 type="email"
-                required
                 autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                onBlur={handleEmailBlur}
                 placeholder="your@email.com"
-                className="w-full px-4 py-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                className={`w-full px-4 py-3 text-sm border rounded-xl focus:outline-none focus:ring-2 transition-all ${
+                  errors.email
+                    ? 'border-red-400 focus:ring-red-400'
+                    : 'border-gray-200 focus:ring-indigo-500 focus:border-transparent'
+                }`}
               />
+              {errors.email && (
+                <p className="mt-1 text-xs text-red-500 flex items-center gap-1">
+                  <span>⚠</span> {errors.email}
+                </p>
+              )}
             </div>
 
             <div>
@@ -64,13 +108,22 @@ export default function LoginPage() {
               <input
                 id="password"
                 type="password"
-                required
                 autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                onBlur={handlePasswordBlur}
                 placeholder="••••••••"
-                className="w-full px-4 py-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                className={`w-full px-4 py-3 text-sm border rounded-xl focus:outline-none focus:ring-2 transition-all ${
+                  errors.password
+                    ? 'border-red-400 focus:ring-red-400'
+                    : 'border-gray-200 focus:ring-indigo-500 focus:border-transparent'
+                }`}
               />
+              {errors.password && (
+                <p className="mt-1 text-xs text-red-500 flex items-center gap-1">
+                  <span>⚠</span> {errors.password}
+                </p>
+              )}
             </div>
 
             <div className="flex items-center justify-between text-sm">
@@ -78,9 +131,9 @@ export default function LoginPage() {
                 <input type="checkbox" className="rounded border-gray-300 text-indigo-600" />
                 <span className="text-gray-600">로그인 상태 유지</span>
               </label>
-              <a href="#" className="text-indigo-600 hover:text-indigo-800 transition-colors">
+              <Link href="/auth/forgot-password" className="text-indigo-600 hover:text-indigo-800 transition-colors">
                 비밀번호 찾기
-              </a>
+              </Link>
             </div>
 
             <button

@@ -21,6 +21,12 @@ interface OrderForm {
   notes: string;
 }
 
+interface InfoErrors {
+  name?: string;
+  email?: string;
+  phone?: string;
+}
+
 const BIRTH_TIMES = [
   { value: '', label: '모름 (생략 가능)' },
   { value: '자시', label: '자시 (23:00 – 01:00)' },
@@ -47,6 +53,8 @@ export default function CheckoutPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderNumber, setOrderNumber] = useState('');
   const [agreeTerms, setAgreeTerms] = useState(false);
+  const [agreeError, setAgreeError] = useState('');
+  const [infoErrors, setInfoErrors] = useState<InfoErrors>({});
 
   const [form, setForm] = useState<OrderForm>({
     name: user?.name ?? '',
@@ -77,23 +85,30 @@ export default function CheckoutPage() {
 
   const handleInfoSubmit = (e: FormEvent) => {
     e.preventDefault();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-      alert('올바른 이메일 주소를 입력해 주세요.');
-      return;
+    const newErrors: InfoErrors = {};
+    if (!form.name.trim()) {
+      newErrors.name = '이름을 입력해 주세요';
+    }
+    if (!form.email.trim()) {
+      newErrors.email = '이메일을 입력해 주세요';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      newErrors.email = '올바른 이메일 주소를 입력해 주세요';
     }
     if (hasPaidItem && !form.phone.trim()) {
-      alert('유료 상품 구매 시 연락처를 입력해 주세요.');
-      return;
+      newErrors.phone = '유료 상품 구매 시 연락처를 입력해 주세요';
     }
+    setInfoErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) return;
     setStep('payment');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handlePayment = async () => {
     if (!agreeTerms) {
-      alert('이용약관 및 개인정보 처리방침에 동의해 주세요.');
+      setAgreeError('이용약관 및 개인정보 처리방침에 동의해 주세요.');
       return;
     }
+    setAgreeError('');
 
     setIsSubmitting(true);
 
@@ -277,7 +292,7 @@ export default function CheckoutPage() {
 
             {/* ── STEP 1: 정보 입력 ──────────────────────── */}
             {step === 'info' && (
-              <form onSubmit={handleInfoSubmit} className="space-y-4">
+              <form onSubmit={handleInfoSubmit} noValidate className="space-y-4">
                 {/* 기본 정보 */}
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:p-6">
                   <h2 className="font-bold text-gray-900 mb-4">📋 주문자 정보</h2>
@@ -289,12 +304,27 @@ export default function CheckoutPage() {
                       <input
                         type="text"
                         name="name"
-                        required
                         value={form.name}
                         onChange={handleFormChange}
+                        onBlur={() => {
+                          if (!form.name.trim()) {
+                            setInfoErrors((prev) => ({ ...prev, name: '이름을 입력해 주세요' }));
+                          } else {
+                            setInfoErrors((prev) => ({ ...prev, name: undefined }));
+                          }
+                        }}
                         placeholder="홍길동"
-                        className="w-full px-4 py-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                        className={`w-full px-4 py-3 text-sm border rounded-xl focus:outline-none focus:ring-2 transition-all ${
+                          infoErrors.name
+                            ? 'border-red-400 focus:ring-red-400'
+                            : 'border-gray-200 focus:ring-indigo-500 focus:border-transparent'
+                        }`}
                       />
+                      {infoErrors.name && (
+                        <p className="mt-1 text-xs text-red-500 flex items-center gap-1">
+                          <span>⚠</span> {infoErrors.name}
+                        </p>
+                      )}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -303,12 +333,27 @@ export default function CheckoutPage() {
                       <input
                         type="tel"
                         name="phone"
-                        required={hasPaidItem}
                         value={form.phone}
                         onChange={handleFormChange}
+                        onBlur={() => {
+                          if (hasPaidItem && !form.phone.trim()) {
+                            setInfoErrors((prev) => ({ ...prev, phone: '유료 상품 구매 시 연락처를 입력해 주세요' }));
+                          } else {
+                            setInfoErrors((prev) => ({ ...prev, phone: undefined }));
+                          }
+                        }}
                         placeholder="010-0000-0000"
-                        className="w-full px-4 py-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                        className={`w-full px-4 py-3 text-sm border rounded-xl focus:outline-none focus:ring-2 transition-all ${
+                          infoErrors.phone
+                            ? 'border-red-400 focus:ring-red-400'
+                            : 'border-gray-200 focus:ring-indigo-500 focus:border-transparent'
+                        }`}
                       />
+                      {infoErrors.phone && (
+                        <p className="mt-1 text-xs text-red-500 flex items-center gap-1">
+                          <span>⚠</span> {infoErrors.phone}
+                        </p>
+                      )}
                     </div>
                     <div className="sm:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -317,13 +362,31 @@ export default function CheckoutPage() {
                       <input
                         type="email"
                         name="email"
-                        required
                         value={form.email}
                         onChange={handleFormChange}
+                        onBlur={() => {
+                          if (!form.email.trim()) {
+                            setInfoErrors((prev) => ({ ...prev, email: '이메일을 입력해 주세요' }));
+                          } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+                            setInfoErrors((prev) => ({ ...prev, email: '올바른 이메일 주소를 입력해 주세요' }));
+                          } else {
+                            setInfoErrors((prev) => ({ ...prev, email: undefined }));
+                          }
+                        }}
                         placeholder="your@email.com"
-                        className="w-full px-4 py-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                        className={`w-full px-4 py-3 text-sm border rounded-xl focus:outline-none focus:ring-2 transition-all ${
+                          infoErrors.email
+                            ? 'border-red-400 focus:ring-red-400'
+                            : 'border-gray-200 focus:ring-indigo-500 focus:border-transparent'
+                        }`}
                       />
-                      <p className="mt-1.5 text-xs text-gray-400">플래너를 이 이메일로 발송합니다. 정확히 입력해 주세요.</p>
+                      {infoErrors.email ? (
+                        <p className="mt-1 text-xs text-red-500 flex items-center gap-1">
+                          <span>⚠</span> {infoErrors.email}
+                        </p>
+                      ) : (
+                        <p className="mt-1.5 text-xs text-gray-400">플래너를 이 이메일로 발송합니다. 정확히 입력해 주세요.</p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -480,7 +543,10 @@ export default function CheckoutPage() {
                     <input
                       type="checkbox"
                       checked={agreeTerms}
-                      onChange={(e) => setAgreeTerms(e.target.checked)}
+                      onChange={(e) => {
+                        setAgreeTerms(e.target.checked);
+                        if (e.target.checked) setAgreeError('');
+                      }}
                       className="mt-0.5 w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 flex-shrink-0"
                     />
                     <span className="text-sm text-gray-600 leading-relaxed">
@@ -495,11 +561,16 @@ export default function CheckoutPage() {
                       디지털 콘텐츠 특성상 다운로드 이후 환불이 불가함을 확인합니다.
                     </span>
                   </label>
+                  {agreeError && (
+                    <p className="mt-2 text-xs text-red-500 flex items-center gap-1">
+                      <span>⚠</span> {agreeError}
+                    </p>
+                  )}
                 </div>
 
                 <button
                   onClick={handlePayment}
-                  disabled={isSubmitting || !agreeTerms}
+                  disabled={isSubmitting}
                   className={`w-full py-4 font-bold rounded-2xl transition-all shadow-lg flex items-center justify-center gap-2 ${
                     hasPaidItem
                       ? 'text-[#1e1b4b] bg-[#f0c040] hover:bg-[#e0b030] disabled:opacity-50 disabled:cursor-not-allowed'
