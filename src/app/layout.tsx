@@ -3,6 +3,7 @@ import Script from 'next/script';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import CartDrawer from '@/components/cart/CartDrawer';
+import Toast from '@/components/ui/Toast';
 import AuthProvider from '@/components/layout/AuthProvider';
 import './globals.css';
 
@@ -73,6 +74,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <main className="flex-1">{children}</main>
           <Footer />
           <CartDrawer />
+          <Toast />
         </AuthProvider>
       </body>
     </html>

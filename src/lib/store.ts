@@ -32,10 +32,9 @@ export const useCartStore = create<CartStore>()(
               items: state.items.map((i) =>
                 i.product.id === product.id ? { ...i, qty: i.qty + 1 } : i
               ),
-              isOpen: true,
             };
           }
-          return { items: [...state.items, { product, qty: 1 }], isOpen: true };
+          return { items: [...state.items, { product, qty: 1 }] };
         });
       },
 
@@ -153,6 +152,29 @@ export const useAuthStore = create<AuthStore>()((set) => ({
   },
 
   clearError: () => set({ error: null }),
+}));
+
+// ── Toast Store ───────────────────────────────────────────────────────────────
+
+interface ToastStore {
+  message: string | null;
+  show: (msg: string) => void;
+  hide: () => void;
+}
+
+let _toastTimer: ReturnType<typeof setTimeout> | null = null;
+
+export const useToastStore = create<ToastStore>()((set) => ({
+  message: null,
+  show: (message) => {
+    if (_toastTimer) clearTimeout(_toastTimer);
+    set({ message });
+    _toastTimer = setTimeout(() => set({ message: null }), 2500);
+  },
+  hide: () => {
+    if (_toastTimer) clearTimeout(_toastTimer);
+    set({ message: null });
+  },
 }));
 
 // ── Saju Store ────────────────────────────────────────────────────────────────

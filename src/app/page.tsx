@@ -34,11 +34,11 @@ const FAQS = [
   },
   {
     q: '결제 후 얼마나 걸리나요?',
-    a: '기본 플래너는 3~5 영업일, 프리미엄(리포트 포함)은 5~7 영업일 이내에 이메일로 발송됩니다.',
+    a: '무료 플래너는 즉시 다운로드 가능합니다. 유료 사주 플래너는 생년월일시를 바탕으로 직접 분석·제작하기 때문에 기본은 3~5 영업일, 프리미엄(리포트 포함)은 5~7 영업일 이내에 이메일로 발송됩니다.',
   },
   {
     q: 'PDF를 인쇄해도 되나요?',
-    a: 'A4 규격 150dpi 고화질 PDF로 제공되어 가정용 프린터에서도 선명하게 출력됩니다. GoodNotes, Noteshelf 등 태블릿 PDF 앱에서도 바로 사용 가능합니다.',
+    a: 'A4 규격 고화질 PDF로 제공되어 가정용 프린터에서도 선명하게 출력됩니다. GoodNotes, Noteshelf 등 태블릿 PDF 앱에서도 바로 사용 가능합니다.',
   },
 ];
 
@@ -110,8 +110,8 @@ export default function HomePage() {
             <p className="mt-2 text-gray-500 text-sm sm:text-base">무료 체험판부터 사주 맞춤 플래너까지</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {PRODUCTS.map((product) => (
-              <ProductCard key={product.id} product={product} />
+            {PRODUCTS.map((product, i) => (
+              <ProductCard key={product.id} product={product} priority={i === 0} />
             ))}
           </div>
           <div className="text-center mt-8">

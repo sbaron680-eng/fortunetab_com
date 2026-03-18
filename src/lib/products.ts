@@ -36,7 +36,7 @@ export const PRODUCTS: Product[] = [
       {
         icon: '🖨️',
         title: 'A4 고화질 인쇄',
-        description: '150dpi, A4 규격 — 가정용 프린터도 선명하게 출력',
+        description: '고화질, A4 규격 — 가정용 프린터도 선명하게 출력',
       },
       {
         icon: '📲',
@@ -47,7 +47,7 @@ export const PRODUCTS: Product[] = [
     specs: [
       { label: '파일 형식', value: 'PDF (고화질 PNG 포함)' },
       { label: '페이지 수', value: '5종 템플릿 (커버+연간+월간+주간+일간)' },
-      { label: '크기', value: 'A4 (210×297mm), 150dpi' },
+      { label: '크기', value: 'A4 (210×297mm), 고화질' },
       { label: '언어', value: '한국어' },
       { label: '배송 방법', value: '이메일 발송 (즉시)' },
       { label: '가격', value: '무료' },
@@ -114,7 +114,7 @@ export const PRODUCTS: Product[] = [
     specs: [
       { label: '파일 형식', value: 'PDF (개인 정보 포함)' },
       { label: '페이지 수', value: '약 70~80페이지 (월간×12+주간×52+일간×30×12)' },
-      { label: '크기', value: 'A4 (210×297mm), 150dpi' },
+      { label: '크기', value: 'A4 (210×297mm), 고화질' },
       { label: '언어', value: '한국어' },
       { label: '제작 기간', value: '결제 후 3~5 영업일 이내 이메일 발송' },
       { label: '가격', value: '19,000원 (얼리버드 할인가)' },
@@ -183,7 +183,7 @@ export const PRODUCTS: Product[] = [
     specs: [
       { label: '파일 형식', value: '플래너 PDF + 리포트 PDF (별도 파일)' },
       { label: '페이지 수', value: '플래너 80p + 리포트 20p+' },
-      { label: '크기', value: 'A4 (210×297mm), 150dpi' },
+      { label: '크기', value: 'A4 (210×297mm), 고화질' },
       { label: '언어', value: '한국어' },
       { label: '제작 기간', value: '결제 후 5~7 영업일 이내 이메일 발송' },
       { label: '가격', value: '29,000원 (얼리버드 특별가)' },

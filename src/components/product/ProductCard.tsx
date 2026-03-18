@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useCartStore } from '@/lib/store';
+import { useCartStore, useToastStore } from '@/lib/store';
 import { formatPrice } from '@/lib/products';
 import type { Product } from '@/types';
 
@@ -15,10 +15,12 @@ const BADGE_STYLES: Record<string, string> = {
 
 interface Props {
   product: Product;
+  priority?: boolean;
 }
 
-export default function ProductCard({ product }: Props) {
+export default function ProductCard({ product, priority = false }: Props) {
   const { addItem } = useCartStore();
+  const { show: showToast } = useToastStore();
   const discountRate =
     product.originalPrice && product.originalPrice > 0
       ? Math.round((1 - product.price / product.originalPrice) * 100)
@@ -44,6 +46,7 @@ export default function ProductCard({ product }: Props) {
             src={product.thumbnailImage}
             alt={product.name}
             fill
+            priority={priority}
             className="object-cover group-hover:scale-105 transition-transform duration-500"
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           />
@@ -93,7 +96,7 @@ export default function ProductCard({ product }: Props) {
             </Link>
           ) : (
             <button
-              onClick={() => addItem(product)}
+              onClick={() => { addItem(product); showToast(`${product.name}을(를) 담았습니다`); }}
               disabled={!product.inStock}
               className="flex-1 py-2.5 text-sm font-bold bg-[#1e1b4b] text-white rounded-xl hover:bg-indigo-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
