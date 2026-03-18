@@ -70,7 +70,7 @@ export default function TermsPage() {
               </div>
               <p className="text-gray-600 mt-3">
                 단, 서비스 오류·결함으로 인해 정상적인 상품을 제공받지 못한 경우에는
-                결제일로부터 7일 이내에 fortunetab@gmail.com으로 문의하시면 검토 후 환불 처리합니다.
+                결제일로부터 7일 이내에 sbaron680@gmail.com으로 문의하시면 검토 후 환불 처리합니다.
               </p>
             </section>
 
@@ -112,8 +112,8 @@ export default function TermsPage() {
               <h2 className="text-base font-bold text-gray-900 mb-3">문의</h2>
               <p className="text-gray-600">
                 이용약관에 관한 문의는{' '}
-                <a href="mailto:fortunetab@gmail.com" className="text-indigo-600 hover:text-indigo-800 underline">
-                  fortunetab@gmail.com
+                <a href="mailto:sbaron680@gmail.com" className="text-indigo-600 hover:text-indigo-800 underline">
+                  sbaron680@gmail.com
                 </a>
                 으로 연락해 주세요.
               </p>

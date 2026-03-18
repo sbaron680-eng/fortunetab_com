@@ -145,8 +145,8 @@ export default function PrivacyPage() {
               </ul>
               <p className="text-gray-600 mt-3">
                 권리 행사는{' '}
-                <a href="mailto:fortunetab@gmail.com" className="text-indigo-600 hover:text-indigo-800 underline">
-                  fortunetab@gmail.com
+                <a href="mailto:sbaron680@gmail.com" className="text-indigo-600 hover:text-indigo-800 underline">
+                  sbaron680@gmail.com
                 </a>
                 으로 요청할 수 있으며, 요청 후 10일 이내에 처리합니다.
               </p>
@@ -168,8 +168,8 @@ export default function PrivacyPage() {
                 <p>서비스명: FortuneTab</p>
                 <p>
                   이메일:{' '}
-                  <a href="mailto:fortunetab@gmail.com" className="text-indigo-600 hover:text-indigo-800 underline">
-                    fortunetab@gmail.com
+                  <a href="mailto:sbaron680@gmail.com" className="text-indigo-600 hover:text-indigo-800 underline">
+                    sbaron680@gmail.com
                   </a>
                 </p>
               </div>

@@ -205,7 +205,7 @@ export default function CheckoutPage() {
           {hasPaidItem && (
             <div className="bg-indigo-50 rounded-2xl p-4 text-left text-sm text-gray-600 mb-6 space-y-1.5">
               <p>📧 이메일 수신함(스팸 포함)을 확인해 주세요.</p>
-              <p>💬 문의: fortunetab.official@gmail.com</p>
+              <p>💬 문의: sbaron680@gmail.com</p>
               {hasSajuProduct && (
                 <p>🔮 사주 분석 후 맞춤 제작되어 발송 기간이 소요됩니다.</p>
               )}
