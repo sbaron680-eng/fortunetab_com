@@ -40,7 +40,7 @@ export default function ProductCard({ product, priority = false }: Props) {
       )}
 
       {/* 상품 이미지 */}
-      <Link href={`/products/${product.slug}`} className="block overflow-hidden bg-indigo-50">
+      <Link href={`/products/${product.slug}`} className="block overflow-hidden bg-ft-paper-alt">
         <div className="relative aspect-[4/3] w-full">
           <Image
             src={product.thumbnailImage}

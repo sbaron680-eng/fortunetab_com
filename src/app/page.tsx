@@ -56,20 +56,22 @@ export default function HomePage() {
       {/* ── 히어로 섹션 ───────────────────────────────────── */}
       <section className="relative bg-ft-paper text-ft-ink py-20 px-4 overflow-hidden">
         {/* 별 장식 */}
-        <span aria-hidden="true" className="absolute top-8 left-10 text-ft-border text-3xl select-none">✦</span>
-        <span aria-hidden="true" className="absolute top-20 right-16 text-ft-border text-xl select-none">✧</span>
-        <span aria-hidden="true" className="absolute bottom-16 left-1/4 text-ft-border text-2xl select-none">✦</span>
-        <span aria-hidden="true" className="absolute bottom-24 right-12 text-ft-border text-lg select-none">✧</span>
+        <span aria-hidden="true" className="absolute top-8 left-10 text-ft-ink/[0.12] text-3xl select-none">✦</span>
+        <span aria-hidden="true" className="absolute top-20 right-16 text-ft-ink/[0.08] text-xl select-none">✧</span>
+        <span aria-hidden="true" className="absolute bottom-16 left-1/4 text-ft-ink/[0.07] text-2xl select-none">✦</span>
+        <span aria-hidden="true" className="absolute bottom-24 right-12 text-ft-ink/[0.09] text-lg select-none">✧</span>
 
         <div className="relative max-w-6xl mx-auto text-center">
-          <span className="inline-block px-3 py-1 text-xs font-semibold bg-ft-paper-alt text-ft-ink border border-ft-border rounded-full mb-6">
+          <span className="inline-block px-4 py-1.5 text-xs font-semibold bg-ft-ink text-ft-gold border border-ft-ink rounded-full mb-8 tracking-wide">
             🌙 2026년 얼리버드 특가 진행 중
           </span>
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-black leading-tight mb-6 text-ft-ink">
-            사주·운세로 설계한<br />
-            <span className="text-ft-ink font-serif">나만의 2026 플래너</span>
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-black leading-tight mb-4 text-ft-ink">
+            사주·운세로 설계한
           </h1>
-          <p className="text-ft-muted text-base sm:text-lg max-w-2xl mx-auto leading-relaxed mb-8">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-black leading-tight mb-6 text-ft-ink-mid">
+            나만의 2026 플래너
+          </h1>
+          <p className="text-ft-muted text-base sm:text-lg max-w-2xl mx-auto leading-relaxed mb-10">
             생년월일시로 분석한 운세 흐름이 플래너에 그대로 녹아듭니다.<br />
             단순한 일정표가 아닌, 내 운의 흐름을 읽는 도구.
           </p>
@@ -82,16 +84,16 @@ export default function HomePage() {
             </Link>
             <Link
               href="/products/common-planner"
-              className="w-full sm:w-auto px-8 py-4 font-medium text-ft-body border border-ft-border rounded-2xl hover:bg-ft-paper-alt hover:border-ft-border hover:scale-[1.02] transition-all"
+              className="w-full sm:w-auto px-8 py-4 font-medium text-ft-ink border-2 border-ft-ink/30 rounded-2xl hover:border-ft-ink hover:bg-ft-paper-alt hover:scale-[1.02] transition-all"
             >
               무료 체험판 받기
             </Link>
           </div>
 
           <div className="mt-12 flex flex-wrap items-center justify-center gap-6 text-sm text-ft-muted">
-            <span className="flex items-center gap-2"><span className="text-ft-ink-mid">✓</span> 무료 체험판 즉시 다운로드</span>
-            <span className="flex items-center gap-2"><span className="text-ft-ink-mid">✓</span> PDF 고화질 A4 규격</span>
-            <span className="flex items-center gap-2"><span className="text-ft-ink-mid">✓</span> 태블릿·인쇄 모두 가능</span>
+            <span className="flex items-center gap-2"><span className="text-ft-gold">✦</span> 무료 체험판 즉시 다운로드</span>
+            <span className="flex items-center gap-2"><span className="text-ft-gold">✦</span> PDF 고화질 A4 규격</span>
+            <span className="flex items-center gap-2"><span className="text-ft-gold">✦</span> 태블릿·인쇄 모두 가능</span>
           </div>
         </div>
       </section>
@@ -100,7 +102,7 @@ export default function HomePage() {
       <section className="py-16 px-4 bg-ft-paper-alt relative">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-10">
-            <p className="text-xs font-semibold text-ft-muted uppercase tracking-widest mb-2">플래너 라인업</p>
+            <p className="text-xs font-semibold text-ft-ink-mid uppercase tracking-widest mb-2">✦ 플래너 라인업</p>
             <h2 className="text-2xl sm:text-3xl font-serif font-black text-ft-ink">나에게 맞는 플래너를 선택하세요</h2>
             <p className="mt-2 text-ft-muted text-sm sm:text-base">무료 체험판부터 사주 맞춤 플래너까지</p>
           </div>
@@ -120,10 +122,10 @@ export default function HomePage() {
       {/* ── 무료 사주 계산기 티저 ─────────────────────────── */}
       <section className="py-16 px-4 bg-ft-paper relative overflow-hidden">
         {/* 별 장식 */}
-        <span aria-hidden="true" className="absolute top-10 right-20 text-ft-border text-3xl select-none">✦</span>
-        <span aria-hidden="true" className="absolute bottom-12 left-16 text-ft-border text-2xl select-none">✧</span>
+        <span aria-hidden="true" className="absolute top-10 right-20 text-ft-ink/[0.10] text-3xl select-none">✦</span>
+        <span aria-hidden="true" className="absolute bottom-12 left-16 text-ft-ink/[0.07] text-2xl select-none">✧</span>
         <div className="max-w-4xl mx-auto text-center relative">
-          <p className="text-xs font-semibold text-ft-muted uppercase tracking-widest mb-5">무료 서비스</p>
+          <p className="text-xs font-semibold text-ft-ink-mid uppercase tracking-widest mb-5">✦ 무료 서비스</p>
           <h2 className="text-2xl sm:text-3xl font-serif font-black text-ft-ink mb-4">
             지금 바로 사주팔자를 계산해보세요
           </h2>
@@ -162,14 +164,14 @@ export default function HomePage() {
       {/* ── 이용 방법 ─────────────────────────────────────── */}
       <section id="how-it-works" className="py-16 px-4 bg-ft-paper-alt relative overflow-hidden">
         {/* 별 장식 */}
-        <span aria-hidden="true" className="absolute top-12 left-16 text-ft-border text-4xl select-none">✦</span>
-        <span aria-hidden="true" className="absolute top-8 right-24 text-ft-border text-2xl select-none">✧</span>
-        <span aria-hidden="true" className="absolute bottom-12 left-1/3 text-ft-border text-3xl select-none">✦</span>
-        <span aria-hidden="true" className="absolute bottom-8 right-16 text-ft-border text-xl select-none">✧</span>
+        <span aria-hidden="true" className="absolute top-12 left-16 text-ft-ink/[0.09] text-4xl select-none">✦</span>
+        <span aria-hidden="true" className="absolute top-8 right-24 text-ft-ink/[0.07] text-2xl select-none">✧</span>
+        <span aria-hidden="true" className="absolute bottom-12 left-1/3 text-ft-ink/[0.08] text-3xl select-none">✦</span>
+        <span aria-hidden="true" className="absolute bottom-8 right-16 text-ft-ink/[0.06] text-xl select-none">✧</span>
 
         <div className="max-w-6xl mx-auto relative">
           <div className="text-center mb-12">
-            <p className="text-xs font-semibold text-ft-muted uppercase tracking-widest mb-2">제작 과정</p>
+            <p className="text-xs font-semibold text-ft-ink-mid uppercase tracking-widest mb-2">✦ 제작 과정</p>
             <h2 className="text-2xl sm:text-3xl font-serif font-black text-ft-ink">이렇게 만들어집니다</h2>
             <p className="mt-2 text-ft-muted text-sm sm:text-base">간단한 4단계로 나만의 플래너가 완성됩니다</p>
           </div>
@@ -183,7 +185,7 @@ export default function HomePage() {
                 <div className="w-14 h-14 mx-auto mb-4 flex items-center justify-center rounded-2xl text-2xl relative z-10 bg-white border border-ft-border">
                   {icon}
                 </div>
-                <span className="block text-xs font-bold text-ft-muted mb-1">STEP {step}</span>
+                <span className="block text-xs font-bold text-ft-gold mb-1 tracking-widest">STEP {step}</span>
                 <h3 className="font-semibold text-ft-ink mb-2">{title}</h3>
                 <p className="text-sm text-ft-muted leading-relaxed">{desc}</p>
               </div>
@@ -195,13 +197,13 @@ export default function HomePage() {
       {/* ── 플래너 미리보기 ──────────────────────────────── */}
       <section className="py-16 px-4 bg-ft-paper relative overflow-hidden">
         {/* 별 장식 */}
-        <span aria-hidden="true" className="absolute top-8 right-16 text-ft-border text-4xl select-none">✦</span>
-        <span aria-hidden="true" className="absolute bottom-16 left-8 text-ft-border text-5xl select-none">✧</span>
-        <span aria-hidden="true" className="absolute top-1/2 left-4 text-ft-border text-2xl select-none">✦</span>
+        <span aria-hidden="true" className="absolute top-8 right-16 text-ft-ink/[0.10] text-4xl select-none">✦</span>
+        <span aria-hidden="true" className="absolute bottom-16 left-8 text-ft-ink/[0.07] text-5xl select-none">✧</span>
+        <span aria-hidden="true" className="absolute top-1/2 left-4 text-ft-ink/[0.06] text-2xl select-none">✦</span>
 
         <div className="max-w-6xl mx-auto relative">
           <div className="text-center mb-10">
-            <p className="text-xs font-semibold text-ft-muted uppercase tracking-widest mb-2">샘플 미리보기</p>
+            <p className="text-xs font-semibold text-ft-ink-mid uppercase tracking-widest mb-2">✦ 샘플 미리보기</p>
             <h2 className="text-2xl sm:text-3xl font-serif font-black text-ft-ink">플래너 미리보기</h2>
             <p className="mt-2 text-ft-muted text-sm">실제 PDF 플래너 템플릿 일부를 미리 확인하세요</p>
             <span className="inline-block mt-3 px-4 py-1.5 text-xs font-semibold rounded-full border border-ft-border bg-ft-paper-alt text-ft-muted">
@@ -226,25 +228,27 @@ export default function HomePage() {
 
       {/* ── 후기 ──────────────────────────────────────────── */}
       <section className="py-16 px-4 bg-ft-paper-alt relative overflow-hidden">
-        <span aria-hidden="true" className="absolute top-10 right-12 text-ft-border text-4xl select-none">✦</span>
-        <span aria-hidden="true" className="absolute bottom-10 left-12 text-ft-border text-3xl select-none">✧</span>
+        <span aria-hidden="true" className="absolute top-10 right-12 text-ft-ink/[0.10] text-4xl select-none">✦</span>
+        <span aria-hidden="true" className="absolute bottom-10 left-12 text-ft-ink/[0.08] text-3xl select-none">✧</span>
         <div className="max-w-6xl mx-auto relative">
           <div className="text-center mb-10">
-            <p className="text-xs font-semibold text-ft-muted uppercase tracking-widest mb-2">실제 후기</p>
+            <p className="text-xs font-semibold text-ft-ink-mid uppercase tracking-widest mb-2">✦ 실제 후기</p>
             <h2 className="text-2xl sm:text-3xl font-serif font-black text-ft-ink">사용 후기</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             {REVIEWS.map(({ name, title, rating, text }) => (
-              <div key={name} className="rounded-2xl p-6 bg-white border border-ft-border">
+              <div key={name} className="rounded-2xl p-6 bg-white border border-ft-border relative overflow-hidden">
+                {/* 대형 인용부호 장식 */}
+                <span aria-hidden="true" className="absolute top-3 right-4 text-6xl font-serif text-ft-ink/[0.06] leading-none select-none">&ldquo;</span>
                 <div className="flex items-center gap-1 mb-3">
                   {Array.from({ length: rating }).map((_, i) => (
                     <span key={i} className="text-ft-gold text-sm">★</span>
                   ))}
                 </div>
-                <p className="text-ft-body text-sm leading-relaxed mb-4">&ldquo;{text}&rdquo;</p>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold text-ft-body">{name}</span>
-                  <span className="text-xs text-ft-muted">{title}</span>
+                <p className="text-ft-body text-sm leading-relaxed mb-5 relative z-10">{text}</p>
+                <div className="flex items-center gap-2 pt-3 border-t border-ft-border">
+                  <span className="text-xs font-semibold text-ft-ink">{name}</span>
+                  <span className="text-xs text-ft-muted">· {title}</span>
                 </div>
               </div>
             ))}
@@ -256,14 +260,17 @@ export default function HomePage() {
       <section id="faq" className="py-16 px-4 bg-ft-paper">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-10">
-            <p className="text-xs font-semibold text-ft-muted uppercase tracking-widest mb-2">자주 묻는 질문</p>
+            <p className="text-xs font-semibold text-ft-ink-mid uppercase tracking-widest mb-2">✦ 자주 묻는 질문</p>
             <h2 className="text-2xl sm:text-3xl font-serif font-black text-ft-ink">FAQ</h2>
           </div>
           <div>
             {FAQS.map(({ q, a }, idx) => (
               <div key={q} className={`py-6 border-b border-ft-border${idx === 0 ? ' border-t' : ''}`}>
-                <h3 className="font-semibold text-ft-ink mb-2">Q. {q}</h3>
-                <p className="text-ft-body text-sm leading-relaxed">A. {a}</p>
+                <h3 className="font-semibold text-ft-ink mb-3 flex items-start gap-2">
+                  <span className="text-ft-gold mt-0.5 shrink-0">✦</span>
+                  <span>{q}</span>
+                </h3>
+                <p className="text-ft-body text-sm leading-relaxed pl-5">{a}</p>
               </div>
             ))}
           </div>
