@@ -3,8 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { useCartStore } from '@/lib/store';
-import { useAuthStore } from '@/lib/store';
+import { useCartStore, useAuthStore } from '@/lib/store';
 
 export default function Header() {
   const pathname = usePathname();
@@ -141,7 +140,7 @@ export default function Header() {
 
         {/* 모바일 메뉴 */}
         {mobileOpen && (
-          <div className="md:hidden border-t border-ft-border py-3 space-y-1">
+          <div className="md:hidden bg-white border-t border-ft-border py-3 space-y-1">
             {navLinks.map(({ href, label }) => (
               <Link
                 key={href}
@@ -184,7 +183,7 @@ export default function Header() {
                   onClick={() => setMobileOpen(false)}
                   className="block px-2 py-2 text-sm text-ft-ink font-medium hover:text-ft-ink-mid"
                 >
-                  로그인 / 회원가입
+                  로그인
                 </Link>
               ))}
             </div>
