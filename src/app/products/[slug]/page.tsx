@@ -44,15 +44,15 @@ export default async function ProductDetailPage({ params }: Props) {
       : null;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
+    <div className="min-h-screen bg-ft-paper py-8 px-4">
       <div className="max-w-6xl mx-auto">
         {/* 브레드크럼 */}
-        <nav className="text-xs text-gray-400 mb-6 flex items-center gap-2">
-          <a href="/" className="hover:text-indigo-600 transition-colors">홈</a>
+        <nav className="text-xs text-ft-muted mb-6 flex items-center gap-2">
+          <a href="/" className="hover:text-ft-ink-mid transition-colors">홈</a>
           <span>›</span>
-          <a href="/products" className="hover:text-indigo-600 transition-colors">플래너 상품</a>
+          <a href="/products" className="hover:text-ft-ink-mid transition-colors">플래너 상품</a>
           <span>›</span>
-          <span className="text-gray-600">{product.name}</span>
+          <span className="text-ft-body">{product.name}</span>
         </nav>
 
         {/* 메인 컨텐츠: 갤러리 + 구매 영역 */}
@@ -80,12 +80,12 @@ export default async function ProductDetailPage({ params }: Props) {
               <span
                 className={`self-start mb-3 px-2.5 py-0.5 text-xs font-bold rounded-full ${
                   product.badgeColor === 'green'
-                    ? 'bg-emerald-100 text-emerald-700'
+                    ? 'bg-ft-ink text-white'
                     : product.badgeColor === 'gold'
-                    ? 'bg-amber-100 text-amber-700'
+                    ? 'bg-ft-gold text-ft-ink'
                     : product.badgeColor === 'red'
-                    ? 'bg-red-100 text-red-700'
-                    : 'bg-blue-100 text-blue-700'
+                    ? 'bg-ft-ink text-white'
+                    : 'bg-ft-ink text-white'
                 }`}
               >
                 {product.badge}
@@ -93,41 +93,43 @@ export default async function ProductDetailPage({ params }: Props) {
             )}
 
             {/* 상품명 */}
-            <h1 className="text-2xl sm:text-3xl font-black text-ft-navy leading-tight">
+            <h1 className="text-2xl sm:text-3xl font-serif font-black text-ft-ink leading-tight">
               {product.name}
             </h1>
-            <p className="mt-2 text-gray-500">{product.subtitle}</p>
+            <p className="mt-2 text-ft-body">{product.subtitle}</p>
 
             {/* 가격 */}
-            <div className="mt-6 flex items-baseline gap-3">
-              <span className="text-3xl font-black text-ft-navy">
-                {formatPrice(product.price)}
-              </span>
-              {product.originalPrice && product.originalPrice > 0 && (
-                <>
-                  <span className="text-base text-gray-400 line-through">
-                    {formatPrice(product.originalPrice)}
-                  </span>
-                  {discountRate && (
-                    <span className="text-sm font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded">
-                      {discountRate}% OFF
+            <div className="mt-6 bg-ft-paper-alt border border-ft-border rounded-xl p-6">
+              <div className="flex items-baseline gap-3">
+                <span className="text-3xl font-bold text-ft-ink">
+                  {formatPrice(product.price)}
+                </span>
+                {product.originalPrice && product.originalPrice > 0 && (
+                  <>
+                    <span className="text-base text-ft-muted line-through">
+                      {formatPrice(product.originalPrice)}
                     </span>
-                  )}
-                </>
-              )}
+                    {discountRate && (
+                      <span className="text-sm font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded">
+                        {discountRate}% OFF
+                      </span>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
 
             {/* 짧은 설명 */}
-            <p className="mt-4 text-sm text-gray-600 leading-relaxed border-l-2 border-indigo-200 pl-4">
+            <p className="mt-4 text-sm text-ft-body leading-relaxed border-l-2 border-ft-border pl-4">
               {product.shortDescription}
             </p>
 
             {/* 주요 스펙 요약 */}
-            <div className="mt-6 bg-white rounded-xl p-4 border border-gray-100 space-y-2">
+            <div className="mt-6 bg-white rounded-xl p-4 border border-ft-border space-y-2">
               {product.specs.slice(0, 3).map(({ label, value }) => (
                 <div key={label} className="flex items-start gap-3 text-sm">
-                  <span className="w-20 flex-shrink-0 text-gray-400">{label}</span>
-                  <span className="text-gray-700 font-medium">{value}</span>
+                  <span className="w-20 flex-shrink-0 text-ft-muted">{label}</span>
+                  <span className="text-ft-body font-medium">{value}</span>
                 </div>
               ))}
             </div>
@@ -138,7 +140,7 @@ export default async function ProductDetailPage({ params }: Props) {
             </div>
 
             {/* 배송 안내 */}
-            <div className="mt-4 flex items-center gap-2 text-xs text-gray-400">
+            <div className="mt-4 flex items-center gap-2 text-xs text-ft-muted">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
               </svg>
@@ -152,21 +154,21 @@ export default async function ProductDetailPage({ params }: Props) {
         {/* 탭 섹션: 상세설명 / 특징 / 스펙 */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* 상세 설명 */}
-          <div className="lg:col-span-2 bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-            <h2 className="text-lg font-bold text-ft-navy mb-4">상품 설명</h2>
-            <div className="text-gray-700 text-sm leading-8 whitespace-pre-line">
+          <div className="lg:col-span-2 bg-white rounded-2xl p-6 shadow-sm border border-ft-border">
+            <h2 className="text-lg font-bold text-ft-ink mb-4">상품 설명</h2>
+            <div className="text-ft-body text-sm leading-8 whitespace-pre-line">
               {product.description}
             </div>
 
             {/* 특징 */}
-            <h2 className="text-lg font-bold text-ft-navy mt-8 mb-4">주요 특징</h2>
+            <h2 className="text-lg font-bold text-ft-ink mt-8 mb-4">주요 특징</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {product.features.map(({ icon, title, description }) => (
-                <div key={title} className="flex gap-3 p-4 rounded-xl bg-indigo-50">
+                <div key={title} className="flex gap-3 p-4 rounded-xl bg-white border border-ft-border">
                   <span className="text-2xl flex-shrink-0">{icon}</span>
                   <div>
-                    <p className="font-bold text-ft-navy text-sm">{title}</p>
-                    <p className="text-xs text-gray-500 mt-1 leading-relaxed">{description}</p>
+                    <p className="font-bold text-ft-ink text-sm">{title}</p>
+                    <p className="text-xs text-ft-body mt-1 leading-relaxed">{description}</p>
                   </div>
                 </div>
               ))}
@@ -174,13 +176,13 @@ export default async function ProductDetailPage({ params }: Props) {
           </div>
 
           {/* 상품 사양 */}
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 h-fit">
-            <h2 className="text-lg font-bold text-ft-navy mb-4">상품 사양</h2>
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-ft-border h-fit">
+            <h2 className="text-lg font-bold text-ft-ink mb-4">상품 사양</h2>
             <div className="space-y-3">
               {product.specs.map(({ label, value }) => (
                 <div key={label} className="flex flex-col gap-0.5">
-                  <span className="text-xs text-gray-400">{label}</span>
-                  <span className="text-sm font-medium text-gray-700">{value}</span>
+                  <span className="text-xs text-ft-muted">{label}</span>
+                  <span className="text-sm font-medium text-ft-body">{value}</span>
                 </div>
               ))}
             </div>
@@ -189,22 +191,22 @@ export default async function ProductDetailPage({ params }: Props) {
 
         {/* 다른 상품 */}
         <div className="mt-12">
-          <h2 className="text-lg font-bold text-ft-navy mb-6">다른 플래너도 살펴보세요</h2>
+          <h2 className="text-lg font-bold text-ft-ink mb-6">다른 플래너도 살펴보세요</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {PRODUCTS.filter((p) => p.id !== product.id).map((p) => (
               <a
                 key={p.id}
                 href={`/products/${p.slug}`}
-                className="flex items-center gap-4 bg-white p-4 rounded-xl border border-gray-100 hover:shadow-md transition-shadow group"
+                className="flex items-center gap-4 bg-white p-4 rounded-xl border border-ft-border hover:shadow-md transition-shadow group"
               >
-                <div className="w-12 h-12 rounded-lg bg-indigo-50 flex items-center justify-center text-xl flex-shrink-0">
+                <div className="w-12 h-12 rounded-lg bg-ft-paper-alt flex items-center justify-center text-xl flex-shrink-0">
                   {p.badge === '무료' ? '🎁' : p.badge === 'BEST' ? '🏆' : '⭐'}
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-bold text-ft-navy truncate group-hover:text-indigo-700 transition-colors">
+                  <p className="text-sm font-bold text-ft-ink truncate group-hover:text-ft-ink-mid transition-colors">
                     {p.name}
                   </p>
-                  <p className="text-xs text-gray-400">{formatPrice(p.price)}</p>
+                  <p className="text-xs text-ft-muted">{formatPrice(p.price)}</p>
                 </div>
               </a>
             ))}

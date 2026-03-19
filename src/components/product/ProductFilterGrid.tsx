@@ -30,10 +30,10 @@ export default function ProductFilterGrid() {
           <button
             key={id}
             onClick={() => setActiveFilter(id)}
-            className={`flex-shrink-0 px-4 py-2 text-sm font-medium rounded-full border transition-colors ${
+            className={`flex-shrink-0 px-4 py-2 text-sm font-medium rounded-full border transition-colors cursor-pointer ${
               activeFilter === id
-                ? 'bg-[#1e1b4b] text-white border-[#1e1b4b]'
-                : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300 cursor-pointer'
+                ? 'bg-ft-ink text-white border-ft-ink'
+                : 'bg-white text-ft-body border-ft-border hover:bg-ft-paper-alt'
             }`}
           >
             {label}

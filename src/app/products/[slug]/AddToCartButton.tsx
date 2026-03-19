@@ -32,11 +32,11 @@ export default function AddToCartButton({ product }: Props) {
       <div className="space-y-3">
         <Link
           href="/download"
-          className="block w-full py-4 text-center font-bold bg-emerald-600 text-white rounded-2xl hover:bg-emerald-700 shadow-lg hover:shadow-xl transition-all"
+          className="block w-full py-4 text-center font-bold bg-ft-gold text-ft-ink rounded-2xl hover:bg-ft-gold-h shadow-lg hover:shadow-xl transition-all"
         >
           무료 다운로드 →
         </Link>
-        <p className="text-xs text-gray-400 text-center">브라우저에서 즉시 PDF 생성 — 이메일 없이 바로 다운로드</p>
+        <p className="text-xs text-ft-muted text-center">브라우저에서 즉시 PDF 생성 — 이메일 없이 바로 다운로드</p>
       </div>
     );
   }
@@ -47,8 +47,8 @@ export default function AddToCartButton({ product }: Props) {
         onClick={handleAdd}
         className={`w-full py-4 font-bold rounded-2xl transition-all ${
           added
-            ? 'bg-indigo-100 text-indigo-700 border border-indigo-300'
-            : 'bg-[#1e1b4b] text-white hover:bg-indigo-800 shadow-lg hover:shadow-xl hover:-translate-y-0.5'
+            ? 'bg-ft-paper-alt text-ft-ink-mid border border-ft-border'
+            : 'bg-ft-ink text-white hover:bg-ft-ink-mid shadow-lg hover:shadow-xl hover:-translate-y-0.5'
         }`}
       >
         {added ? '✓ 장바구니에 담겼습니다' : '장바구니에 담기'}
@@ -56,7 +56,7 @@ export default function AddToCartButton({ product }: Props) {
       <a
         href="/checkout"
         onClick={() => addItem(product)}
-        className="block w-full py-4 text-center font-bold text-[#1e1b4b] bg-[#f0c040] rounded-2xl hover:bg-[#e0b030] transition-all shadow hover:shadow-md"
+        className="block w-full py-4 text-center font-bold text-ft-ink bg-ft-gold rounded-2xl hover:bg-ft-gold-h transition-all shadow hover:shadow-md"
       >
         바로 구매하기
       </a>

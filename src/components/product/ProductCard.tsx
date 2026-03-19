@@ -7,10 +7,10 @@ import { formatPrice } from '@/lib/products';
 import type { Product } from '@/types';
 
 const BADGE_STYLES: Record<string, string> = {
-  green: 'bg-emerald-500 text-white',
-  gold: 'bg-[#f0c040] text-[#1e1b4b]',
-  red: 'bg-red-500 text-white',
-  blue: 'bg-blue-500 text-white',
+  green: 'bg-ft-ink text-white',
+  gold: 'bg-ft-gold text-ft-ink',
+  red: 'bg-ft-ink text-white',
+  blue: 'bg-ft-ink text-white',
 };
 
 interface Props {
@@ -27,7 +27,7 @@ export default function ProductCard({ product, priority = false }: Props) {
       : null;
 
   return (
-    <div className="group relative bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 flex flex-col">
+    <div className="group relative bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 border border-ft-border flex flex-col">
       {/* 배지 */}
       {product.badge && (
         <span
@@ -56,20 +56,20 @@ export default function ProductCard({ product, priority = false }: Props) {
       {/* 정보 영역 */}
       <div className="p-4 flex flex-col flex-1">
         <Link href={`/products/${product.slug}`} className="block">
-          <h3 className="font-semibold text-gray-900 text-base leading-snug group-hover:text-indigo-700 transition-colors">
+          <h3 className="font-serif font-semibold text-ft-ink text-base leading-snug group-hover:text-ft-ink-mid transition-colors">
             {product.name}
           </h3>
-          <p className="mt-1 text-sm text-gray-500 line-clamp-2">{product.shortDescription}</p>
+          <p className="mt-1 text-sm text-ft-muted line-clamp-2">{product.shortDescription}</p>
         </Link>
 
         {/* 가격 */}
         <div className="mt-3 flex items-baseline gap-2">
-          <span className="text-xl font-bold text-[#1e1b4b]">
+          <span className="text-xl font-bold text-ft-ink">
             {formatPrice(product.price)}
           </span>
           {product.originalPrice && product.originalPrice > 0 && (
             <>
-              <span className="text-sm text-gray-400 line-through">
+              <span className="text-sm text-ft-muted line-through">
                 {formatPrice(product.originalPrice)}
               </span>
               {discountRate && (
@@ -83,14 +83,14 @@ export default function ProductCard({ product, priority = false }: Props) {
         <div className="mt-4 flex gap-2">
           <Link
             href={`/products/${product.slug}`}
-            className="flex-1 text-center py-2.5 text-sm font-medium border border-indigo-700 text-indigo-700 rounded-xl hover:bg-indigo-50 transition-colors"
+            className="flex-1 text-center py-2.5 text-sm font-medium border border-ft-border text-ft-body rounded-xl hover:bg-ft-paper-alt transition-colors"
           >
             상세보기
           </Link>
           {product.price === 0 ? (
             <Link
               href="/download"
-              className="flex-1 py-2.5 text-sm font-medium bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors text-center"
+              className="flex-1 py-2.5 text-sm font-bold bg-ft-gold text-ft-ink rounded-xl hover:bg-ft-gold-h transition-colors text-center"
             >
               무료 다운로드
             </Link>
@@ -98,7 +98,7 @@ export default function ProductCard({ product, priority = false }: Props) {
             <button
               onClick={() => { addItem(product); showToast(`${product.name}을(를) 담았습니다`); }}
               disabled={!product.inStock}
-              className="flex-1 py-2.5 text-sm font-bold bg-[#1e1b4b] text-white rounded-xl hover:bg-indigo-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 py-2.5 text-sm font-bold bg-ft-gold text-ft-ink rounded-xl hover:bg-ft-gold-h transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {product.inStock ? '담기' : '품절'}
             </button>
