@@ -99,28 +99,30 @@ export default function DownloadPage() {
   const progressPct = progress ? Math.round((progress.current / progress.total) * 100) : 0;
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-ft-navy via-[#2d2a6e] to-ft-navy py-16 px-4">
+    <main className="min-h-screen bg-ft-paper py-16 px-4">
       {/* ── 헤더 ──────────────────────────────────────────────────────────────── */}
-      <div className="max-w-2xl mx-auto text-center mb-12">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#f59e0b]/10 border border-[#f59e0b]/30 text-[#f59e0b] text-sm font-medium mb-4">
-          🎁 무료 다운로드
+      <div className="bg-ft-ink -mx-4 -mt-16 px-4 pt-16 pb-12 mb-12">
+        <div className="max-w-2xl mx-auto text-center">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-ft-gold/10 border border-ft-gold/30 text-ft-gold text-sm font-medium mb-4">
+            🎁 무료 다운로드
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-bold text-white mb-3">
+            운세 플래너
+          </h1>
+          <p className="text-indigo-300 text-base sm:text-lg leading-relaxed">
+            템플릿과 방향을 선택하면 브라우저에서 즉시 PDF가 생성됩니다.
+            <br className="hidden sm:block" />
+            서버 전송 없이 내 기기에서 바로 다운로드됩니다.
+          </p>
         </div>
-        <h1 className="text-3xl sm:text-4xl font-bold text-white mb-3">
-          운세 플래너
-        </h1>
-        <p className="text-indigo-300 text-base sm:text-lg leading-relaxed">
-          템플릿과 방향을 선택하면 브라우저에서 즉시 PDF가 생성됩니다.
-          <br className="hidden sm:block" />
-          서버 전송 없이 내 기기에서 바로 다운로드됩니다.
-        </p>
       </div>
 
       <div className="max-w-2xl mx-auto space-y-6">
 
         {/* ── 카드: 연도 선택 ───────────────────────────────────────────────────── */}
-        <section className="bg-white/5 border border-white/10 rounded-2xl p-6">
-          <h2 className="text-white font-semibold text-sm uppercase tracking-widest mb-4 flex items-center gap-2">
-            <span className="w-1.5 h-4 bg-[#f59e0b] rounded-full inline-block" />
+        <section className="bg-white border border-ft-border rounded-2xl p-6">
+          <h2 className="text-ft-ink font-semibold text-sm uppercase tracking-widest mb-4 flex items-center gap-2">
+            <span className="w-1.5 h-4 bg-ft-gold rounded-full inline-block" />
             연도
           </h2>
           <div className="grid grid-cols-3 gap-3">
@@ -132,8 +134,8 @@ export default function DownloadPage() {
                   onClick={() => { setYear(y); setDone(false); }}
                   className={`py-3 rounded-xl border-2 font-bold text-sm transition-all ${
                     isSel
-                      ? 'border-[#f59e0b] bg-[#f59e0b]/10 text-[#f59e0b]'
-                      : 'border-white/10 bg-white/5 text-white hover:border-white/30'
+                      ? 'bg-ft-ink text-white ring-2 ring-ft-ink border-ft-ink'
+                      : 'bg-white border border-ft-border text-ft-body hover:bg-ft-paper-alt'
                   }`}
                 >
                   {y}년
@@ -144,9 +146,9 @@ export default function DownloadPage() {
         </section>
 
         {/* ── 카드: 컬러 테마 ──────────────────────────────────────────────────── */}
-        <section className="bg-white/5 border border-white/10 rounded-2xl p-6">
-          <h2 className="text-white font-semibold text-sm uppercase tracking-widest mb-4 flex items-center gap-2">
-            <span className="w-1.5 h-4 bg-[#f59e0b] rounded-full inline-block" />
+        <section className="bg-white border border-ft-border rounded-2xl p-6">
+          <h2 className="text-ft-ink font-semibold text-sm uppercase tracking-widest mb-4 flex items-center gap-2">
+            <span className="w-1.5 h-4 bg-ft-gold rounded-full inline-block" />
             컬러 테마
           </h2>
           <div className="grid grid-cols-4 sm:grid-cols-7 gap-3">
@@ -159,15 +161,15 @@ export default function DownloadPage() {
                   title={t.name}
                   className={`flex flex-col items-center gap-1.5 p-2 rounded-xl border-2 transition-all ${
                     isSel
-                      ? 'border-[#f59e0b] bg-[#f59e0b]/10'
-                      : 'border-white/10 bg-white/5 hover:border-white/30'
+                      ? 'border-ft-ink bg-ft-paper-alt ring-2 ring-ft-ink'
+                      : 'border-ft-border bg-white hover:bg-ft-paper-alt'
                   }`}
                 >
                   <span
-                    className="w-8 h-8 rounded-full border-2 border-white/20 shadow-md"
+                    className="w-8 h-8 rounded-full border-2 border-ft-border shadow-md"
                     style={{ backgroundColor: t.swatch }}
                   />
-                  <span className={`text-xs font-medium ${isSel ? 'text-[#f59e0b]' : 'text-indigo-300'}`}>
+                  <span className={`text-xs font-medium ${isSel ? 'text-ft-ink' : 'text-ft-muted'}`}>
                     {t.name}
                   </span>
                 </button>
@@ -177,9 +179,9 @@ export default function DownloadPage() {
         </section>
 
         {/* ── 카드: 방향 선택 ──────────────────────────────────────────────────── */}
-        <section className="bg-white/5 border border-white/10 rounded-2xl p-6">
-          <h2 className="text-white font-semibold text-sm uppercase tracking-widest mb-4 flex items-center gap-2">
-            <span className="w-1.5 h-4 bg-[#f59e0b] rounded-full inline-block" />
+        <section className="bg-white border border-ft-border rounded-2xl p-6">
+          <h2 className="text-ft-ink font-semibold text-sm uppercase tracking-widest mb-4 flex items-center gap-2">
+            <span className="w-1.5 h-4 bg-ft-gold rounded-full inline-block" />
             용지 방향
           </h2>
           <div className="grid grid-cols-2 gap-3">
@@ -191,25 +193,25 @@ export default function DownloadPage() {
                   onClick={() => { setOrientation(ori); setDone(false); }}
                   className={`relative flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all ${
                     isSelected
-                      ? 'border-[#f59e0b] bg-[#f59e0b]/10'
-                      : 'border-white/10 bg-white/5 hover:border-white/30'
+                      ? 'bg-ft-ink text-white ring-2 ring-ft-ink border-ft-ink'
+                      : 'bg-white border border-ft-border text-ft-body hover:bg-ft-paper-alt'
                   }`}
                 >
                   <div
-                    className={`rounded border-2 ${isSelected ? 'border-[#f59e0b]' : 'border-indigo-400'} bg-indigo-900/60`}
+                    className={`rounded border-2 ${isSelected ? 'border-white/60 bg-white/20' : 'border-ft-border bg-ft-paper-alt'}`}
                     style={ori === 'portrait' ? { width: 32, height: 44 } : { width: 44, height: 32 }}
                   />
                   <div>
-                    <div className={`text-sm font-semibold ${isSelected ? 'text-[#f59e0b]' : 'text-white'}`}>
+                    <div className={`text-sm font-semibold ${isSelected ? 'text-white' : 'text-ft-body'}`}>
                       {ori === 'portrait' ? '세로 (A4)' : '가로 (A4)'}
                     </div>
-                    <div className="text-xs text-indigo-400 mt-0.5">
+                    <div className={`text-xs mt-0.5 ${isSelected ? 'text-white/70' : 'text-ft-muted'}`}>
                       {ori === 'portrait' ? '210 × 297 mm' : '297 × 210 mm'}
                     </div>
                   </div>
                   {isSelected && (
-                    <span className="absolute top-2 right-2 w-5 h-5 bg-[#f59e0b] rounded-full flex items-center justify-center">
-                      <svg className="w-3 h-3 text-ft-navy" fill="currentColor" viewBox="0 0 20 20">
+                    <span className="absolute top-2 right-2 w-5 h-5 bg-ft-gold rounded-full flex items-center justify-center">
+                      <svg className="w-3 h-3 text-ft-ink" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
                     </span>
@@ -221,10 +223,10 @@ export default function DownloadPage() {
         </section>
 
         {/* ── 카드: 이름 입력 ───────────────────────────────────────────────────── */}
-        <section className="bg-white/5 border border-white/10 rounded-2xl p-6">
-          <h2 className="text-white font-semibold text-sm uppercase tracking-widest mb-4 flex items-center gap-2">
-            <span className="w-1.5 h-4 bg-[#f59e0b] rounded-full inline-block" />
-            플래너 이름 <span className="text-indigo-400 font-normal normal-case tracking-normal">(선택)</span>
+        <section className="bg-white border border-ft-border rounded-2xl p-6">
+          <h2 className="text-ft-ink font-semibold text-sm uppercase tracking-widest mb-4 flex items-center gap-2">
+            <span className="w-1.5 h-4 bg-ft-gold rounded-full inline-block" />
+            플래너 이름 <span className="text-ft-muted font-normal normal-case tracking-normal">(선택)</span>
           </h2>
           <input
             type="text"
@@ -232,39 +234,39 @@ export default function DownloadPage() {
             onChange={(e) => { setName(e.target.value); setDone(false); }}
             placeholder="예: 나의 2026 플래너"
             maxLength={30}
-            className="w-full bg-white/5 border border-white/15 rounded-xl px-4 py-3 text-white placeholder-indigo-400/60 text-sm focus:outline-none focus:border-[#f59e0b]/60 transition-colors"
+            className="w-full bg-ft-paper-alt border border-ft-border rounded-xl px-4 py-3 text-ft-body placeholder-ft-muted text-sm focus:outline-none focus:ring-2 focus:ring-ft-ink focus:border-transparent transition-colors"
           />
-          <p className="text-xs text-indigo-400 mt-2">커버 페이지에 표시됩니다. 비워두면 &quot;나의 플래너&quot;로 표시됩니다.</p>
+          <p className="text-xs text-ft-muted mt-2">커버 페이지에 표시됩니다. 비워두면 &quot;나의 플래너&quot;로 표시됩니다.</p>
         </section>
 
         {/* ── 사주 데이터 연동 배지 ─────────────────────────────────────────────── */}
         {savedSaju ? (
-          <div className="flex items-center gap-3 px-4 py-3 bg-indigo-500/10 border border-indigo-500/30 rounded-xl text-sm">
+          <div className="flex items-center gap-3 px-4 py-3 bg-ft-paper-alt border border-ft-border rounded-xl text-sm">
             <span className="text-xl">🔮</span>
             <div className="flex-1 min-w-0">
-              <span className="text-indigo-200 font-medium">사주 데이터 연동됨</span>
-              <span className="ml-2 text-indigo-400 text-xs truncate">{savedSaju.ganzhi}</span>
+              <span className="text-ft-body font-medium">사주 데이터 연동됨</span>
+              <span className="ml-2 text-ft-muted text-xs truncate">{savedSaju.ganzhi}</span>
             </div>
             <button
               onClick={() => useSajuStore.getState().clearSaju()}
-              className="text-indigo-500 hover:text-indigo-300 transition-colors text-xs flex-shrink-0"
+              className="text-ft-muted hover:text-ft-body transition-colors text-xs flex-shrink-0"
             >
               해제
             </button>
           </div>
         ) : (
-          <div className="flex items-center gap-3 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-sm text-indigo-400">
+          <div className="flex items-center gap-3 px-4 py-3 bg-white border border-ft-border rounded-xl text-sm text-ft-muted">
             <span className="text-xl">💡</span>
             <span>
-              <a href="/saju" className="underline underline-offset-2 hover:text-indigo-200 transition-colors">사주 계산기</a>에서 생년월일을 입력하면 커버에 사주 정보가 자동으로 추가됩니다.
+              <a href="/saju" className="underline underline-offset-2 hover:text-ft-body transition-colors">사주 계산기</a>에서 생년월일을 입력하면 커버에 사주 정보가 자동으로 추가됩니다.
             </span>
           </div>
         )}
 
         {/* ── 카드: 템플릿 선택 ─────────────────────────────────────────────────── */}
-        <section className="bg-white/5 border border-white/10 rounded-2xl p-6">
-          <h2 className="text-white font-semibold text-sm uppercase tracking-widest mb-1 flex items-center gap-2">
-            <span className="w-1.5 h-4 bg-[#f59e0b] rounded-full inline-block" />
+        <section className="bg-white border border-ft-border rounded-2xl p-6">
+          <h2 className="text-ft-ink font-semibold text-sm uppercase tracking-widest mb-1 flex items-center gap-2">
+            <span className="w-1.5 h-4 bg-ft-gold rounded-full inline-block" />
             포함할 템플릿
           </h2>
 
@@ -274,7 +276,7 @@ export default function DownloadPage() {
               <button
                 key={preset.label}
                 onClick={() => applyPreset(preset.pages)}
-                className="px-3 py-1 text-xs rounded-full border border-white/20 text-indigo-300 hover:border-[#f59e0b]/60 hover:text-[#f59e0b] transition-colors"
+                className="px-3 py-1 text-xs rounded-full border border-ft-border text-ft-muted hover:border-ft-ink hover:text-ft-ink transition-colors"
               >
                 {preset.label}
               </button>
@@ -290,8 +292,8 @@ export default function DownloadPage() {
                   key={type}
                   className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
                     checked
-                      ? 'border-[#f59e0b]/40 bg-[#f59e0b]/8'
-                      : 'border-white/10 bg-white/3 hover:border-white/20'
+                      ? 'border-ft-ink bg-ft-paper-alt'
+                      : 'border-ft-border bg-white hover:bg-ft-paper-alt'
                   }`}
                 >
                   <input
@@ -303,20 +305,20 @@ export default function DownloadPage() {
                   <span
                     className={`w-5 h-5 rounded flex-shrink-0 flex items-center justify-center border-2 transition-colors ${
                       checked
-                        ? 'bg-[#f59e0b] border-[#f59e0b]'
-                        : 'border-white/30 bg-transparent'
+                        ? 'bg-ft-ink border-ft-ink'
+                        : 'border-ft-border bg-transparent'
                     }`}
                   >
                     {checked && (
-                      <svg className="w-3 h-3 text-ft-navy" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
                     )}
                   </span>
                   <span className="text-lg leading-none">{icon}</span>
                   <div className="flex-1 min-w-0">
-                    <span className="text-sm font-medium text-white">{label}</span>
-                    <span className="ml-2 text-xs text-indigo-400">{sublabel}</span>
+                    <span className="text-sm font-medium text-ft-body">{label}</span>
+                    <span className="ml-2 text-xs text-ft-muted">{sublabel}</span>
                   </div>
                 </label>
               );
@@ -325,18 +327,18 @@ export default function DownloadPage() {
 
           {/* 예상 페이지 수 */}
           {selectedPages.size > 0 && (
-            <div className="mt-3 text-right text-xs text-indigo-400">
-              예상 페이지 수: <span className="text-[#f59e0b] font-medium">{estimatedPages}p</span>
+            <div className="mt-3 text-right text-xs text-ft-muted">
+              예상 페이지 수: <span className="text-ft-ink font-medium">{estimatedPages}p</span>
             </div>
           )}
         </section>
 
         {/* ── 카드: 실시간 미리보기 ────────────────────────────────────────────── */}
-        <section className="bg-white/5 border border-white/10 rounded-2xl p-6">
-          <h2 className="text-white font-semibold text-sm uppercase tracking-widest mb-4 flex items-center gap-2">
-            <span className="w-1.5 h-4 bg-[#f59e0b] rounded-full inline-block" />
+        <section className="bg-white border border-ft-border rounded-2xl p-6">
+          <h2 className="text-ft-ink font-semibold text-sm uppercase tracking-widest mb-4 flex items-center gap-2">
+            <span className="w-1.5 h-4 bg-ft-gold rounded-full inline-block" />
             실시간 미리보기
-            <span className="text-indigo-400 font-normal normal-case tracking-normal text-xs ml-1">— 실제 PDF와 동일</span>
+            <span className="text-ft-muted font-normal normal-case tracking-normal text-xs ml-1">— 실제 PDF와 동일</span>
           </h2>
 
           <div className="overflow-x-auto pb-2">
@@ -355,13 +357,13 @@ export default function DownloadPage() {
                     opts={{ orientation, year, name: name.trim() || '나의 플래너', theme }}
                     displayWidth={140}
                   />
-                  <span className="text-xs text-indigo-400">{label}</span>
+                  <span className="text-xs text-ft-muted">{label}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          <p className="text-xs text-indigo-500 mt-3 text-center">
+          <p className="text-xs text-ft-muted mt-3 text-center">
             테마·연도·방향 변경 시 자동으로 업데이트됩니다
           </p>
         </section>
@@ -391,18 +393,18 @@ export default function DownloadPage() {
 
           {/* 진행 바 */}
           {isGenerating && progress && (
-            <div className="px-4 py-3 bg-white/5 border border-white/10 rounded-xl space-y-2">
-              <div className="flex justify-between text-xs text-indigo-300">
+            <div className="px-4 py-3 bg-ft-paper-alt border border-ft-border rounded-xl space-y-2">
+              <div className="flex justify-between text-xs text-ft-muted">
                 <span className="truncate">{progress.label}</span>
                 <span className="flex-shrink-0 ml-2">{progressPct}%</span>
               </div>
-              <div className="w-full bg-white/10 rounded-full h-1.5 overflow-hidden">
+              <div className="w-full bg-ft-border rounded-full h-1.5 overflow-hidden">
                 <div
-                  className="bg-[#f59e0b] h-full rounded-full transition-all duration-300"
+                  className="bg-ft-gold h-full rounded-full transition-all duration-300"
                   style={{ width: `${progressPct}%` }}
                 />
               </div>
-              <div className="text-xs text-indigo-400 text-right">
+              <div className="text-xs text-ft-muted text-right">
                 {progress.current} / {progress.total} 페이지
               </div>
             </div>
@@ -414,8 +416,8 @@ export default function DownloadPage() {
             disabled={isGenerating || selectedPages.size === 0}
             className={`w-full py-4 rounded-2xl font-bold text-base transition-all flex items-center justify-center gap-2.5 ${
               isGenerating || selectedPages.size === 0
-                ? 'bg-white/10 text-white/30 cursor-not-allowed'
-                : 'bg-[#f59e0b] text-ft-navy hover:bg-[#fbbf24] active:scale-[0.98] shadow-lg shadow-[#f59e0b]/20'
+                ? 'bg-ft-border text-ft-muted cursor-not-allowed'
+                : 'bg-ft-gold text-ft-ink hover:bg-ft-gold-h active:scale-[0.98] shadow-lg shadow-ft-gold/20'
             }`}
           >
             {isGenerating ? (
@@ -437,7 +439,7 @@ export default function DownloadPage() {
           </button>
 
           {/* 안내 문구 */}
-          <p className="text-center text-xs text-indigo-400 leading-relaxed">
+          <p className="text-center text-xs text-ft-muted leading-relaxed">
             🔒 모든 처리는 내 브라우저에서만 이루어집니다. 서버로 데이터가 전송되지 않습니다.
             <br />
             주간(52p) 포함 시 생성에 10~30초 소요될 수 있습니다.
@@ -445,7 +447,7 @@ export default function DownloadPage() {
         </section>
 
         {/* ── 유료 버전 업셀 배너 ───────────────────────────────────────────────── */}
-        <section className="bg-gradient-to-r from-indigo-800/50 to-purple-800/50 border border-indigo-500/30 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+        <section className="bg-ft-ink border border-ft-ink rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
           <div className="text-3xl">🔮</div>
           <div className="flex-1">
             <div className="text-white font-semibold text-sm">사주 기반 맞춤 플래너가 필요하신가요?</div>
@@ -455,7 +457,7 @@ export default function DownloadPage() {
           </div>
           <a
             href="/products/saju-planner-basic"
-            className="flex-shrink-0 px-4 py-2 bg-[#f59e0b] text-ft-navy rounded-xl text-sm font-bold hover:bg-[#fbbf24] transition-colors whitespace-nowrap"
+            className="flex-shrink-0 px-4 py-2 bg-ft-gold text-ft-ink rounded-xl text-sm font-bold hover:bg-ft-gold-h transition-colors whitespace-nowrap"
           >
             자세히 보기 →
           </a>
