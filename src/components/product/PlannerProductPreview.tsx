@@ -108,7 +108,7 @@ export default function PlannerProductPreview({ year = 2026, theme = 'rose' }: P
             onClick={() => setActiveIdx(i)}
             className={`flex flex-col items-center gap-1 flex-shrink-0 rounded-xl border-2 p-1.5 transition-all ${
               i === activeIdx
-                ? 'border-[#f0c040] shadow-md bg-amber-50'
+                ? 'border-ft-gold shadow-md bg-amber-50'
                 : 'border-gray-200 hover:border-indigo-300 bg-white'
             }`}
             aria-label={`${label} 미리보기`}

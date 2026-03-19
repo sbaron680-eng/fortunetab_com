@@ -67,12 +67,12 @@ export default function HomePage() {
         <span aria-hidden="true" className="absolute bottom-24 right-12 text-[#f0c040]/20 text-lg select-none">✧</span>
 
         <div className="relative max-w-6xl mx-auto text-center">
-          <span className="inline-block px-3 py-1 text-xs font-semibold bg-[#f0c040]/20 text-[#f0c040] rounded-full border border-[#f0c040]/40 mb-6">
+          <span className="inline-block px-3 py-1 text-xs font-semibold bg-[#f0c040]/20 text-ft-gold rounded-full border border-[#f0c040]/40 mb-6">
             🌙 2026년 얼리버드 특가 진행 중
           </span>
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black leading-tight mb-6">
             사주·운세로 설계한<br />
-            <span className="text-[#f0c040]">나만의 2026 플래너</span>
+            <span className="text-ft-gold">나만의 2026 플래너</span>
           </h1>
           <p className="text-indigo-200 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed mb-8">
             생년월일시로 분석한 운세 흐름이 플래너에 그대로 녹아듭니다.<br />
@@ -81,7 +81,7 @@ export default function HomePage() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               href="/products"
-              className="w-full sm:w-auto px-8 py-4 font-bold text-[#1e1b4b] bg-[#f0c040] rounded-2xl hover:bg-[#e0b030] transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+              className="w-full sm:w-auto px-8 py-4 font-bold text-ft-navy bg-ft-gold rounded-2xl hover:bg-ft-gold-h transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5"
             >
               플래너 보러 가기 →
             </Link>
@@ -94,20 +94,20 @@ export default function HomePage() {
           </div>
 
           <div className="mt-12 flex flex-wrap items-center justify-center gap-6 text-sm text-indigo-300">
-            <span className="flex items-center gap-2"><span className="text-[#f0c040]">✓</span> 무료 체험판 즉시 다운로드</span>
-            <span className="flex items-center gap-2"><span className="text-[#f0c040]">✓</span> PDF 고화질 A4 규격</span>
-            <span className="flex items-center gap-2"><span className="text-[#f0c040]">✓</span> 태블릿·인쇄 모두 가능</span>
+            <span className="flex items-center gap-2"><span className="text-ft-gold">✓</span> 무료 체험판 즉시 다운로드</span>
+            <span className="flex items-center gap-2"><span className="text-ft-gold">✓</span> PDF 고화질 A4 규격</span>
+            <span className="flex items-center gap-2"><span className="text-ft-gold">✓</span> 태블릿·인쇄 모두 가능</span>
           </div>
         </div>
       </section>
 
       {/* ── 상품 섹션 ─────────────────────────────────────── */}
-      <section className="py-16 px-4 bg-gradient-to-b from-[#f8f7ff] to-white relative">
+      <section className="py-16 px-4 bg-gradient-to-b from-ft-card to-ft-base relative">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-10">
             <p className="text-xs font-semibold text-indigo-400 uppercase tracking-widest mb-2">✨ 플래너 라인업</p>
-            <h2 className="text-2xl sm:text-3xl font-black text-[#1e1b4b]">나에게 맞는 플래너를 선택하세요</h2>
-            <p className="mt-2 text-[#4a4a6a] text-sm sm:text-base">무료 체험판부터 사주 맞춤 플래너까지</p>
+            <h2 className="text-2xl sm:text-3xl font-black text-ft-text">나에게 맞는 플래너를 선택하세요</h2>
+            <p className="mt-2 text-ft-text-muted text-sm sm:text-base">무료 체험판부터 사주 맞춤 플래너까지</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {PRODUCTS.map((product) => (
@@ -123,12 +123,12 @@ export default function HomePage() {
       </section>
 
       {/* ── 무료 사주 계산기 티저 ─────────────────────────── */}
-      <section className="py-16 px-4 bg-gradient-to-br from-[#0f0e17] to-[#1e1b4b] relative overflow-hidden">
+      <section className="py-16 px-4 bg-gradient-to-br from-ft-base to-ft-navy relative overflow-hidden">
         {/* 별 장식 */}
         <span aria-hidden="true" className="absolute top-10 right-20 text-[#f0c040]/20 text-3xl select-none">✦</span>
         <span aria-hidden="true" className="absolute bottom-12 left-16 text-[#f0c040]/15 text-2xl select-none">✧</span>
         <div className="max-w-4xl mx-auto text-center relative">
-          <span className="inline-block px-3 py-1 text-xs font-semibold bg-[#f0c040]/20 text-[#f0c040] rounded-full border border-[#f0c040]/40 mb-5">
+          <span className="inline-block px-3 py-1 text-xs font-semibold bg-[#f0c040]/20 text-ft-gold rounded-full border border-[#f0c040]/40 mb-5">
             ✨ 무료 서비스
           </span>
           <h2 className="text-2xl sm:text-3xl font-black text-white mb-4">
@@ -136,7 +136,7 @@ export default function HomePage() {
           </h2>
           <p className="text-indigo-300 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed mb-8">
             생년월일만 입력하면 사주팔자 4기둥, 오행 분포, 용신,
-            그리고 <span className="text-[#f0c040] font-semibold">2026년 12개월 운세</span>를 무료로 확인하세요.
+            그리고 <span className="text-ft-gold font-semibold">2026년 12개월 운세</span>를 무료로 확인하세요.
           </p>
 
           {/* 미리보기 카드들 */}
@@ -159,7 +159,7 @@ export default function HomePage() {
 
           <Link
             href="/saju"
-            className="inline-flex items-center gap-2 px-8 py-4 font-bold text-[#1e1b4b] bg-[#f0c040] rounded-2xl hover:bg-[#e0b030] transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 text-base"
+            className="inline-flex items-center gap-2 px-8 py-4 font-bold text-ft-navy bg-ft-gold rounded-2xl hover:bg-ft-gold-h transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 text-base"
           >
             🔮 무료 사주 계산하기
           </Link>
@@ -168,7 +168,7 @@ export default function HomePage() {
       </section>
 
       {/* ── 이용 방법 ─────────────────────────────────────── */}
-      <section id="how-it-works" className="py-16 px-4 bg-[#0c0b14] relative overflow-hidden">
+      <section id="how-it-works" className="py-16 px-4 bg-ft-deep relative overflow-hidden">
         {/* 별 장식 */}
         <span aria-hidden="true" className="absolute top-12 left-16 text-[#f0c040]/15 text-4xl select-none">✦</span>
         <span aria-hidden="true" className="absolute top-8 right-24 text-[#f0c040]/10 text-2xl select-none">✧</span>
@@ -202,7 +202,7 @@ export default function HomePage() {
       </section>
 
       {/* ── 플래너 미리보기 ──────────────────────────────── */}
-      <section className="py-16 px-4 bg-gradient-to-b from-[#1a1535] to-[#0f0e17] relative overflow-hidden">
+      <section className="py-16 px-4 bg-gradient-to-b from-ft-card to-ft-base relative overflow-hidden">
         {/* 별 장식 */}
         <span aria-hidden="true" className="absolute top-8 right-16 text-[#f0c040]/20 text-4xl select-none">✦</span>
         <span aria-hidden="true" className="absolute bottom-16 left-8 text-[#f0c040]/10 text-5xl select-none">✧</span>
@@ -226,7 +226,7 @@ export default function HomePage() {
           <div className="text-center mt-8">
             <Link
               href="/products/common-planner"
-              className="inline-flex items-center px-6 py-3 font-bold text-[#1e1b4b] bg-[#f0c040] rounded-xl hover:bg-[#e0b030] transition-colors shadow"
+              className="inline-flex items-center px-6 py-3 font-bold text-ft-navy bg-ft-gold rounded-xl hover:bg-ft-gold-h transition-colors shadow"
             >
               무료로 다운로드 →
             </Link>
@@ -235,7 +235,7 @@ export default function HomePage() {
       </section>
 
       {/* ── 후기 ──────────────────────────────────────────── */}
-      <section className="py-16 px-4 bg-[#13111d] relative overflow-hidden">
+      <section className="py-16 px-4 bg-ft-card relative overflow-hidden">
         <span aria-hidden="true" className="absolute top-10 right-12 text-[#f0c040]/15 text-4xl select-none">✦</span>
         <span aria-hidden="true" className="absolute bottom-10 left-12 text-[#f0c040]/10 text-3xl select-none">✧</span>
         <div className="max-w-6xl mx-auto relative">
@@ -249,7 +249,7 @@ export default function HomePage() {
                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
                 <div className="flex items-center gap-1 mb-3">
                   {Array.from({ length: rating }).map((_, i) => (
-                    <span key={i} className="text-[#f0c040] text-sm">★</span>
+                    <span key={i} className="text-ft-gold text-sm">★</span>
                   ))}
                 </div>
                 <p className="text-indigo-200 text-sm leading-relaxed mb-4">&ldquo;{text}&rdquo;</p>
@@ -261,7 +261,7 @@ export default function HomePage() {
       </section>
 
       {/* ── FAQ ───────────────────────────────────────────── */}
-      <section id="faq" className="py-16 px-4 bg-[#0c0b14]">
+      <section id="faq" className="py-16 px-4 bg-ft-deep">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-10">
             <p className="text-xs font-semibold text-[#f0c040]/70 uppercase tracking-widest mb-2">💬 자주 묻는 질문</p>
@@ -280,7 +280,7 @@ export default function HomePage() {
       </section>
 
       {/* ── CTA ───────────────────────────────────────────── */}
-      <section className="py-16 px-4 bg-gradient-to-r from-[#1e1b4b] to-[#312e81] text-white text-center relative overflow-hidden">
+      <section className="py-16 px-4 bg-gradient-to-r from-ft-navy to-ft-purple text-white text-center relative overflow-hidden">
         <span aria-hidden="true" className="absolute top-8 left-12 text-[#f0c040]/20 text-3xl select-none">✦</span>
         <span aria-hidden="true" className="absolute bottom-8 right-16 text-[#f0c040]/15 text-4xl select-none">✧</span>
         <div className="max-w-2xl mx-auto relative">
@@ -289,7 +289,7 @@ export default function HomePage() {
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link
               href="/products/common-planner"
-              className="px-8 py-4 font-bold text-[#1e1b4b] bg-[#f0c040] rounded-2xl hover:bg-[#e0b030] transition-all shadow-lg"
+              className="px-8 py-4 font-bold text-ft-navy bg-ft-gold rounded-2xl hover:bg-ft-gold-h transition-all shadow-lg"
             >
               무료 플래너 받기
             </Link>

@@ -93,7 +93,7 @@ export default function RegisterPage() {
         <div className="bg-white rounded-3xl shadow-xl p-8">
           {/* 헤더 */}
           <div className="text-center mb-8">
-            <Link href="/" className="text-2xl font-black text-[#1e1b4b]">
+            <Link href="/" className="text-2xl font-black text-ft-navy">
               fortunetab
             </Link>
             <h1 className="mt-4 text-xl font-bold text-gray-900">회원가입</h1>
@@ -212,7 +212,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3.5 font-bold text-white bg-[#1e1b4b] rounded-xl hover:bg-indigo-800 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2"
+              className="w-full py-3.5 font-bold text-white bg-ft-navy rounded-xl hover:bg-indigo-800 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2"
             >
               {isLoading && (
                 <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">

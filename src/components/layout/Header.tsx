@@ -26,7 +26,7 @@ export default function Header() {
     href === '/' ? pathname === '/' : pathname.startsWith(href);
 
   return (
-    <header className="sticky top-0 z-50 bg-[#1e1b4b] shadow-md">
+    <header className="sticky top-0 z-50 bg-ft-navy shadow-md">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* 로고 */}
@@ -39,7 +39,7 @@ export default function Header() {
               height={32}
               className="rounded-lg group-hover:opacity-80 transition-opacity"
             />
-            <span className="text-xl font-bold text-[#f0c040] tracking-tight group-hover:opacity-80 transition-opacity">
+            <span className="text-xl font-bold text-ft-gold tracking-tight group-hover:opacity-80 transition-opacity">
               FortuneTab
             </span>
             <span className="hidden sm:inline text-xs text-indigo-300 mt-1">
@@ -55,7 +55,7 @@ export default function Header() {
                 href={href}
                 className={`text-sm font-medium transition-colors ${
                   isActive(href)
-                    ? 'text-[#f0c040]'
+                    ? 'text-ft-gold'
                     : 'text-indigo-200 hover:text-white'
                 }`}
               >
@@ -86,7 +86,7 @@ export default function Header() {
                 />
               </svg>
               {mounted && totalItems() > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center w-4 h-4 text-xs font-bold bg-[#f0c040] text-[#1e1b4b] rounded-full">
+                <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center w-4 h-4 text-xs font-bold bg-ft-gold text-ft-navy rounded-full">
                   {totalItems()}
                 </span>
               )}
@@ -114,7 +114,7 @@ export default function Header() {
             ) : (
               <Link
                 href="/auth/login"
-                className="hidden md:inline-flex items-center px-3 py-1.5 text-sm font-medium text-[#1e1b4b] bg-[#f0c040] rounded-lg hover:bg-[#e0b030] transition-colors"
+                className="hidden md:inline-flex items-center px-3 py-1.5 text-sm font-medium text-ft-navy bg-ft-gold rounded-lg hover:bg-ft-gold-h transition-colors"
               >
                 로그인
               </Link>
@@ -149,7 +149,7 @@ export default function Header() {
                 onClick={() => setMobileOpen(false)}
                 className={`block px-2 py-2 text-sm rounded transition-colors ${
                   isActive(href)
-                    ? 'text-[#f0c040] font-medium'
+                    ? 'text-ft-gold font-medium'
                     : 'text-indigo-200 hover:text-white'
                 }`}
               >
@@ -182,7 +182,7 @@ export default function Header() {
                 <Link
                   href="/auth/login"
                   onClick={() => setMobileOpen(false)}
-                  className="block px-2 py-2 text-sm text-[#f0c040] font-medium hover:text-[#e0b030]"
+                  className="block px-2 py-2 text-sm text-ft-gold font-medium hover:text-ft-gold-h"
                 >
                   로그인 / 회원가입
                 </Link>

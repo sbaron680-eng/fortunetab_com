@@ -4,12 +4,12 @@ export default function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-[#1e1b4b] text-indigo-300 mt-auto">
+    <footer className="bg-ft-navy text-indigo-300 mt-auto">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* 브랜드 */}
           <div className="lg:col-span-2">
-            <Link href="/" className="text-xl font-bold text-[#f0c040]">
+            <Link href="/" className="text-xl font-bold text-ft-gold">
               FortuneTab
             </Link>
             <p className="mt-3 text-sm leading-relaxed text-indigo-300 max-w-xs">
@@ -21,7 +21,7 @@ export default function Footer() {
                 href="https://www.instagram.com/fortunetab"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-indigo-400 hover:text-[#f0c040] transition-colors"
+                className="text-indigo-400 hover:text-ft-gold transition-colors"
                 aria-label="Instagram"
               >
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">

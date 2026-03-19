@@ -10,6 +10,27 @@
   --color-warm-white: #fefce8;
   --color-cream: #fffbeb;
 
+  /* === FortuneTab 다크 배경 3단계 표준화 === */
+  --color-ft-deep:   #0b0a14;   /* 최심층 (Hero, CTA 대형 섹션) */
+  --color-ft-base:   #0f0e1a;   /* 기본 다크 바디 */
+  --color-ft-card:   #15131f;   /* 카드/서브 섹션 */
+  --color-ft-navy:   #1e1b4b;   /* 브랜드 네이비 (헤더/푸터) */
+  --color-ft-purple: #312e81;   /* 퍼플 (그라디언트 보조) */
+
+  /* === 골드 액센트 === */
+  --color-ft-gold:   #f0c040;   /* 메인 액센트 */
+  --color-ft-gold-h: #e0b030;   /* 골드 hover */
+
+  /* === 텍스트 === */
+  --color-ft-text:        #e8e4ff;  /* 다크 배경 위 본문 */
+  --color-ft-text-muted:  #9b96cc;  /* 다크 배경 위 보조 */
+  --color-ft-text-dim:    #6b6899;  /* 최소 텍스트 */
+
+  /* === 라이트 섹션 === */
+  --color-ft-light:       #f5f4fe;  /* 라이트 배경 */
+  --color-ft-light-text:  #1e1b4b;  /* 라이트 위 텍스트 */
+  --color-ft-light-muted: #4a4a6a;  /* 라이트 위 보조 텍스트 */
+
   --font-sans: 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
 }
 
@@ -28,10 +49,10 @@
   to   { transform: translateX(0); }
 }
 
-/* 쇼핑몰 스타일: 흰 배경 기반 */
+/* 다크 테마 기반 */
 body {
-  background-color: #f8f8fc;
-  color: #1a1a2e;
+  background-color: #0f0e1a;  /* ft-base */
+  color: #e8e4ff;              /* ft-text */
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
 }
@@ -56,14 +77,14 @@ body {
   width: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: #15131f;
 }
 ::-webkit-scrollbar-thumb {
-  background: #c5c5d5;
+  background: #312e81;
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #9999bb;
+  background: #4338ca;
 }
 
 /* 포커스 링 일관성 */

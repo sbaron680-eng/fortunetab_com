@@ -99,7 +99,7 @@ export default function DownloadPage() {
   const progressPct = progress ? Math.round((progress.current / progress.total) * 100) : 0;
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-[#1e1b4b] via-[#2d2a6e] to-[#1e1b4b] py-16 px-4">
+    <main className="min-h-screen bg-gradient-to-b from-ft-navy via-[#2d2a6e] to-ft-navy py-16 px-4">
       {/* ── 헤더 ──────────────────────────────────────────────────────────────── */}
       <div className="max-w-2xl mx-auto text-center mb-12">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#f59e0b]/10 border border-[#f59e0b]/30 text-[#f59e0b] text-sm font-medium mb-4">
@@ -209,7 +209,7 @@ export default function DownloadPage() {
                   </div>
                   {isSelected && (
                     <span className="absolute top-2 right-2 w-5 h-5 bg-[#f59e0b] rounded-full flex items-center justify-center">
-                      <svg className="w-3 h-3 text-[#1e1b4b]" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className="w-3 h-3 text-ft-navy" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
                     </span>
@@ -308,7 +308,7 @@ export default function DownloadPage() {
                     }`}
                   >
                     {checked && (
-                      <svg className="w-3 h-3 text-[#1e1b4b]" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className="w-3 h-3 text-ft-navy" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
                     )}
@@ -415,7 +415,7 @@ export default function DownloadPage() {
             className={`w-full py-4 rounded-2xl font-bold text-base transition-all flex items-center justify-center gap-2.5 ${
               isGenerating || selectedPages.size === 0
                 ? 'bg-white/10 text-white/30 cursor-not-allowed'
-                : 'bg-[#f59e0b] text-[#1e1b4b] hover:bg-[#fbbf24] active:scale-[0.98] shadow-lg shadow-[#f59e0b]/20'
+                : 'bg-[#f59e0b] text-ft-navy hover:bg-[#fbbf24] active:scale-[0.98] shadow-lg shadow-[#f59e0b]/20'
             }`}
           >
             {isGenerating ? (
@@ -455,7 +455,7 @@ export default function DownloadPage() {
           </div>
           <a
             href="/products/saju-planner-basic"
-            className="flex-shrink-0 px-4 py-2 bg-[#f59e0b] text-[#1e1b4b] rounded-xl text-sm font-bold hover:bg-[#fbbf24] transition-colors whitespace-nowrap"
+            className="flex-shrink-0 px-4 py-2 bg-[#f59e0b] text-ft-navy rounded-xl text-sm font-bold hover:bg-[#fbbf24] transition-colors whitespace-nowrap"
           >
             자세히 보기 →
           </a>

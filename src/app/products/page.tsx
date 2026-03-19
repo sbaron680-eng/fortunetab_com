@@ -14,7 +14,7 @@ export default function ProductsPage() {
       <div className="max-w-6xl mx-auto">
         {/* 페이지 헤더 */}
         <div className="mb-8">
-          <h1 className="text-2xl sm:text-3xl font-black text-[#1e1b4b]">플래너 상품</h1>
+          <h1 className="text-2xl sm:text-3xl font-black text-ft-navy">플래너 상품</h1>
           <p className="mt-2 text-gray-500 text-sm">
             나에게 맞는 플래너를 선택하세요. 무료 체험 후 업그레이드하실 수 있습니다.
           </p>
@@ -25,7 +25,7 @@ export default function ProductsPage() {
 
         {/* 비교 안내 */}
         <div className="mt-12 bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <h2 className="text-lg font-bold text-[#1e1b4b] mb-4">플래너 비교</h2>
+          <h2 className="text-lg font-bold text-ft-navy mb-4">플래너 비교</h2>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>

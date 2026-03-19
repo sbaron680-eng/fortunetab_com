@@ -93,14 +93,14 @@ export default async function ProductDetailPage({ params }: Props) {
             )}
 
             {/* 상품명 */}
-            <h1 className="text-2xl sm:text-3xl font-black text-[#1e1b4b] leading-tight">
+            <h1 className="text-2xl sm:text-3xl font-black text-ft-navy leading-tight">
               {product.name}
             </h1>
             <p className="mt-2 text-gray-500">{product.subtitle}</p>
 
             {/* 가격 */}
             <div className="mt-6 flex items-baseline gap-3">
-              <span className="text-3xl font-black text-[#1e1b4b]">
+              <span className="text-3xl font-black text-ft-navy">
                 {formatPrice(product.price)}
               </span>
               {product.originalPrice && product.originalPrice > 0 && (
@@ -153,19 +153,19 @@ export default async function ProductDetailPage({ params }: Props) {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* 상세 설명 */}
           <div className="lg:col-span-2 bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-            <h2 className="text-lg font-bold text-[#1e1b4b] mb-4">상품 설명</h2>
+            <h2 className="text-lg font-bold text-ft-navy mb-4">상품 설명</h2>
             <div className="text-gray-700 text-sm leading-8 whitespace-pre-line">
               {product.description}
             </div>
 
             {/* 특징 */}
-            <h2 className="text-lg font-bold text-[#1e1b4b] mt-8 mb-4">주요 특징</h2>
+            <h2 className="text-lg font-bold text-ft-navy mt-8 mb-4">주요 특징</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {product.features.map(({ icon, title, description }) => (
                 <div key={title} className="flex gap-3 p-4 rounded-xl bg-indigo-50">
                   <span className="text-2xl flex-shrink-0">{icon}</span>
                   <div>
-                    <p className="font-bold text-[#1e1b4b] text-sm">{title}</p>
+                    <p className="font-bold text-ft-navy text-sm">{title}</p>
                     <p className="text-xs text-gray-500 mt-1 leading-relaxed">{description}</p>
                   </div>
                 </div>
@@ -175,7 +175,7 @@ export default async function ProductDetailPage({ params }: Props) {
 
           {/* 상품 사양 */}
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 h-fit">
-            <h2 className="text-lg font-bold text-[#1e1b4b] mb-4">상품 사양</h2>
+            <h2 className="text-lg font-bold text-ft-navy mb-4">상품 사양</h2>
             <div className="space-y-3">
               {product.specs.map(({ label, value }) => (
                 <div key={label} className="flex flex-col gap-0.5">
@@ -189,7 +189,7 @@ export default async function ProductDetailPage({ params }: Props) {
 
         {/* 다른 상품 */}
         <div className="mt-12">
-          <h2 className="text-lg font-bold text-[#1e1b4b] mb-6">다른 플래너도 살펴보세요</h2>
+          <h2 className="text-lg font-bold text-ft-navy mb-6">다른 플래너도 살펴보세요</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {PRODUCTS.filter((p) => p.id !== product.id).map((p) => (
               <a
@@ -201,7 +201,7 @@ export default async function ProductDetailPage({ params }: Props) {
                   {p.badge === '무료' ? '🎁' : p.badge === 'BEST' ? '🏆' : '⭐'}
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-bold text-[#1e1b4b] truncate group-hover:text-indigo-700 transition-colors">
+                  <p className="text-sm font-bold text-ft-navy truncate group-hover:text-indigo-700 transition-colors">
                     {p.name}
                   </p>
                   <p className="text-xs text-gray-400">{formatPrice(p.price)}</p>

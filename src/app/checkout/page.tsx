@@ -163,7 +163,7 @@ export default function CheckoutPage() {
       <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center py-20 px-4 text-center">
         <div className="text-7xl mb-6">🛒</div>
         <h1 className="text-2xl font-bold text-gray-800 mb-2">장바구니가 비어 있습니다</h1>
-        <Link href="/products" className="mt-4 px-8 py-4 font-bold text-white bg-[#1e1b4b] rounded-2xl hover:bg-indigo-800 transition-colors">
+        <Link href="/products" className="mt-4 px-8 py-4 font-bold text-white bg-ft-navy rounded-2xl hover:bg-indigo-800 transition-colors">
           상품 보러 가기 →
         </Link>
       </div>
@@ -180,7 +180,7 @@ export default function CheckoutPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
             </svg>
           </div>
-          <h1 className="text-2xl font-black text-[#1e1b4b] mb-2">
+          <h1 className="text-2xl font-black text-ft-navy mb-2">
             {hasPaidItem ? '결제가 완료되었습니다!' : '신청이 완료되었습니다!'}
           </h1>
           <p className="text-gray-500 text-sm mb-2">주문번호: <span className="font-medium text-gray-700">{orderNumber}</span></p>
@@ -216,7 +216,7 @@ export default function CheckoutPage() {
             {!hasPaidItem && (
               <Link
                 href="/download"
-                className="block w-full py-3.5 font-bold text-[#1e1b4b] bg-[#f0c040] rounded-xl hover:bg-[#e0b030] transition-colors text-center"
+                className="block w-full py-3.5 font-bold text-ft-navy bg-ft-gold rounded-xl hover:bg-ft-gold-h transition-colors text-center"
               >
                 PDF 다운로드 →
               </Link>
@@ -225,7 +225,7 @@ export default function CheckoutPage() {
               href="/"
               className={`block w-full text-center rounded-xl transition-colors ${
                 hasPaidItem
-                  ? 'py-3.5 font-bold text-[#1e1b4b] bg-[#f0c040] hover:bg-[#e0b030]'
+                  ? 'py-3.5 font-bold text-ft-navy bg-ft-gold hover:bg-ft-gold-h'
                   : 'py-3 text-sm text-gray-600 border border-gray-200 hover:bg-gray-50'
               }`}
             >
@@ -254,7 +254,7 @@ export default function CheckoutPage() {
       <div className="max-w-5xl mx-auto">
         {/* 페이지 헤더 */}
         <div className="mb-8">
-          <h1 className="text-2xl sm:text-3xl font-black text-[#1e1b4b]">결제</h1>
+          <h1 className="text-2xl sm:text-3xl font-black text-ft-navy">결제</h1>
 
           {/* 스텝 인디케이터 */}
           <div className="flex items-center gap-2 mt-4">
@@ -262,14 +262,14 @@ export default function CheckoutPage() {
               <div key={s.id} className="flex items-center gap-2">
                 <div className={`flex items-center gap-2 text-sm font-medium ${
                   step === s.id
-                    ? 'text-[#1e1b4b]'
+                    ? 'text-ft-navy'
                     : step === 'payment' && s.id === 'info'
                     ? 'text-emerald-600'
                     : 'text-gray-400'
                 }`}>
                   <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
                     step === s.id
-                      ? 'bg-[#1e1b4b] text-white'
+                      ? 'bg-ft-navy text-white'
                       : step === 'payment' && s.id === 'info'
                       ? 'bg-emerald-500 text-white'
                       : 'bg-gray-200 text-gray-500'
@@ -462,7 +462,7 @@ export default function CheckoutPage() {
 
                 <button
                   type="submit"
-                  className="w-full py-4 font-bold text-white bg-[#1e1b4b] rounded-2xl hover:bg-indigo-800 transition-colors shadow-lg mt-2"
+                  className="w-full py-4 font-bold text-white bg-ft-navy rounded-2xl hover:bg-indigo-800 transition-colors shadow-lg mt-2"
                 >
                   다음 단계: 결제 →
                 </button>
@@ -504,7 +504,7 @@ export default function CheckoutPage() {
                       {/* Toss Payments 플레이스홀더 */}
                       <div className="border-2 border-indigo-500 rounded-xl p-4 bg-indigo-50">
                         <div className="flex items-center gap-3 mb-3">
-                          <div className="w-8 h-8 rounded-lg bg-[#1e1b4b] flex items-center justify-center">
+                          <div className="w-8 h-8 rounded-lg bg-ft-navy flex items-center justify-center">
                             <span className="text-white text-xs font-bold">T</span>
                           </div>
                           <div>
@@ -573,7 +573,7 @@ export default function CheckoutPage() {
                   disabled={isSubmitting}
                   className={`w-full py-4 font-bold rounded-2xl transition-all shadow-lg flex items-center justify-center gap-2 ${
                     hasPaidItem
-                      ? 'text-[#1e1b4b] bg-[#f0c040] hover:bg-[#e0b030] disabled:opacity-50 disabled:cursor-not-allowed'
+                      ? 'text-ft-navy bg-ft-gold hover:bg-ft-gold-h disabled:opacity-50 disabled:cursor-not-allowed'
                       : 'text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed'
                   }`}
                 >
@@ -638,7 +638,7 @@ export default function CheckoutPage() {
 
               <div className="flex justify-between items-baseline">
                 <span className="font-bold text-gray-900">총 결제금액</span>
-                <span className="text-xl font-black text-[#1e1b4b]">{formatPrice(total)}</span>
+                <span className="text-xl font-black text-ft-navy">{formatPrice(total)}</span>
               </div>
 
               {/* 발송 안내 */}

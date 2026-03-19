@@ -66,7 +66,7 @@ function PillarCard({
   const color   = elemIdx >= 0 ? ELEM_COLOR[elemIdx] : '#f0c040';
 
   return (
-    <div className={`flex flex-col items-center rounded-xl p-4 ${isDay ? 'ring-2 ring-[#f0c040]' : ''}`}
+    <div className={`flex flex-col items-center rounded-xl p-4 ${isDay ? 'ring-2 ring-ft-gold' : ''}`}
          style={{ background: 'rgba(30,27,75,0.6)' }}>
       <span className="text-xs text-indigo-300 mb-2">{label}</span>
       {stemKo === '?' ? (
@@ -94,7 +94,7 @@ function PillarCard({
         </>
       )}
       {isDay && (
-        <span className="mt-2 text-xs text-[#f0c040]">일간(나)</span>
+        <span className="mt-2 text-xs text-ft-gold">일간(나)</span>
       )}
     </div>
   );
@@ -309,7 +309,7 @@ export default function SajuPage() {
   const todayFortune = saju ? getTodayFortune(saju) : null;
 
   return (
-    <main className="min-h-screen bg-[#0f0e17] py-10 px-4">
+    <main className="min-h-screen bg-ft-base py-10 px-4">
       <div className="max-w-3xl mx-auto">
         {/* 헤더 */}
         <div className="text-center mb-10">
@@ -324,7 +324,7 @@ export default function SajuPage() {
 
         {/* 입력 카드 */}
         <div className="rounded-2xl p-6 mb-8" style={{ background: 'rgba(30,27,75,0.7)' }}>
-          <h2 className="text-lg font-semibold text-[#f0c040] mb-5">생년월일 입력</h2>
+          <h2 className="text-lg font-semibold text-ft-gold mb-5">생년월일 입력</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
             <div>
               <label className="block text-xs text-indigo-300 mb-1">년도</label>
@@ -335,7 +335,7 @@ export default function SajuPage() {
                 placeholder="1990"
                 min={1900}
                 max={2100}
-                className="w-full bg-indigo-900 border border-indigo-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#f0c040]"
+                className="w-full bg-indigo-900 border border-indigo-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-ft-gold"
               />
             </div>
             <div>
@@ -343,7 +343,7 @@ export default function SajuPage() {
               <select
                 value={form.month}
                 onChange={e => handleChange('month', e.target.value)}
-                className="w-full bg-indigo-900 border border-indigo-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#f0c040]"
+                className="w-full bg-indigo-900 border border-indigo-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-ft-gold"
               >
                 {Array.from({ length: 12 }, (_, i) => (
                   <option key={i + 1} value={i + 1}>{i + 1}월</option>
@@ -355,7 +355,7 @@ export default function SajuPage() {
               <select
                 value={form.day}
                 onChange={e => handleChange('day', e.target.value)}
-                className="w-full bg-indigo-900 border border-indigo-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#f0c040]"
+                className="w-full bg-indigo-900 border border-indigo-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-ft-gold"
               >
                 {Array.from({ length: 31 }, (_, i) => (
                   <option key={i + 1} value={i + 1}>{i + 1}일</option>
@@ -367,7 +367,7 @@ export default function SajuPage() {
               <select
                 value={form.gender}
                 onChange={e => handleChange('gender', e.target.value)}
-                className="w-full bg-indigo-900 border border-indigo-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#f0c040]"
+                className="w-full bg-indigo-900 border border-indigo-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-ft-gold"
               >
                 <option value="male">남성</option>
                 <option value="female">여성</option>
@@ -385,8 +385,8 @@ export default function SajuPage() {
                   onClick={() => handleChange('time', t)}
                   className={`py-2 rounded-lg border transition-colors flex flex-col items-center gap-0.5 ${
                     form.time === t
-                      ? 'bg-[#f0c040] text-[#1e1b4b] border-[#f0c040] font-bold'
-                      : 'bg-indigo-900 text-indigo-300 border-indigo-600 hover:border-[#f0c040]'
+                      ? 'bg-ft-gold text-ft-navy border-ft-gold font-bold'
+                      : 'bg-indigo-900 text-indigo-300 border-indigo-600 hover:border-ft-gold'
                   }`}
                 >
                   <span className="text-xs">{t}</span>
@@ -406,7 +406,7 @@ export default function SajuPage() {
 
           <button
             onClick={handleCalculate}
-            className="w-full py-3 rounded-xl font-bold text-[#1e1b4b] bg-[#f0c040] hover:bg-[#e0b030] transition-colors text-base"
+            className="w-full py-3 rounded-xl font-bold text-ft-navy bg-ft-gold hover:bg-ft-gold-h transition-colors text-base"
           >
             사주 계산하기
           </button>
@@ -496,19 +496,19 @@ export default function SajuPage() {
               </h3>
               <p className="text-indigo-300 text-sm mb-5 leading-relaxed">
                 방금 계산한 사주팔자와 2026년 운세를{' '}
-                <span className="text-[#f0c040] font-semibold">아름다운 PDF 플래너</span>로 제작해드립니다.
+                <span className="text-ft-gold font-semibold">아름다운 PDF 플래너</span>로 제작해드립니다.
                 <br />매월 운세 해설, 일간 플래너, 용신 컬러 테마까지 개인화된 플래너를 받아보세요.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Link
                   href="/products/saju-planner-basic"
-                  className="px-6 py-3 rounded-xl font-bold text-[#1e1b4b] bg-[#f0c040] hover:bg-[#e0b030] transition-colors"
+                  className="px-6 py-3 rounded-xl font-bold text-ft-navy bg-ft-gold hover:bg-ft-gold-h transition-colors"
                 >
                   베이직 플래너 ₩19,000
                 </Link>
                 <Link
                   href="/products/saju-planner-premium"
-                  className="px-6 py-3 rounded-xl font-bold text-[#f0c040] border border-[#f0c040] hover:bg-[#f0c040] hover:text-[#1e1b4b] transition-colors"
+                  className="px-6 py-3 rounded-xl font-bold text-ft-gold border border-ft-gold hover:bg-ft-gold hover:text-ft-navy transition-colors"
                 >
                   프리미엄 플래너 ₩29,000 ✨
                 </Link>
