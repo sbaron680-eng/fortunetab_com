@@ -18,9 +18,9 @@ const HOW_IT_WORKS = [
 ];
 
 const REVIEWS = [
-  { name: '김O연', rating: 5, text: '운세가 플래너에 그대로 녹아 있어서 신기했어요. 길일에 중요한 약속을 잡게 됐는데 정말 잘 풀렸어요.' },
-  { name: '이O준', rating: 5, text: '사주 리포트가 정말 상세해서 놀랐습니다. 올해 조심해야 할 시기를 미리 알고 대비할 수 있었어요.' },
-  { name: '박O수', rating: 5, text: '무료 버전 먼저 써봤는데 너무 좋아서 유료 결제했습니다. 디자인도 예쁘고 내용도 알차요!' },
+  { name: '김O연', title: '직장인', rating: 5, text: '운세가 플래너에 그대로 녹아 있어서 신기했어요. 길일에 중요한 약속을 잡게 됐는데 정말 잘 풀렸어요.' },
+  { name: '이O준', title: '프리랜서', rating: 5, text: '사주 리포트가 정말 상세해서 놀랐습니다. 올해 조심해야 할 시기를 미리 알고 대비할 수 있었어요.' },
+  { name: '박O수', title: '자영업자', rating: 5, text: '무료 버전 먼저 써봤는데 너무 좋아서 유료 결제했습니다. 디자인도 예쁘고 내용도 알차요!' },
 ];
 
 const FAQS = [
@@ -234,7 +234,7 @@ export default function HomePage() {
             <h2 className="text-2xl sm:text-3xl font-serif font-black text-ft-ink">사용 후기</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            {REVIEWS.map(({ name, rating, text }) => (
+            {REVIEWS.map(({ name, title, rating, text }) => (
               <div key={name} className="rounded-2xl p-6 bg-white border border-ft-border">
                 <div className="flex items-center gap-1 mb-3">
                   {Array.from({ length: rating }).map((_, i) => (
@@ -242,7 +242,10 @@ export default function HomePage() {
                   ))}
                 </div>
                 <p className="text-ft-body text-sm leading-relaxed mb-4">&ldquo;{text}&rdquo;</p>
-                <span className="text-xs font-semibold text-ft-body">{name}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-ft-body">{name}</span>
+                  <span className="text-xs text-ft-muted">{title}</span>
+                </div>
               </div>
             ))}
           </div>
@@ -256,9 +259,9 @@ export default function HomePage() {
             <p className="text-xs font-semibold text-ft-muted uppercase tracking-widest mb-2">자주 묻는 질문</p>
             <h2 className="text-2xl sm:text-3xl font-serif font-black text-ft-ink">FAQ</h2>
           </div>
-          <div className="space-y-0">
-            {FAQS.map(({ q, a }) => (
-              <div key={q} className="py-6 border-b border-ft-border">
+          <div>
+            {FAQS.map(({ q, a }, idx) => (
+              <div key={q} className={`py-6 border-b border-ft-border${idx === 0 ? ' border-t' : ''}`}>
                 <h3 className="font-semibold text-ft-ink mb-2">Q. {q}</h3>
                 <p className="text-ft-body text-sm leading-relaxed">A. {a}</p>
               </div>
