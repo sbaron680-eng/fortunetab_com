@@ -12,8 +12,21 @@
   --color-ft-gold:       #f0c040;   /* CTA 버튼 전용 */
   --color-ft-gold-h:     #e0b030;   /* 골드 hover */
 
-  --font-sans:  'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
-  --font-serif: 'Noto Serif KR', 'Georgia', serif;
+  --font-sans:  var(--font-noto-sans);   /* next/font 변수 참조 */
+  --font-serif: var(--font-noto-serif);  /* next/font 변수 참조 */
+
+  /* === 하위호환 (DEPRECATED — Tasks 2~8 완료 후 제거 예정) === */
+  --color-ft-navy:       #1e1b4b;
+  --color-ft-purple:     #312e81;
+  --color-ft-deep:       #0b0a14;
+  --color-ft-base:       #0f0e1a;
+  --color-ft-card:       #15131f;
+  --color-ft-text:       #e8e4ff;
+  --color-ft-text-muted: #9b96cc;
+  --color-ft-text-dim:   #6b6899;
+  --color-ft-light:      #f5f4fe;
+  --color-ft-light-text: #1e1b4b;
+  --color-ft-light-muted:#4a4a6a;
 }
 
 @keyframes fade-in {
@@ -31,9 +44,13 @@
   to   { transform: translateX(0); }
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
-  background-color: #fdfcfb;
-  color: #2d2b3d;
+  background-color: theme(--color-ft-paper);
+  color: theme(--color-ft-body);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
 }

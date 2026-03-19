@@ -41,14 +41,14 @@ export const metadata: Metadata = {
 const notoSans = Noto_Sans_KR({
   subsets: ['latin'],
   weight: ['300', '400', '500', '700', '900'],
-  variable: '--font-sans',
+  variable: '--font-noto-sans',
   display: 'swap',
 });
 
 const notoSerif = Noto_Serif_KR({
   subsets: ['latin'],
   weight: ['400', '600', '700'],
-  variable: '--font-serif',
+  variable: '--font-noto-serif',
   display: 'swap',
 });
 
@@ -56,7 +56,7 @@ const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ko" data-scroll-behavior="smooth">
+    <html lang="ko">
       <head />
       <body className={`flex flex-col min-h-screen ${notoSans.variable} ${notoSerif.variable}`}>
         {/* GA4 */}
