@@ -66,35 +66,34 @@ function PillarCard({
   const color   = elemIdx >= 0 ? ELEM_COLOR[elemIdx] : '#f0c040';
 
   return (
-    <div className={`flex flex-col items-center rounded-xl p-4 ${isDay ? 'ring-2 ring-ft-gold' : ''}`}
-         style={{ background: 'rgba(30,27,75,0.6)' }}>
-      <span className="text-xs text-indigo-300 mb-2">{label}</span>
+    <div className={`flex flex-col items-center rounded-xl p-4 bg-white border border-ft-border ${isDay ? 'ring-2 ring-ft-ink' : ''}`}>
+      <span className="text-xs text-ft-muted mb-2">{label}</span>
       {stemKo === '?' ? (
-        <span className="text-indigo-400 text-2xl mt-2 mb-2">?</span>
+        <span className="text-ft-muted text-2xl mt-2 mb-2">?</span>
       ) : (
         <>
           {/* 천간 */}
           <div className="flex flex-col items-center mb-1">
-            <span className="text-2xl font-bold" style={{ color }}>{stemKo}</span>
-            <span className="text-sm text-indigo-300">{stemHj}</span>
+            <span className="text-2xl font-bold text-ft-ink">{stemKo}</span>
+            <span className="text-sm text-ft-muted">{stemHj}</span>
             <span className="text-xs px-2 py-0.5 rounded-full mt-1"
                   style={{ background: color + '33', color }}>
               {stemElem}
             </span>
           </div>
-          <div className="w-px h-4 bg-indigo-600 my-1" />
+          <div className="w-px h-4 bg-ft-border my-1" />
           {/* 지지 */}
           <div className="flex flex-col items-center">
-            <span className="text-2xl font-bold text-white">{branchKo}</span>
-            <span className="text-sm text-indigo-300">{branchHj}</span>
-            <span className="text-xs px-2 py-0.5 rounded-full mt-1 bg-indigo-800 text-indigo-200">
+            <span className="text-2xl font-bold text-ft-ink">{branchKo}</span>
+            <span className="text-sm text-ft-muted">{branchHj}</span>
+            <span className="text-xs px-2 py-0.5 rounded-full mt-1 bg-ft-paper-alt border border-ft-border text-ft-body">
               {branchElem}
             </span>
           </div>
         </>
       )}
       {isDay && (
-        <span className="mt-2 text-xs text-ft-gold">일간(나)</span>
+        <span className="mt-2 text-xs text-ft-ink font-semibold">일간(나)</span>
       )}
     </div>
   );
@@ -105,14 +104,14 @@ function ElemDistribution({ saju }: { saju: SajuResult }) {
   const pct = elemCountToPercent(saju.elemCount, saju.hasHour);
 
   return (
-    <div className="rounded-xl p-5" style={{ background: 'rgba(30,27,75,0.6)' }}>
-      <h3 className="text-sm font-semibold text-indigo-300 mb-4">오행(五行) 분포</h3>
+    <div className="rounded-xl p-5 bg-white border border-ft-border">
+      <h3 className="text-sm font-semibold text-ft-ink mb-4">오행(五行) 분포</h3>
       <div className="space-y-3">
         {ELEM_KO.map((elem, i) => (
           <div key={elem} className="flex items-center gap-3">
             <span className="text-base w-5">{ELEM_EMOJI[i]}</span>
-            <span className="text-sm text-indigo-200 w-8">{elem}({ELEM_HJ[i]})</span>
-            <div className="flex-1 bg-indigo-900 rounded-full h-3">
+            <span className="text-sm text-ft-body w-8">{elem}({ELEM_HJ[i]})</span>
+            <div className="flex-1 bg-ft-paper-alt rounded-full h-3 border border-ft-border">
               <div
                 className="h-3 rounded-full transition-all duration-700"
                 style={{
@@ -122,19 +121,19 @@ function ElemDistribution({ saju }: { saju: SajuResult }) {
                 }}
               />
             </div>
-            <span className="text-xs text-indigo-300 w-8 text-right">{saju.elemCount[elem]}개</span>
+            <span className="text-xs text-ft-muted w-8 text-right">{saju.elemCount[elem]}개</span>
           </div>
         ))}
       </div>
-      <div className="mt-4 pt-4 border-t border-indigo-700 flex gap-6 text-sm">
+      <div className="mt-4 pt-4 border-t border-ft-border flex gap-6 text-sm">
         <div>
-          <span className="text-indigo-400">일간 오행</span>
+          <span className="text-ft-muted">일간 오행</span>
           <span className="ml-2 font-bold" style={{ color: ELEM_COLOR[ELEM_KO.indexOf(saju.dayElem)] }}>
             {ELEM_EMOJI[ELEM_KO.indexOf(saju.dayElem)]} {saju.dayElem}({ELEM_HJ[ELEM_KO.indexOf(saju.dayElem)]})
           </span>
         </div>
         <div>
-          <span className="text-indigo-400">용신</span>
+          <span className="text-ft-muted">용신</span>
           <span className="ml-2 font-bold" style={{ color: ELEM_COLOR[ELEM_KO.indexOf(saju.yongsin)] }}>
             {ELEM_EMOJI[ELEM_KO.indexOf(saju.yongsin)]} {saju.yongsin}({ELEM_HJ[ELEM_KO.indexOf(saju.yongsin)]})
           </span>
@@ -145,12 +144,12 @@ function ElemDistribution({ saju }: { saju: SajuResult }) {
 }
 
 // ─── 서브 컴포넌트: 월운 카드 ─────────────────────────────────────────
-const GRADE_STYLE: Record<string, { bg: string; text: string; border: string }> = {
-  '대길':   { bg: 'rgba(240,192,64,0.15)',  text: '#f0c040', border: 'rgba(240,192,64,0.4)' },
-  '길':     { bg: 'rgba(34,197,94,0.12)',   text: '#22c55e', border: 'rgba(34,197,94,0.3)' },
-  '평':     { bg: 'rgba(99,102,241,0.15)',  text: '#a5b4fc', border: 'rgba(99,102,241,0.3)' },
-  '주의':   { bg: 'rgba(251,146,60,0.12)',  text: '#fb923c', border: 'rgba(251,146,60,0.3)' },
-  '어려움': { bg: 'rgba(239,68,68,0.12)',   text: '#f87171', border: 'rgba(239,68,68,0.3)' },
+const GRADE_STYLE: Record<string, { badgeBg: string; badgeText: string; badgeBorder: string; barColor: string }> = {
+  '대길':   { badgeBg: 'bg-green-50',  badgeText: 'text-green-700',  badgeBorder: 'border border-green-200',  barColor: '#22c55e' },
+  '길':     { badgeBg: 'bg-blue-50',   badgeText: 'text-blue-700',   badgeBorder: 'border border-blue-200',   barColor: '#3b82f6' },
+  '평':     { badgeBg: 'bg-gray-50',   badgeText: 'text-gray-600',   badgeBorder: 'border border-gray-200',   barColor: '#9ca3af' },
+  '주의':   { badgeBg: 'bg-red-50',    badgeText: 'text-red-700',    badgeBorder: 'border border-red-200',    barColor: '#ef4444' },
+  '어려움': { badgeBg: 'bg-red-50',    badgeText: 'text-red-700',    badgeBorder: 'border border-red-200',    barColor: '#ef4444' },
 };
 
 const GRADE_ADVICE: Record<string, string> = {
@@ -168,32 +167,30 @@ interface MonthFortuneCardProps {
 }
 
 function MonthFortuneCard({ fm, isExpanded, onToggle }: MonthFortuneCardProps) {
-  const style = GRADE_STYLE[fm.grade];
+  const style = GRADE_STYLE[fm.grade] ?? GRADE_STYLE['평'];
   const advice = GRADE_ADVICE[fm.grade];
   return (
     <div
-      className="rounded-xl border transition-all hover:scale-[1.01] cursor-pointer"
-      style={{ background: style.bg, borderColor: isExpanded ? style.text : style.border }}
+      className="rounded-xl border border-ft-border bg-white transition-all hover:scale-[1.01] cursor-pointer"
       onClick={onToggle}
       role="button"
       aria-expanded={isExpanded}
     >
       <div className="p-4">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-bold text-white">{fm.month}월</span>
+          <span className="text-sm font-semibold text-ft-ink">{fm.month}월</span>
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
-                  style={{ background: style.border, color: style.text }}>
+            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${style.badgeBg} ${style.badgeText} ${style.badgeBorder}`}>
               {fm.grade}
             </span>
-            <span className="text-xs text-indigo-400 transition-transform duration-200"
+            <span className="text-xs text-ft-muted transition-transform duration-200"
                   style={{ display: 'inline-block', transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}>
               ▼
             </span>
           </div>
         </div>
         {/* 점수 바 */}
-        <div className="w-full bg-indigo-900 rounded-full h-1.5 mb-3">
+        <div className="w-full bg-ft-paper-alt border border-ft-border rounded-full h-1.5 mb-3">
           <div
             className="h-1.5 rounded-full transition-all duration-700"
             style={{ width: `${fm.score}%`, background: fm.color }}
@@ -206,10 +203,10 @@ function MonthFortuneCard({ fm, isExpanded, onToggle }: MonthFortuneCardProps) {
             {ELEM_EMOJI[ELEM_KO.indexOf(fm.monthElem)]} {fm.monthElem}
           </span>
           {fm.keywords.map(kw => (
-            <span key={kw} className="text-xs text-indigo-300">#{kw}</span>
+            <span key={kw} className="text-xs text-ft-muted">#{kw}</span>
           ))}
         </div>
-        <p className="text-xs text-indigo-300 mt-2 leading-relaxed line-clamp-2">
+        <p className="text-xs text-ft-muted mt-2 leading-relaxed line-clamp-2">
           {fm.description}
         </p>
       </div>
@@ -217,35 +214,34 @@ function MonthFortuneCard({ fm, isExpanded, onToggle }: MonthFortuneCardProps) {
       {/* 펼쳐진 상세 내용 */}
       {isExpanded && (
         <div
-          className="px-4 pb-4 border-t"
-          style={{ borderColor: style.border }}
+          className="px-4 pb-4 border-t border-ft-border"
           onClick={e => e.stopPropagation()}
         >
           <div className="pt-3 space-y-3">
             {/* 운세 점수 */}
             <div className="flex items-center gap-3">
-              <span className="text-xs text-indigo-400 w-14 flex-shrink-0">운세 점수</span>
-              <div className="flex-1 bg-indigo-900 rounded-full h-2">
+              <span className="text-xs text-ft-muted w-14 flex-shrink-0">운세 점수</span>
+              <div className="flex-1 bg-ft-paper-alt border border-ft-border rounded-full h-2">
                 <div
                   className="h-2 rounded-full"
                   style={{ width: `${fm.score}%`, background: fm.color }}
                 />
               </div>
-              <span className="text-xs font-bold w-8 text-right" style={{ color: fm.color }}>
+              <span className="text-xs font-bold w-8 text-right text-ft-ink">
                 {fm.score}점
               </span>
             </div>
             {/* 상세 설명 */}
             <div>
-              <span className="text-xs text-indigo-400 block mb-1">이달의 운세</span>
-              <p className="text-xs text-indigo-200 leading-relaxed">{fm.description}</p>
+              <span className="text-xs text-ft-muted block mb-1">이달의 운세</span>
+              <p className="text-xs text-ft-body leading-relaxed">{fm.description}</p>
             </div>
             {/* 조언 */}
-            <div className="rounded-lg p-3" style={{ background: 'rgba(99,102,241,0.15)' }}>
-              <span className="text-xs font-semibold mb-1 block" style={{ color: style.text }}>
-                💡 조언
+            <div className="rounded-lg p-3 bg-ft-paper-alt border border-ft-border">
+              <span className="text-xs font-semibold text-ft-ink mb-1 block">
+                조언
               </span>
-              <p className="text-xs text-indigo-200 leading-relaxed">{advice}</p>
+              <p className="text-xs text-ft-body leading-relaxed">{advice}</p>
             </div>
           </div>
         </div>
@@ -309,10 +305,10 @@ export default function SajuPage() {
   const todayFortune = saju ? getTodayFortune(saju) : null;
 
   return (
-    <main className="min-h-screen bg-ft-base py-10 px-4">
+    <main className="min-h-screen bg-ft-paper py-10 px-4">
       <div className="max-w-3xl mx-auto">
-        {/* 헤더 */}
-        <div className="text-center mb-10">
+        {/* 헤더 히어로 */}
+        <div className="text-center mb-10 rounded-2xl py-10 px-6 bg-ft-ink">
           <span className="text-3xl">🔮</span>
           <h1 className="text-3xl font-bold text-white mt-3">
             무료 사주 계산기
@@ -323,11 +319,11 @@ export default function SajuPage() {
         </div>
 
         {/* 입력 카드 */}
-        <div className="rounded-2xl p-6 mb-8" style={{ background: 'rgba(30,27,75,0.7)' }}>
-          <h2 className="text-lg font-semibold text-ft-gold mb-5">생년월일 입력</h2>
+        <div className="rounded-2xl p-6 mb-8 bg-white border border-ft-border shadow-sm">
+          <h2 className="text-lg font-semibold text-ft-ink mb-5">생년월일 입력</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
             <div>
-              <label className="block text-xs text-indigo-300 mb-1">년도</label>
+              <label className="block text-xs font-semibold text-ft-ink mb-1">년도</label>
               <input
                 type="number"
                 value={form.year}
@@ -335,15 +331,15 @@ export default function SajuPage() {
                 placeholder="1990"
                 min={1900}
                 max={2100}
-                className="w-full bg-indigo-900 border border-indigo-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-ft-gold"
+                className="w-full bg-ft-paper-alt border border-ft-border rounded-lg px-3 py-2 text-ft-body text-sm focus:outline-none focus:ring-2 focus:ring-ft-ink"
               />
             </div>
             <div>
-              <label className="block text-xs text-indigo-300 mb-1">월</label>
+              <label className="block text-xs font-semibold text-ft-ink mb-1">월</label>
               <select
                 value={form.month}
                 onChange={e => handleChange('month', e.target.value)}
-                className="w-full bg-indigo-900 border border-indigo-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-ft-gold"
+                className="w-full bg-ft-paper-alt border border-ft-border rounded-lg px-3 py-2 text-ft-body text-sm focus:outline-none focus:ring-2 focus:ring-ft-ink"
               >
                 {Array.from({ length: 12 }, (_, i) => (
                   <option key={i + 1} value={i + 1}>{i + 1}월</option>
@@ -351,11 +347,11 @@ export default function SajuPage() {
               </select>
             </div>
             <div>
-              <label className="block text-xs text-indigo-300 mb-1">일</label>
+              <label className="block text-xs font-semibold text-ft-ink mb-1">일</label>
               <select
                 value={form.day}
                 onChange={e => handleChange('day', e.target.value)}
-                className="w-full bg-indigo-900 border border-indigo-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-ft-gold"
+                className="w-full bg-ft-paper-alt border border-ft-border rounded-lg px-3 py-2 text-ft-body text-sm focus:outline-none focus:ring-2 focus:ring-ft-ink"
               >
                 {Array.from({ length: 31 }, (_, i) => (
                   <option key={i + 1} value={i + 1}>{i + 1}일</option>
@@ -363,11 +359,11 @@ export default function SajuPage() {
               </select>
             </div>
             <div>
-              <label className="block text-xs text-indigo-300 mb-1">성별</label>
+              <label className="block text-xs font-semibold text-ft-ink mb-1">성별</label>
               <select
                 value={form.gender}
                 onChange={e => handleChange('gender', e.target.value)}
-                className="w-full bg-indigo-900 border border-indigo-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-ft-gold"
+                className="w-full bg-ft-paper-alt border border-ft-border rounded-lg px-3 py-2 text-ft-body text-sm focus:outline-none focus:ring-2 focus:ring-ft-ink"
               >
                 <option value="male">남성</option>
                 <option value="female">여성</option>
@@ -375,8 +371,8 @@ export default function SajuPage() {
             </div>
           </div>
           <div className="mb-5">
-            <label className="block text-xs text-indigo-300 mb-1">
-              태어난 시간 <span className="text-indigo-500">(모르면 '모름' 선택)</span>
+            <label className="block text-xs font-semibold text-ft-ink mb-1">
+              태어난 시간 <span className="text-ft-muted font-normal">(모르면 &apos;모름&apos; 선택)</span>
             </label>
             <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
               {TIME_OPTIONS.map(t => (
@@ -386,13 +382,13 @@ export default function SajuPage() {
                   className={`py-2 rounded-lg border transition-colors flex flex-col items-center gap-0.5 ${
                     form.time === t
                       ? 'bg-ft-gold text-ft-navy border-ft-gold font-bold'
-                      : 'bg-indigo-900 text-indigo-300 border-indigo-600 hover:border-ft-gold'
+                      : 'bg-ft-paper-alt text-ft-body border-ft-border hover:border-ft-ink'
                   }`}
                 >
                   <span className="text-xs">{t}</span>
                   {TIME_RANGES[t] && (
                     <span className={`text-[10px] leading-tight ${
-                      form.time === t ? 'text-[#1e1b4b]/70' : 'text-indigo-500'
+                      form.time === t ? 'text-[#1e1b4b]/70' : 'text-ft-muted'
                     }`}>
                       {TIME_RANGES[t]}
                     </span>
@@ -402,7 +398,7 @@ export default function SajuPage() {
             </div>
           </div>
 
-          {error && <p className="text-red-400 text-sm mb-3">{error}</p>}
+          {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
 
           <button
             onClick={handleCalculate}
@@ -416,9 +412,9 @@ export default function SajuPage() {
         {calculated && saju && (
           <>
             {/* 사주팔자 기둥 */}
-            <section className="mb-8">
-              <h2 className="text-lg font-semibold text-white mb-1">사주팔자(四柱八字)</h2>
-              <p className="text-xs text-indigo-400 mb-4">{getSajuSummary(saju)}</p>
+            <section className="mb-8 bg-ft-paper rounded-2xl p-6">
+              <h2 className="text-lg font-semibold font-serif text-ft-ink mb-1">사주팔자(四柱八字)</h2>
+              <p className="text-xs text-ft-muted mb-4">{getSajuSummary(saju)}</p>
               <div className="grid grid-cols-4 gap-3">
                 <PillarCard label="연주(年柱)" {...saju.year}
                   stemElem={saju.year.stemElem} branchElem={saju.year.branchElem} />
@@ -429,7 +425,7 @@ export default function SajuPage() {
                 <PillarCard label="시주(時柱)" {...saju.hour}
                   stemElem={saju.hour.stemElem} branchElem={saju.hour.branchElem} />
               </div>
-              <p className="text-xs text-indigo-500 mt-2 text-center">
+              <p className="text-xs text-ft-muted mt-2 text-center">
                 * 일주(日柱)의 천간이 &apos;나&apos;를 나타내는 핵심 오행입니다
               </p>
             </section>
@@ -441,24 +437,23 @@ export default function SajuPage() {
 
             {/* 오늘의 운세 */}
             {todayFortune && (
-              <section className="mb-8 rounded-xl p-5"
-                       style={{ background: 'rgba(30,27,75,0.6)', border: `1px solid ${todayFortune.color}44` }}>
-                <h2 className="text-lg font-semibold text-white mb-3">
-                  🌟 오늘의 운세 ({new Date().toLocaleDateString('ko-KR')})
+              <section className="mb-8 rounded-xl p-5 bg-white border border-ft-border">
+                <h2 className="text-lg font-semibold font-serif text-ft-ink mb-3">
+                  오늘의 운세 ({new Date().toLocaleDateString('ko-KR')})
                 </h2>
                 <div className="flex items-center gap-4 mb-3">
                   <div className="flex flex-col items-center">
-                    <div className="text-4xl font-bold" style={{ color: todayFortune.color }}>
+                    <div className="text-4xl font-bold text-ft-ink">
                       {todayFortune.score}
                     </div>
-                    <div className="text-xs text-indigo-300">점</div>
+                    <div className="text-xs text-ft-muted">점</div>
                   </div>
                   <div className="flex-1">
                     <span className="text-sm font-bold px-3 py-1 rounded-full"
                           style={{ background: todayFortune.color + '33', color: todayFortune.color }}>
                       {todayFortune.grade}
                     </span>
-                    <p className="text-sm text-indigo-200 mt-2">{todayFortune.message}</p>
+                    <p className="text-sm text-ft-body mt-2">{todayFortune.message}</p>
                   </div>
                 </div>
               </section>
@@ -467,10 +462,10 @@ export default function SajuPage() {
             {/* 2026 월운 */}
             <section className="mb-8">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-white">
+                <h2 className="text-lg font-semibold font-serif text-ft-ink">
                   2026년 병오(丙午)년 월별 운세
                 </h2>
-                <span className="text-xs text-indigo-400">
+                <span className="text-xs text-ft-muted">
                   일간: {ELEM_EMOJI[ELEM_KO.indexOf(saju.dayElem)]} {saju.dayElem} · 용신: {ELEM_EMOJI[ELEM_KO.indexOf(saju.yongsin)]} {saju.yongsin}
                 </span>
               </div>
@@ -487,9 +482,7 @@ export default function SajuPage() {
             </section>
 
             {/* 유료 플래너 CTA */}
-            <section className="rounded-2xl p-6 text-center"
-                     style={{ background: 'linear-gradient(135deg, rgba(30,27,75,0.9), rgba(15,14,23,0.9))',
-                              border: '1px solid rgba(240,192,64,0.3)' }}>
+            <section className="rounded-2xl p-6 text-center bg-ft-ink border border-ft-border">
               <div className="text-3xl mb-3">📖</div>
               <h3 className="text-xl font-bold text-white mb-2">
                 나만의 사주 맞춤 플래너로 업그레이드
@@ -513,7 +506,7 @@ export default function SajuPage() {
                   프리미엄 플래너 ₩29,000 ✨
                 </Link>
               </div>
-              <p className="text-xs text-indigo-500 mt-3">
+              <p className="text-xs text-indigo-400 mt-3">
                 * 구매 후 입력한 사주 정보로 개인화 PDF를 이메일로 발송합니다
               </p>
             </section>
@@ -522,14 +515,14 @@ export default function SajuPage() {
 
         {/* 처음 안내 (계산 전) */}
         {!calculated && (
-          <div className="text-center py-16 text-indigo-500">
+          <div className="text-center py-16 text-ft-muted">
             <div className="text-6xl mb-4">☯</div>
             <p>생년월일을 입력하고 계산하기 버튼을 눌러주세요</p>
           </div>
         )}
 
         {/* 면책 고지 */}
-        <p className="text-xs text-center text-indigo-600 mt-8">
+        <p className="text-xs text-center text-ft-muted mt-8">
           사주 계산은 전통 역술을 기반으로 하며, 오락·참고 목적으로만 활용하시기 바랍니다.
           중요한 결정은 전문 상담사와 상의하세요.
         </p>
