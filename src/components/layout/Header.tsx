@@ -26,7 +26,7 @@ export default function Header() {
     href === '/' ? pathname === '/' : pathname.startsWith(href);
 
   return (
-    <header className="sticky top-0 z-50 bg-ft-navy shadow-md">
+    <header className="sticky top-0 z-50 bg-white border-b border-ft-border shadow-sm">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* 로고 */}
@@ -39,10 +39,10 @@ export default function Header() {
               height={32}
               className="rounded-lg group-hover:opacity-80 transition-opacity"
             />
-            <span className="text-xl font-bold text-ft-gold tracking-tight group-hover:opacity-80 transition-opacity">
+            <span className="text-xl font-bold font-serif text-ft-ink tracking-tight group-hover:opacity-80 transition-opacity">
               FortuneTab
             </span>
-            <span className="hidden sm:inline text-xs text-indigo-300 mt-1">
+            <span className="hidden sm:inline text-xs text-ft-muted mt-1">
               사주·운세 플래너
             </span>
           </Link>
@@ -55,8 +55,8 @@ export default function Header() {
                 href={href}
                 className={`text-sm font-medium transition-colors ${
                   isActive(href)
-                    ? 'text-ft-gold'
-                    : 'text-indigo-200 hover:text-white'
+                    ? 'text-ft-ink font-semibold'
+                    : 'text-ft-body hover:text-ft-ink'
                 }`}
               >
                 {label}
@@ -69,7 +69,7 @@ export default function Header() {
             {/* 장바구니 */}
             <button
               onClick={openCart}
-              className="relative p-2 text-indigo-200 hover:text-white transition-colors"
+              className="relative p-2 text-ft-body hover:text-ft-ink transition-colors"
               aria-label="장바구니"
             >
               <svg
@@ -98,15 +98,15 @@ export default function Header() {
                 {user.isAdmin && (
                   <Link
                     href="/admin"
-                    className="text-xs px-2 py-1 rounded bg-indigo-800 text-indigo-200 hover:bg-indigo-700 transition-colors"
+                    className="text-xs px-2 py-1 rounded bg-ft-border text-ft-body hover:bg-ft-ink hover:text-white transition-colors"
                   >
                     관리자
                   </Link>
                 )}
-                <span className="text-xs text-indigo-300">{user.name}님</span>
+                <span className="text-xs text-ft-muted">{user.name}님</span>
                 <button
                   onClick={() => logout()}
-                  className="text-xs text-indigo-300 hover:text-white transition-colors"
+                  className="text-xs text-ft-muted hover:text-ft-ink transition-colors"
                 >
                   로그아웃
                 </button>
@@ -114,7 +114,7 @@ export default function Header() {
             ) : (
               <Link
                 href="/auth/login"
-                className="hidden md:inline-flex items-center px-3 py-1.5 text-sm font-medium text-ft-navy bg-ft-gold rounded-lg hover:bg-ft-gold-h transition-colors"
+                className="hidden md:inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-ft-ink rounded-lg hover:bg-ft-ink-mid transition-colors"
               >
                 로그인
               </Link>
@@ -122,7 +122,7 @@ export default function Header() {
 
             {/* 모바일 햄버거 */}
             <button
-              className="md:hidden p-2 text-indigo-200 hover:text-white transition-colors"
+              className="md:hidden p-2 text-ft-body hover:text-ft-ink transition-colors"
               onClick={() => setMobileOpen(!mobileOpen)}
               aria-label="메뉴"
             >
@@ -141,7 +141,7 @@ export default function Header() {
 
         {/* 모바일 메뉴 */}
         {mobileOpen && (
-          <div className="md:hidden border-t border-indigo-700 py-3 space-y-1">
+          <div className="md:hidden border-t border-ft-border py-3 space-y-1">
             {navLinks.map(({ href, label }) => (
               <Link
                 key={href}
@@ -149,23 +149,23 @@ export default function Header() {
                 onClick={() => setMobileOpen(false)}
                 className={`block px-2 py-2 text-sm rounded transition-colors ${
                   isActive(href)
-                    ? 'text-ft-gold font-medium'
-                    : 'text-indigo-200 hover:text-white'
+                    ? 'text-ft-ink font-semibold'
+                    : 'text-ft-body hover:text-ft-ink'
                 }`}
               >
                 {label}
               </Link>
             ))}
-            <div className="pt-2 border-t border-indigo-700">
+            <div className="pt-2 border-t border-ft-border">
               {mounted && (user ? (
                 <div className="flex items-center justify-between px-2 py-2">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-indigo-300">{user.name}님</span>
+                    <span className="text-xs text-ft-muted">{user.name}님</span>
                     {user.isAdmin && (
                       <Link
                         href="/admin"
                         onClick={() => setMobileOpen(false)}
-                        className="text-xs px-2 py-0.5 rounded bg-indigo-800 text-indigo-200"
+                        className="text-xs px-2 py-0.5 rounded bg-ft-border text-ft-body"
                       >
                         관리자
                       </Link>
@@ -173,7 +173,7 @@ export default function Header() {
                   </div>
                   <button
                     onClick={() => { logout(); setMobileOpen(false); }}
-                    className="text-xs text-indigo-300 hover:text-white"
+                    className="text-xs text-ft-muted hover:text-ft-ink"
                   >
                     로그아웃
                   </button>
@@ -182,7 +182,7 @@ export default function Header() {
                 <Link
                   href="/auth/login"
                   onClick={() => setMobileOpen(false)}
-                  className="block px-2 py-2 text-sm text-ft-gold font-medium hover:text-ft-gold-h"
+                  className="block px-2 py-2 text-sm text-ft-ink font-medium hover:text-ft-ink-mid"
                 >
                   로그인 / 회원가입
                 </Link>
