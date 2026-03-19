@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Noto_Sans_KR, Noto_Serif_KR } from 'next/font/google';
 import Script from 'next/script';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
@@ -37,20 +38,27 @@ export const metadata: Metadata = {
   },
 };
 
+const notoSans = Noto_Sans_KR({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '700', '900'],
+  variable: '--font-sans',
+  display: 'swap',
+});
+
+const notoSerif = Noto_Serif_KR({
+  subsets: ['latin'],
+  weight: ['400', '600', '700'],
+  variable: '--font-serif',
+  display: 'swap',
+});
+
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ko" data-scroll-behavior="smooth">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap"
-          rel="stylesheet"
-        />
-      </head>
-      <body className="flex flex-col min-h-screen">
+      <head />
+      <body className={`flex flex-col min-h-screen ${notoSans.variable} ${notoSerif.variable}`}>
         {/* GA4 */}
         {GA_ID && (
           <>

@@ -1,37 +1,19 @@
 @import "tailwindcss";
 
 @theme {
-  --color-indigo-deep: #1e1b4b;
-  --color-indigo-mid: #312e81;
-  --color-indigo-light: #4338ca;
-  --color-gold: #f0c040;
-  --color-gold-light: #f5d060;
-  --color-gold-dark: #c09020;
-  --color-warm-white: #fefce8;
-  --color-cream: #fffbeb;
+  /* === 묵향(Ink Wash) 팔레트 === */
+  --color-ft-paper:      #fdfcfb;   /* 기본 배경 (따뜻한 백지) */
+  --color-ft-paper-alt:  #f7f5f2;   /* 교차 섹션 배경 */
+  --color-ft-ink:        #1e1b4b;   /* 헤딩·강조 (먹물) */
+  --color-ft-ink-mid:    #312e81;   /* 서브 헤딩 */
+  --color-ft-body:       #2d2b3d;   /* 본문 텍스트 */
+  --color-ft-muted:      #6b6886;   /* 보조 텍스트 */
+  --color-ft-border:     #e4e1f0;   /* 카드·구분선 */
+  --color-ft-gold:       #f0c040;   /* CTA 버튼 전용 */
+  --color-ft-gold-h:     #e0b030;   /* 골드 hover */
 
-  /* === FortuneTab 다크 배경 3단계 표준화 === */
-  --color-ft-deep:   #0b0a14;   /* 최심층 (Hero, CTA 대형 섹션) */
-  --color-ft-base:   #0f0e1a;   /* 기본 다크 바디 */
-  --color-ft-card:   #15131f;   /* 카드/서브 섹션 */
-  --color-ft-navy:   #1e1b4b;   /* 브랜드 네이비 (헤더/푸터) */
-  --color-ft-purple: #312e81;   /* 퍼플 (그라디언트 보조) */
-
-  /* === 골드 액센트 === */
-  --color-ft-gold:   #f0c040;   /* 메인 액센트 */
-  --color-ft-gold-h: #e0b030;   /* 골드 hover */
-
-  /* === 텍스트 === */
-  --color-ft-text:        #e8e4ff;  /* 다크 배경 위 본문 */
-  --color-ft-text-muted:  #9b96cc;  /* 다크 배경 위 보조 */
-  --color-ft-text-dim:    #6b6899;  /* 최소 텍스트 */
-
-  /* === 라이트 섹션 === */
-  --color-ft-light:       #f5f4fe;  /* 라이트 배경 */
-  --color-ft-light-text:  #1e1b4b;  /* 라이트 위 텍스트 */
-  --color-ft-light-muted: #4a4a6a;  /* 라이트 위 보조 텍스트 */
-
-  --font-sans: 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  --font-sans:  'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  --font-serif: 'Noto Serif KR', 'Georgia', serif;
 }
 
 @keyframes fade-in {
@@ -49,10 +31,9 @@
   to   { transform: translateX(0); }
 }
 
-/* 다크 테마 기반 */
 body {
-  background-color: #0f0e1a;  /* ft-base */
-  color: #e8e4ff;              /* ft-text */
+  background-color: #fdfcfb;
+  color: #2d2b3d;
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
 }
@@ -76,16 +57,9 @@ body {
 ::-webkit-scrollbar {
   width: 6px;
 }
-::-webkit-scrollbar-track {
-  background: #15131f;
-}
-::-webkit-scrollbar-thumb {
-  background: #312e81;
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #4338ca;
-}
+::-webkit-scrollbar-track { background: #f7f5f2; }
+::-webkit-scrollbar-thumb { background: #c4beff; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #312e81; }
 
 /* 포커스 링 일관성 */
 :focus-visible {
