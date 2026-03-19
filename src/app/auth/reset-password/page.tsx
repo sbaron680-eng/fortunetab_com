@@ -62,15 +62,15 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-gradient-to-br from-indigo-50 to-purple-50 py-12 px-4">
+    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-ft-paper py-12 px-4">
       <div className="w-full max-w-md">
-        <div className="bg-white rounded-3xl shadow-xl p-8">
+        <div className="bg-white border border-ft-border rounded-2xl shadow-sm p-8">
           {/* 헤더 */}
           <div className="text-center mb-8">
-            <Link href="/" className="text-2xl font-black text-[#1e1b4b]">
+            <Link href="/" className="text-2xl font-black font-serif text-ft-ink">
               fortunetab
             </Link>
-            <h1 className="mt-4 text-xl font-bold text-gray-900">새 비밀번호 설정</h1>
+            <h1 className="mt-4 text-xl font-bold font-serif text-ft-ink">새 비밀번호 설정</h1>
             <p className="mt-1 text-sm text-gray-500">새로운 비밀번호를 입력해주세요</p>
           </div>
 
@@ -90,7 +90,7 @@ export default function ResetPasswordPage() {
               </div>
               <button
                 onClick={() => router.push('/auth/login')}
-                className="w-full py-3.5 font-bold text-white bg-[#1e1b4b] rounded-xl hover:bg-indigo-800 transition-colors"
+                className="w-full py-3.5 font-bold text-white bg-ft-ink rounded-xl hover:bg-ft-ink-mid transition-colors"
               >
                 로그인하러 가기
               </button>
@@ -128,8 +128,8 @@ export default function ResetPasswordPage() {
                       if (passwordError) setPasswordError('');
                     }}
                     placeholder="••••••••"
-                    className={`w-full px-4 py-3 text-sm border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all ${
-                      passwordError ? 'border-red-400' : 'border-gray-200'
+                    className={`w-full px-4 py-3 text-sm border rounded-xl focus:outline-none focus:ring-2 focus:ring-ft-ink focus:border-transparent transition-all ${
+                      passwordError ? 'border-red-400' : 'border-ft-border'
                     }`}
                   />
                   {passwordError && (
@@ -151,8 +151,8 @@ export default function ResetPasswordPage() {
                       if (confirmError) setConfirmError('');
                     }}
                     placeholder="••••••••"
-                    className={`w-full px-4 py-3 text-sm border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all ${
-                      confirmError ? 'border-red-400' : 'border-gray-200'
+                    className={`w-full px-4 py-3 text-sm border rounded-xl focus:outline-none focus:ring-2 focus:ring-ft-ink focus:border-transparent transition-all ${
+                      confirmError ? 'border-red-400' : 'border-ft-border'
                     }`}
                   />
                   {confirmError && (
@@ -163,7 +163,7 @@ export default function ResetPasswordPage() {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full py-3.5 font-bold text-white bg-[#1e1b4b] rounded-xl hover:bg-indigo-800 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="w-full py-3.5 font-bold text-white bg-ft-ink rounded-xl hover:bg-ft-ink-mid transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {isLoading && (
                     <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
@@ -176,7 +176,7 @@ export default function ResetPasswordPage() {
               </form>
 
               <p className="mt-6 text-center text-sm text-gray-500">
-                <Link href="/auth/login" className="font-semibold text-indigo-600 hover:text-indigo-800 transition-colors">
+                <Link href="/auth/login" className="font-semibold text-ft-ink-mid hover:text-ft-ink transition-colors">
                   로그인 페이지로 돌아가기
                 </Link>
               </p>

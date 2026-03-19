@@ -54,16 +54,16 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-gradient-to-br from-indigo-50 to-purple-50 py-12 px-4">
+    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-ft-paper py-12 px-4">
       <div className="w-full max-w-md">
         {/* 카드 */}
-        <div className="bg-white rounded-3xl shadow-xl p-8">
+        <div className="bg-white border border-ft-border rounded-2xl shadow-sm p-8">
           {/* 헤더 */}
           <div className="text-center mb-8">
-            <Link href="/" className="text-2xl font-black text-ft-navy">
+            <Link href="/" className="text-2xl font-black font-serif text-ft-ink">
               fortunetab
             </Link>
-            <h1 className="mt-4 text-xl font-bold text-gray-900">로그인</h1>
+            <h1 className="mt-4 text-xl font-bold font-serif text-ft-ink">로그인</h1>
             <p className="mt-1 text-sm text-gray-500">계정에 로그인하세요</p>
           </div>
 
@@ -91,7 +91,7 @@ export default function LoginPage() {
                 className={`w-full px-4 py-3 text-sm border rounded-xl focus:outline-none focus:ring-2 transition-all ${
                   errors.email
                     ? 'border-red-400 focus:ring-red-400'
-                    : 'border-gray-200 focus:ring-indigo-500 focus:border-transparent'
+                    : 'border-ft-border focus:ring-ft-ink focus:border-transparent'
                 }`}
               />
               {errors.email && (
@@ -116,7 +116,7 @@ export default function LoginPage() {
                 className={`w-full px-4 py-3 text-sm border rounded-xl focus:outline-none focus:ring-2 transition-all ${
                   errors.password
                     ? 'border-red-400 focus:ring-red-400'
-                    : 'border-gray-200 focus:ring-indigo-500 focus:border-transparent'
+                    : 'border-ft-border focus:ring-ft-ink focus:border-transparent'
                 }`}
               />
               {errors.password && (
@@ -131,7 +131,7 @@ export default function LoginPage() {
                 <input type="checkbox" className="rounded border-gray-300 text-indigo-600" />
                 <span className="text-gray-600">로그인 상태 유지</span>
               </label>
-              <Link href="/auth/forgot-password" className="text-indigo-600 hover:text-indigo-800 transition-colors">
+              <Link href="/auth/forgot-password" className="text-ft-ink-mid hover:text-ft-ink transition-colors">
                 비밀번호 찾기
               </Link>
             </div>
@@ -139,7 +139,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3.5 font-bold text-white bg-ft-navy rounded-xl hover:bg-indigo-800 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full py-3.5 font-bold text-white bg-ft-ink rounded-xl hover:bg-ft-ink-mid transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {isLoading && (
                 <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
@@ -161,7 +161,7 @@ export default function LoginPage() {
           {/* 회원가입 링크 */}
           <p className="text-center text-sm text-gray-500">
             아직 계정이 없으신가요?{' '}
-            <Link href="/auth/register" className="font-semibold text-indigo-600 hover:text-indigo-800 transition-colors">
+            <Link href="/auth/register" className="font-semibold text-ft-ink-mid hover:text-ft-ink transition-colors">
               회원가입
             </Link>
           </p>

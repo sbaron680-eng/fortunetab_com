@@ -151,8 +151,8 @@ export default function CheckoutPage() {
   // ── 로딩 중 ────────────────────────────────────────────
   if (!mounted) {
     return (
-      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center">
-        <div className="animate-pulse text-gray-400">로딩 중...</div>
+      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-ft-paper">
+        <div className="animate-pulse text-ft-muted">로딩 중...</div>
       </div>
     );
   }
@@ -163,7 +163,7 @@ export default function CheckoutPage() {
       <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center py-20 px-4 text-center">
         <div className="text-7xl mb-6">🛒</div>
         <h1 className="text-2xl font-bold text-gray-800 mb-2">장바구니가 비어 있습니다</h1>
-        <Link href="/products" className="mt-4 px-8 py-4 font-bold text-white bg-ft-navy rounded-2xl hover:bg-indigo-800 transition-colors">
+        <Link href="/products" className="mt-4 px-8 py-4 font-bold text-white bg-ft-ink rounded-2xl hover:bg-ft-ink-mid transition-colors">
           상품 보러 가기 →
         </Link>
       </div>
@@ -173,14 +173,14 @@ export default function CheckoutPage() {
   // ── 주문 완료 ──────────────────────────────────────────
   if (step === 'complete') {
     return (
-      <div className="min-h-[calc(100vh-4rem)] bg-gray-50 flex items-center justify-center py-20 px-4">
-        <div className="bg-white rounded-3xl shadow-xl p-10 max-w-md w-full text-center">
+      <div className="min-h-[calc(100vh-4rem)] bg-ft-paper flex items-center justify-center py-20 px-4">
+        <div className="bg-white border border-ft-border rounded-2xl shadow-sm p-10 max-w-md w-full text-center">
           <div className="w-20 h-20 mx-auto mb-6 flex items-center justify-center bg-emerald-100 rounded-full">
             <svg className="w-10 h-10 text-emerald-500" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
             </svg>
           </div>
-          <h1 className="text-2xl font-black text-ft-navy mb-2">
+          <h1 className="text-2xl font-black font-serif text-ft-ink mb-2">
             {hasPaidItem ? '결제가 완료되었습니다!' : '신청이 완료되었습니다!'}
           </h1>
           <p className="text-gray-500 text-sm mb-2">주문번호: <span className="font-medium text-gray-700">{orderNumber}</span></p>
@@ -250,11 +250,11 @@ export default function CheckoutPage() {
   ];
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-gray-50 py-10 px-4">
+    <div className="min-h-[calc(100vh-4rem)] bg-ft-paper py-10 px-4">
       <div className="max-w-5xl mx-auto">
         {/* 페이지 헤더 */}
         <div className="mb-8">
-          <h1 className="text-2xl sm:text-3xl font-black text-ft-navy">결제</h1>
+          <h1 className="text-2xl sm:text-3xl font-black font-serif text-ft-ink">결제</h1>
 
           {/* 스텝 인디케이터 */}
           <div className="flex items-center gap-2 mt-4">
@@ -262,17 +262,17 @@ export default function CheckoutPage() {
               <div key={s.id} className="flex items-center gap-2">
                 <div className={`flex items-center gap-2 text-sm font-medium ${
                   step === s.id
-                    ? 'text-ft-navy'
+                    ? 'text-ft-ink'
                     : step === 'payment' && s.id === 'info'
                     ? 'text-emerald-600'
-                    : 'text-gray-400'
+                    : 'text-ft-muted'
                 }`}>
                   <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
                     step === s.id
-                      ? 'bg-ft-navy text-white'
+                      ? 'bg-ft-ink text-white'
                       : step === 'payment' && s.id === 'info'
                       ? 'bg-emerald-500 text-white'
-                      : 'bg-gray-200 text-gray-500'
+                      : 'border border-ft-border text-ft-muted'
                   }`}>
                     {step === 'payment' && s.id === 'info' ? '✓' : idx + 1}
                   </span>
@@ -294,8 +294,8 @@ export default function CheckoutPage() {
             {step === 'info' && (
               <form onSubmit={handleInfoSubmit} noValidate className="space-y-4">
                 {/* 기본 정보 */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:p-6">
-                  <h2 className="font-bold text-gray-900 mb-4">📋 주문자 정보</h2>
+                <div className="bg-white rounded-2xl shadow-sm border border-ft-border p-5 sm:p-6">
+                  <h2 className="font-bold font-serif text-ft-ink mb-4">📋 주문자 정보</h2>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -317,7 +317,7 @@ export default function CheckoutPage() {
                         className={`w-full px-4 py-3 text-sm border rounded-xl focus:outline-none focus:ring-2 transition-all ${
                           infoErrors.name
                             ? 'border-red-400 focus:ring-red-400'
-                            : 'border-gray-200 focus:ring-indigo-500 focus:border-transparent'
+                            : 'border-ft-border focus:ring-ft-ink focus:border-transparent'
                         }`}
                       />
                       {infoErrors.name && (
@@ -346,7 +346,7 @@ export default function CheckoutPage() {
                         className={`w-full px-4 py-3 text-sm border rounded-xl focus:outline-none focus:ring-2 transition-all ${
                           infoErrors.phone
                             ? 'border-red-400 focus:ring-red-400'
-                            : 'border-gray-200 focus:ring-indigo-500 focus:border-transparent'
+                            : 'border-ft-border focus:ring-ft-ink focus:border-transparent'
                         }`}
                       />
                       {infoErrors.phone && (
@@ -377,7 +377,7 @@ export default function CheckoutPage() {
                         className={`w-full px-4 py-3 text-sm border rounded-xl focus:outline-none focus:ring-2 transition-all ${
                           infoErrors.email
                             ? 'border-red-400 focus:ring-red-400'
-                            : 'border-gray-200 focus:ring-indigo-500 focus:border-transparent'
+                            : 'border-ft-border focus:ring-ft-ink focus:border-transparent'
                         }`}
                       />
                       {infoErrors.email ? (
@@ -393,10 +393,10 @@ export default function CheckoutPage() {
 
                 {/* 사주 정보 (사주 플래너 구매 시) */}
                 {hasSajuProduct && (
-                  <div className="bg-white rounded-2xl shadow-sm border border-indigo-100 p-5 sm:p-6">
+                  <div className="bg-white rounded-2xl shadow-sm border border-ft-border p-5 sm:p-6">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-lg">🔮</span>
-                      <h2 className="font-bold text-gray-900">사주 정보</h2>
+                      <h2 className="font-bold font-serif text-ft-ink">사주 정보</h2>
                     </div>
                     <p className="text-xs text-indigo-500 mb-4 ml-7">맞춤 플래너 제작에 필요합니다.</p>
 
@@ -411,7 +411,7 @@ export default function CheckoutPage() {
                           required={hasSajuProduct}
                           value={form.birthDate}
                           onChange={handleFormChange}
-                          className="w-full px-4 py-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                          className="w-full px-4 py-3 text-sm border border-ft-border rounded-xl focus:outline-none focus:ring-2 focus:ring-ft-ink focus:border-transparent transition-all"
                         />
                       </div>
                       <div>
@@ -422,7 +422,7 @@ export default function CheckoutPage() {
                           name="birthGender"
                           value={form.birthGender}
                           onChange={handleFormChange}
-                          className="w-full px-4 py-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all bg-white"
+                          className="w-full px-4 py-3 text-sm border border-ft-border rounded-xl focus:outline-none focus:ring-2 focus:ring-ft-ink focus:border-transparent transition-all bg-ft-paper-alt"
                         >
                           <option value="양력">남성</option>
                           <option value="음력">여성</option>
@@ -436,7 +436,7 @@ export default function CheckoutPage() {
                           name="birthTime"
                           value={form.birthTime}
                           onChange={handleFormChange}
-                          className="w-full px-4 py-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all bg-white"
+                          className="w-full px-4 py-3 text-sm border border-ft-border rounded-xl focus:outline-none focus:ring-2 focus:ring-ft-ink focus:border-transparent transition-all bg-ft-paper-alt"
                         >
                           {BIRTH_TIMES.map(({ value, label }) => (
                             <option key={value} value={value}>{label}</option>
@@ -453,7 +453,7 @@ export default function CheckoutPage() {
                           onChange={handleFormChange}
                           rows={3}
                           placeholder="예: 음력 생년월일로 분석 원함 / 특정 색상 테마 선호 등"
-                          className="w-full px-4 py-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all resize-none"
+                          className="w-full px-4 py-3 text-sm border border-ft-border bg-ft-paper-alt rounded-xl focus:outline-none focus:ring-2 focus:ring-ft-ink focus:border-transparent transition-all resize-none"
                         />
                       </div>
                     </div>
@@ -462,7 +462,7 @@ export default function CheckoutPage() {
 
                 <button
                   type="submit"
-                  className="w-full py-4 font-bold text-white bg-ft-navy rounded-2xl hover:bg-indigo-800 transition-colors shadow-lg mt-2"
+                  className="w-full py-4 font-bold text-white bg-ft-ink rounded-2xl hover:bg-ft-ink-mid transition-colors shadow-lg mt-2"
                 >
                   다음 단계: 결제 →
                 </button>
@@ -473,12 +473,12 @@ export default function CheckoutPage() {
             {step === 'payment' && (
               <div className="space-y-4">
                 {/* 주문자 정보 요약 */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                <div className="bg-white rounded-2xl shadow-sm border border-ft-border p-5">
                   <div className="flex items-center justify-between mb-3">
-                    <h2 className="font-bold text-gray-900 text-sm">주문자 정보</h2>
+                    <h2 className="font-bold font-serif text-ft-ink text-sm">주문자 정보</h2>
                     <button
                       onClick={() => setStep('info')}
-                      className="text-xs text-indigo-600 hover:text-indigo-800 font-medium"
+                      className="text-xs text-ft-ink-mid hover:text-ft-ink font-medium"
                     >
                       수정
                     </button>
@@ -496,8 +496,8 @@ export default function CheckoutPage() {
                 </div>
 
                 {/* 결제 방법 */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:p-6">
-                  <h2 className="font-bold text-gray-900 mb-4">💳 결제 수단</h2>
+                <div className="bg-white rounded-2xl shadow-sm border border-ft-border p-5 sm:p-6">
+                  <h2 className="font-bold font-serif text-ft-ink mb-4">💳 결제 수단</h2>
 
                   {hasPaidItem ? (
                     <div className="space-y-3">
@@ -538,7 +538,7 @@ export default function CheckoutPage() {
                 </div>
 
                 {/* 약관 동의 */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                <div className="bg-white rounded-2xl shadow-sm border border-ft-border p-5">
                   <label className="flex items-start gap-3 cursor-pointer">
                     <input
                       type="checkbox"
@@ -547,14 +547,14 @@ export default function CheckoutPage() {
                         setAgreeTerms(e.target.checked);
                         if (e.target.checked) setAgreeError('');
                       }}
-                      className="mt-0.5 w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 flex-shrink-0"
+                      className="mt-0.5 w-4 h-4 rounded border-ft-border text-ft-ink focus:ring-ft-ink flex-shrink-0"
                     />
                     <span className="text-sm text-gray-600 leading-relaxed">
-                      <Link href="/terms" target="_blank" className="font-medium text-gray-900 underline hover:text-indigo-700 transition-colors">
+                      <Link href="/terms" target="_blank" className="font-medium text-gray-900 underline hover:text-ft-ink transition-colors">
                         이용약관
                       </Link>{' '}
                       및{' '}
-                      <Link href="/privacy" target="_blank" className="font-medium text-gray-900 underline hover:text-indigo-700 transition-colors">
+                      <Link href="/privacy" target="_blank" className="font-medium text-gray-900 underline hover:text-ft-ink transition-colors">
                         개인정보 처리방침
                       </Link>
                       에 동의합니다.
@@ -595,8 +595,8 @@ export default function CheckoutPage() {
 
           {/* ── 주문 요약 사이드바 ────────────────────────── */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sticky top-24">
-              <h2 className="font-bold text-gray-900 mb-4">주문 상품</h2>
+            <div className="bg-white rounded-2xl shadow-sm border border-ft-border p-5 sticky top-24">
+              <h2 className="font-bold font-serif text-ft-ink mb-4">주문 상품</h2>
 
               <div className="space-y-3">
                 {items.map(({ product, qty }) => (
@@ -638,7 +638,7 @@ export default function CheckoutPage() {
 
               <div className="flex justify-between items-baseline">
                 <span className="font-bold text-gray-900">총 결제금액</span>
-                <span className="text-xl font-black text-ft-navy">{formatPrice(total)}</span>
+                <span className="text-xl font-black text-ft-ink">{formatPrice(total)}</span>
               </div>
 
               {/* 발송 안내 */}
