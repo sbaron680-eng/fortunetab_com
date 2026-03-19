@@ -278,7 +278,7 @@ export default function HomePage() {
       </section>
 
       {/* ── CTA ───────────────────────────────────────────── */}
-      <section className="py-16 px-4 bg-ft-ink text-white text-center relative overflow-hidden">
+      <section className="py-20 px-4 bg-ft-purple text-white text-center relative overflow-hidden">
         <span aria-hidden="true" className="absolute top-8 left-12 text-white/10 text-3xl select-none">✦</span>
         <span aria-hidden="true" className="absolute bottom-8 right-16 text-white/10 text-4xl select-none">✧</span>
         <div className="max-w-2xl mx-auto relative">

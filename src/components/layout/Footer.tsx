@@ -4,7 +4,7 @@ export default function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-ft-ink text-white/50 mt-auto">
+    <footer className="bg-ft-ink text-white/50 mt-auto border-t-2 border-ft-gold/30">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
 
         {/* ── 단일 그리드: 브랜드(2col) + 쇼핑 + 안내 ── */}
