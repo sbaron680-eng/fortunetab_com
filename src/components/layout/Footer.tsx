@@ -4,24 +4,29 @@ export default function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-ft-navy text-indigo-300 mt-auto">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+    <footer className="bg-ft-ink text-white/60 mt-auto">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-14 pb-10">
+
+        {/* ── 상단 그리드 ─────────────────────────────────── */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
+
           {/* 브랜드 */}
           <div className="lg:col-span-2">
-            <Link href="/" className="text-xl font-bold text-ft-gold">
-              FortuneTab
+            <Link href="/" className="inline-flex items-center gap-2 group">
+              <span className="text-xl font-serif font-bold text-ft-gold group-hover:opacity-80 transition-opacity">
+                FortuneTab
+              </span>
             </Link>
-            <p className="mt-3 text-sm leading-relaxed text-indigo-300 max-w-xs">
+            <p className="mt-3 text-sm leading-relaxed max-w-xs">
               사주·운세의 흐름으로 설계하는 나만의 플래너.<br />
               2026년을 전략적으로 살아가는 첫걸음.
             </p>
-            <div className="mt-4 flex items-center gap-4">
+            <div className="mt-5 flex items-center gap-4">
               <a
                 href="https://www.instagram.com/fortunetab"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-indigo-400 hover:text-ft-gold transition-colors"
+                className="text-white/40 hover:text-ft-gold transition-colors"
                 aria-label="Instagram"
               >
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -33,8 +38,10 @@ export default function Footer() {
 
           {/* 쇼핑 */}
           <div>
-            <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">쇼핑</h3>
-            <ul className="space-y-2 text-sm">
+            <h3 className="text-xs font-semibold text-white uppercase tracking-widest mb-5">
+              ✦ 쇼핑
+            </h3>
+            <ul className="space-y-3 text-sm">
               <li><Link href="/products" className="hover:text-white transition-colors">전체 상품</Link></li>
               <li><Link href="/products/common-planner" className="hover:text-white transition-colors">무료 공통 플래너</Link></li>
               <li><Link href="/products/saju-planner-basic" className="hover:text-white transition-colors">사주 플래너 기본</Link></li>
@@ -43,10 +50,12 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* 정보 */}
+          {/* 안내 */}
           <div>
-            <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">안내</h3>
-            <ul className="space-y-2 text-sm">
+            <h3 className="text-xs font-semibold text-white uppercase tracking-widest mb-5">
+              ✦ 안내
+            </h3>
+            <ul className="space-y-3 text-sm">
               <li><Link href="/#how-it-works" className="hover:text-white transition-colors">이용안내</Link></li>
               <li><Link href="/#faq" className="hover:text-white transition-colors">자주 묻는 질문</Link></li>
               <li><Link href="/auth/login" className="hover:text-white transition-colors">로그인</Link></li>
@@ -55,15 +64,44 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* 사업자 정보 */}
-        <div className="mt-8 pt-8 border-t border-indigo-700 text-xs text-indigo-400 space-y-1">
-          <p>상호: 비포에이 | 서비스명: FortuneTab | 사업자등록번호: 238-18-00745</p>
-          <p>통신판매업신고: 제 2019-울산울주-0053호</p>
-          <p>고객센터: sbaron680@gmail.com | 운영시간: 평일 10:00 - 18:00</p>
-          <p className="pt-2 text-indigo-500">
-            © {currentYear} FortuneTab. All rights reserved.
+        {/* ── 사업자 정보 ──────────────────────────────────── */}
+        <div className="mt-10 pt-8 border-t border-white/10">
+          <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-2 text-xs text-white/40">
+            <div className="flex gap-2">
+              <dt className="text-white/25 shrink-0">상호</dt>
+              <dd>비포에이</dd>
+            </div>
+            <div className="flex gap-2">
+              <dt className="text-white/25 shrink-0">서비스명</dt>
+              <dd>FortuneTab</dd>
+            </div>
+            <div className="flex gap-2">
+              <dt className="text-white/25 shrink-0">사업자등록번호</dt>
+              <dd>238-18-00745</dd>
+            </div>
+            <div className="flex gap-2">
+              <dt className="text-white/25 shrink-0">통신판매업신고</dt>
+              <dd>제 2019-울산울주-0053호</dd>
+            </div>
+            <div className="flex gap-2">
+              <dt className="text-white/25 shrink-0">고객센터</dt>
+              <dd>
+                <a href="mailto:sbaron680@gmail.com" className="hover:text-white/70 transition-colors">
+                  sbaron680@gmail.com
+                </a>
+              </dd>
+            </div>
+            <div className="flex gap-2">
+              <dt className="text-white/25 shrink-0">운영시간</dt>
+              <dd>평일 10:00 – 18:00</dd>
+            </div>
+          </dl>
+
+          <p className="mt-6 text-xs text-white/25">
+            © {currentYear} FortuneTab · 비포에이. All rights reserved.
           </p>
         </div>
+
       </div>
     </footer>
   );
