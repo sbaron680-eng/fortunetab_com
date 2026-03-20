@@ -22,3 +22,6 @@ pdf_server/*.pyc
 # 중간 생성물 PNG (용량 큰 파일, 재생성 가능)
 pdf-planner/*.png
 .mcp.json
+
+# Claude Preview MCP 로그/스크린샷
+.playwright-mcp/
