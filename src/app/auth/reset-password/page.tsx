@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, FormEvent } from 'react';
+import { useState, useEffect, FormEvent, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function ResetPasswordPage() {
+function ResetPasswordForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const [ready, setReady] = useState(false);       // code 교환 완료 여부
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [passwordError, setPasswordError] = useState('');
@@ -13,6 +15,24 @@ export default function ResetPasswordPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [serverError, setServerError] = useState('');
   const [done, setDone] = useState(false);
+
+  // URL에 code 파라미터가 있으면 먼저 세션 교환 (Dashboard 발송 이메일 대응)
+  useEffect(() => {
+    const code = searchParams.get('code');
+    if (!code) {
+      setReady(true); // /auth/callback 경유 시 이미 세션 수립됨
+      return;
+    }
+    (async () => {
+      const { supabase } = await import('@/lib/supabase');
+      const { error } = await supabase.auth.exchangeCodeForSession(code);
+      if (error) {
+        setServerError('링크가 만료되었거나 유효하지 않습니다. 다시 요청해 주세요.');
+      }
+      setReady(true);
+    })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const validate = (): boolean => {
     let valid = true;
@@ -60,6 +80,17 @@ export default function ResetPasswordPage() {
       setIsLoading(false);
     }
   };
+
+  if (!ready) {
+    return (
+      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-ft-paper">
+        <svg className="animate-spin w-7 h-7 text-ft-ink" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+        </svg>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-ft-paper py-12 px-4">
@@ -185,5 +216,20 @@ export default function ResetPasswordPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-ft-paper">
+        <svg className="animate-spin w-7 h-7 text-ft-muted" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+        </svg>
+      </div>
+    }>
+      <ResetPasswordForm />
+    </Suspense>
   );
 }
