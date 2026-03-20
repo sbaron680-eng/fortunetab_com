@@ -9,7 +9,7 @@
  *   - 연간 인덱스 → 월간 / 월간 → 주간 내부 하이퍼링크
  */
 
-import { getHoliday } from './korean-holidays';
+import { getHoliday, getSolarTerm } from './korean-holidays';
 import { getTheme, ColorTheme, DEFAULT_THEME } from './pdf-themes';
 
 export type Orientation = 'portrait' | 'landscape';
@@ -235,9 +235,13 @@ function drawNavBar(
   ctx.fillStyle = grad;
   ctx.fillRect(0, barY, W, NAV_H);
 
-  ctx.strokeStyle = 'rgba(200,160,180,0.4)';
+  // NavBar 상단 골드 구분선 (Task 4-1)
+  ctx.beginPath();
+  ctx.moveTo(0, barY);
+  ctx.lineTo(W, barY);
+  ctx.strokeStyle = 'rgba(240,192,64,0.25)';
   ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(0, barY); ctx.lineTo(W, barY); ctx.stroke();
+  ctx.stroke();
 
   const tabW     = W / NAV_SECTIONS.length;
   const fontSize = NAV_H * 0.42;
@@ -249,14 +253,19 @@ function drawNavBar(
     const isAvail  = availablePages.includes(type);
 
     if (isActive) {
-      ctx.fillStyle = 'rgba(255,245,248,0.2)';
+      // 현재 탭 강조: 배경 T.navA + 골드 테두리 (Task 4-2)
+      ctx.fillStyle = T.navA;
       roundRect(ctx, i*tabW+3, barY+3, tabW-6, NAV_H-6, 4);
       ctx.fill();
+      ctx.strokeStyle = 'rgba(240,192,64,0.55)';
+      ctx.lineWidth = 1;
+      roundRect(ctx, i*tabW+3, barY+3, tabW-6, NAV_H-6, 4);
+      ctx.stroke();
     }
 
     ctx.font = F(fontSize, isActive);
     ctx.fillStyle = isActive
-      ? '#fff5f8'
+      ? C.gold
       : isAvail
         ? 'rgba(255,215,230,0.85)'
         : 'rgba(200,155,175,0.45)';
@@ -279,11 +288,22 @@ function drawCover(
   const CH    = H - NAV_H;
   const isL   = opts.orientation === 'landscape';
 
-  const grad = ctx.createLinearGradient(0, 0, isL ? W : 0, isL ? 0 : CH);
-  grad.addColorStop(0, T.coverDeep);
-  grad.addColorStop(0.55, T.coverMid);
-  grad.addColorStop(1, T.coverLight);
-  ctx.fillStyle = grad; ctx.fillRect(0, 0, W, CH);
+  if (!isL) {
+    // 세로형: 방사형 그라디언트
+    const radGrad = ctx.createRadialGradient(W/2, CH*0.28, 0, W/2, CH*0.28, CH*0.85);
+    radGrad.addColorStop(0, T.coverMid);
+    radGrad.addColorStop(0.45, T.coverDeep);
+    radGrad.addColorStop(1, '#060510');
+    ctx.fillStyle = radGrad;
+    ctx.fillRect(0, 0, W, CH);
+  } else {
+    // 가로형: 기존 선형 그라디언트
+    const grad = ctx.createLinearGradient(0, 0, W, 0);
+    grad.addColorStop(0, T.coverDeep);
+    grad.addColorStop(0.55, T.coverMid);
+    grad.addColorStop(1, T.coverLight);
+    ctx.fillStyle = grad; ctx.fillRect(0, 0, W, CH);
+  }
   drawStars(ctx, W, CH);
 
   if (!isL) {
@@ -292,13 +312,45 @@ function drawCover(
     const bgMid = lerpColor(hexToRgb(T.coverDeep), hexToRgb(T.coverMid), MY / CH);
     drawMoon(ctx, MX, MY, W * 0.085, bgMid);
 
+    // 달 주위 골드 원형 프레임 (Task 2-2)
+    const fcx = W/2, fcy = CH * 0.19;
+    const fr1 = W * 0.16, fr2 = W * 0.175;
+    ctx.beginPath(); ctx.arc(fcx, fcy, fr2, 0, Math.PI*2);
+    ctx.strokeStyle = 'rgba(240,192,64,0.18)'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.beginPath(); ctx.arc(fcx, fcy, fr1, 0, Math.PI*2);
+    ctx.strokeStyle = 'rgba(240,192,64,0.10)'; ctx.lineWidth = 1; ctx.stroke();
+
+    // 별자리 장식 (Task 2-3)
+    const constLeft: [number, number][] = [
+      [W*0.06, CH*0.09], [W*0.12, CH*0.06], [W*0.09, CH*0.14],
+      [W*0.16, CH*0.11], [W*0.14, CH*0.18],
+    ];
+    const constRight: [number, number][] = [
+      [W*0.84, CH*0.07], [W*0.90, CH*0.05], [W*0.88, CH*0.13],
+      [W*0.94, CH*0.10], [W*0.92, CH*0.17],
+    ];
+    ctx.strokeStyle = 'rgba(240,192,64,0.15)'; ctx.lineWidth = 0.8;
+    for (const pts of [constLeft, constRight]) {
+      ctx.beginPath();
+      pts.forEach(([x, y], i) => i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y));
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(240,192,64,0.6)';
+      pts.forEach(([x, y]) => {
+        ctx.beginPath(); ctx.arc(x, y, 2.5, 0, Math.PI*2); ctx.fill();
+      });
+    }
+
     ctx.font = F(26, false, false); ctx.fillStyle = C.goldFaint;
     centeredText(ctx, 'fortunetab', CH * 0.33, W);
 
     drawRule(ctx, CH * 0.355, W, 150, C.goldDim, false);
 
-    ctx.font = F(W * 0.155, true, true); ctx.fillStyle = C.gold;
+    // 연도 텍스트 letterSpacing 적용 (Task 2-4)
+    const ctxAny = ctx as CanvasRenderingContext2D & { letterSpacing?: string };
+    if (ctxAny.letterSpacing !== undefined) ctxAny.letterSpacing = '0.06em';
+    ctx.font = F(W * 0.148, true, true); ctx.fillStyle = C.gold;
     centeredText(ctx, String(opts.year), CH * 0.535, W);
+    if (ctxAny.letterSpacing !== undefined) ctxAny.letterSpacing = '0em';
 
     drawRule(ctx, CH * 0.563, W, 150, C.goldDim, true);
 
@@ -346,7 +398,7 @@ function drawCover(
     const tagY = opts.saju ? CH * 0.955 : CH * 0.930;
     drawRule(ctx, tagY - CH*0.016, W, 200, C.goldDim, false);
     ctx.font = F(15, false, false); ctx.fillStyle = C.goldDim;
-    centeredText(ctx, `FORTUNE  ·  TAB  ·  ${opts.year}`, tagY, W);
+    centeredText(ctx, `✦  FORTUNE TAB  ✦  ${opts.year}  ✦`, tagY, W);
 
   } else {
     const MX = W * 0.26, MY = CH * 0.5;
@@ -618,6 +670,15 @@ function drawMonthly(
           const hname = hol.name.length > 6 ? hol.name.slice(0, 5) + '…' : hol.name;
           ctx.fillText(hname, cx2 + 3, cy2 + NF*1.35 + HF*1.3);
         }
+
+        // 절기 표시 (Task 3-2) — 셀 우상단 소형 텍스트
+        const term = getSolarTerm(opts.year, monthIdx, dayNum);
+        if (term) {
+          ctx.font = F(9, false, false);
+          ctx.fillStyle = 'rgba(100,180,100,0.85)';
+          const termW = ctx.measureText(term.name).width;
+          ctx.fillText(term.name, cx2 + CELL_W - termW - 3, cy2 + 10);
+        }
       } else {
         ctx.fillStyle = cellBg;
         ctx.fillRect(cx2, cy2, CELL_W-1, CELL_H-1);
@@ -682,8 +743,8 @@ function drawWeekly(
   const COL_W     = (W - PAD*2) / COLS;
   const CONTENT_H = CH - CONTENT_Y - PAD;
   const DAY_H     = isL ? CONTENT_H*0.14 : CONTENT_H*0.12;
-  const FONT_DY   = DAY_H * 0.30;
-  const FONT_DT   = DAY_H * 0.28; // 날짜 숫자 폰트
+  const FONT_DY   = DAY_H * 0.36; // 요일명: 크게 (Task 4-3)
+  const FONT_DT   = DAY_H * 0.26; // 날짜 숫자: 작게 (Task 4-3)
 
   for (let d = 0; d < 7; d++) {
     const wdate  = weekDates[d]; // d=0 → Mon, d=5 → Sat, d=6 → Sun
@@ -699,22 +760,36 @@ function drawWeekly(
 
     const fgColor = isRed ? C.holidayText : isMem ? C.memorialText
       : isSat ? T.saturdayText : T.wkDayAccent;
+    const dateFgColor = isRed ? C.holidayText : isMem ? C.memorialText
+      : isSat ? T.saturdayText : C.textMid;
 
     ctx.fillStyle = bgColor;
     ctx.fillRect(PAD + d*COL_W, CONTENT_Y, COL_W-1, DAY_H);
 
     const dayStr  = isL ? DAYS_WEEK_FULL[d] : DAYS_WEEK_SHORT[d];
-    const dateStr = `${wdate.getMonth()+1}/${wdate.getDate()}`;
+    // 날짜: 일(day)만 크게, 월은 위에 작게 (Task 4-3)
+    const dayOfMonth = String(wdate.getDate());
+    const monthStr   = `${wdate.getMonth()+1}월`;
 
-    // 요일명
+    // 요일명 (크게, 굵게) — 상단 절반
     ctx.font = F(FONT_DY, true, false); ctx.fillStyle = fgColor;
     const dyw = ctx.measureText(dayStr).width;
-    ctx.fillText(dayStr, PAD + d*COL_W + (COL_W-dyw)/2, CONTENT_Y + DAY_H*0.42);
+    ctx.fillText(dayStr, PAD + d*COL_W + (COL_W-dyw)/2, CONTENT_Y + DAY_H*0.44);
 
-    // 날짜 (MM/DD)
-    ctx.font = F(FONT_DT, false, false); ctx.fillStyle = fgColor;
-    const dtw = ctx.measureText(dateStr).width;
-    ctx.fillText(dateStr, PAD + d*COL_W + (COL_W-dtw)/2, CONTENT_Y + DAY_H*0.78);
+    // 날짜 (작게) — 하단 절반: "M월 D" 형식
+    const dateDisplayStr = isL
+      ? `${wdate.getMonth()+1}/${wdate.getDate()}`
+      : dayOfMonth;
+    ctx.font = F(FONT_DT, false, false); ctx.fillStyle = dateFgColor;
+    const dtw = ctx.measureText(dateDisplayStr).width;
+    ctx.fillText(dateDisplayStr, PAD + d*COL_W + (COL_W-dtw)/2, CONTENT_Y + DAY_H*0.82);
+
+    // 세로형에서 월 표시 (작은 텍스트로 날짜 위에)
+    if (!isL) {
+      ctx.font = F(FONT_DT * 0.85, false, false); ctx.fillStyle = dateFgColor;
+      const mw2 = ctx.measureText(monthStr).width;
+      ctx.fillText(monthStr, PAD + d*COL_W + (COL_W-mw2)/2, CONTENT_Y + DAY_H*0.72);
+    }
 
     // 공휴일명 (landscape에서만 표시)
     if (isL && hol) {

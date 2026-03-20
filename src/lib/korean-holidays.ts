@@ -93,3 +93,49 @@ export function getHoliday(year: number, month: number, day: number): HolidayInf
   if (MEMORIALS[memKey]) return { name: MEMORIALS[memKey], type: 'memorial' };
   return null;
 }
+
+// ── 절기 데이터 ────────────────────────────────────────────────────────────
+
+export interface SolarTerm { name: string; symbol: string; }
+
+export const SOLAR_TERMS_2025: Record<string, SolarTerm> = {
+  '2025-02-03': { name: '입춘', symbol: '🌱' },
+  '2025-03-20': { name: '춘분', symbol: '🌸' },
+  '2025-05-05': { name: '입하', symbol: '☀️' },
+  '2025-06-21': { name: '하지', symbol: '🌞' },
+  '2025-08-07': { name: '입추', symbol: '🍂' },
+  '2025-09-23': { name: '추분', symbol: '🍁' },
+  '2025-11-07': { name: '입동', symbol: '❄️' },
+  '2025-12-22': { name: '동지', symbol: '⛄' },
+};
+export const SOLAR_TERMS_2026: Record<string, SolarTerm> = {
+  '2026-02-04': { name: '입춘', symbol: '🌱' },
+  '2026-03-20': { name: '춘분', symbol: '🌸' },
+  '2026-05-05': { name: '입하', symbol: '☀️' },
+  '2026-06-21': { name: '하지', symbol: '🌞' },
+  '2026-08-07': { name: '입추', symbol: '🍂' },
+  '2026-09-23': { name: '추분', symbol: '🍁' },
+  '2026-11-07': { name: '입동', symbol: '❄️' },
+  '2026-12-22': { name: '동지', symbol: '⛄' },
+};
+export const SOLAR_TERMS_2027: Record<string, SolarTerm> = {
+  '2027-02-03': { name: '입춘', symbol: '🌱' },
+  '2027-03-20': { name: '춘분', symbol: '🌸' },
+  '2027-05-05': { name: '입하', symbol: '☀️' },
+  '2027-06-21': { name: '하지', symbol: '🌞' },
+  '2027-08-07': { name: '입추', symbol: '🍂' },
+  '2027-09-23': { name: '추분', symbol: '🍁' },
+  '2027-11-07': { name: '입동', symbol: '❄️' },
+  '2027-12-22': { name: '동지', symbol: '⛄' },
+};
+
+const ALL_SOLAR_TERMS: Record<string, SolarTerm> = {
+  ...SOLAR_TERMS_2025,
+  ...SOLAR_TERMS_2026,
+  ...SOLAR_TERMS_2027,
+};
+
+export function getSolarTerm(year: number, month: number, day: number): SolarTerm | null {
+  const key = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  return ALL_SOLAR_TERMS[key] ?? null;
+}
