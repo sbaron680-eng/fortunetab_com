@@ -47,7 +47,7 @@ const notoSans = Noto_Sans_KR({
 
 const notoSerif = Noto_Serif_KR({
   subsets: ['latin'],
-  weight: ['400', '600', '700'],
+  weight: ['400', '600', '700', '900'],
   variable: '--font-noto-serif',
   display: 'swap',
 });

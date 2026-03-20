@@ -7,9 +7,9 @@ import { formatPrice } from '@/lib/products';
 import type { Product } from '@/types';
 
 const BADGE_STYLES: Record<string, string> = {
-  green: 'bg-ft-ink text-white',
+  green: 'bg-ft-gold text-ft-ink',
   gold: 'bg-ft-gold text-ft-ink',
-  red: 'bg-ft-ink text-white',
+  red: 'bg-ft-gold text-ft-ink',
   blue: 'bg-ft-ink text-white',
 };
 
@@ -27,7 +27,7 @@ export default function ProductCard({ product, priority = false }: Props) {
       : null;
 
   return (
-    <div className="group relative bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 border border-ft-border flex flex-col">
+    <div className="group relative bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 border border-ft-border flex flex-col hover:-translate-y-1 transition-transform duration-200">
       {/* 배지 */}
       {product.badge && (
         <span
