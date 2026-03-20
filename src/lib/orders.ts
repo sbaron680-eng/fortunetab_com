@@ -81,6 +81,50 @@ export async function fetchAllOrders() {
   return data ?? [];
 }
 
+// ── 다운로드 링크 열람 추적 ───────────────────────────────────────────────────
+/**
+ * 이메일 내 추적 URL 클릭 시 호출.
+ * - access_token 검증 (잘못된 토큰 → 예외)
+ * - 최초 열람 시각 기록 (download_opened_at)
+ * - 열람 횟수 증가 (download_count)
+ * @returns 실제 파일 URL (null이면 아직 파일 미설정)
+ */
+export async function trackDownload(
+  orderId: string,
+  token: string
+): Promise<{ fileUrl: string | null; error: string | null }> {
+  const { data, error } = await supabase.rpc('track_download', {
+    p_order_id: orderId,
+    p_token: token,
+  });
+
+  if (error) {
+    const msg = error.message.includes('INVALID_TOKEN')
+      ? '유효하지 않은 다운로드 링크입니다.'
+      : '다운로드 처리 중 오류가 발생했습니다.';
+    return { fileUrl: null, error: msg };
+  }
+
+  return { fileUrl: data as string | null, error: null };
+}
+
+// ── 파일 URL 설정 (관리자) ────────────────────────────────────────────────────
+export async function setOrderFileUrl(
+  orderId: string,
+  fileUrl: string
+): Promise<boolean> {
+  const { error } = await supabase
+    .from('orders')
+    .update({ file_url: fileUrl, status: 'completed' })
+    .eq('id', orderId);
+
+  if (error) {
+    console.error('[setOrderFileUrl] 실패:', error);
+    return false;
+  }
+  return true;
+}
+
 // ── 주문 상태 변경 (관리자) ───────────────────────────────────────────────────
 export async function updateOrderStatus(
   orderId: string,
