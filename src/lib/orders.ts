@@ -53,13 +53,9 @@ export async function createOrder(
   return { orderNumber, orderId: order.id };
 }
 
-// ── 내 주문 목록 ──────────────────────────────────────────────────────────────
+// ── 내 주문 목록 (RPC — 다운로드 추적 포함) ──────────────────────────────────
 export async function fetchMyOrders() {
-  const { data, error } = await supabase
-    .from('orders')
-    .select('*, order_items(*)')
-    .order('created_at', { ascending: false });
-
+  const { data, error } = await supabase.rpc('get_my_orders');
   if (error) {
     console.error('[fetchMyOrders] 실패:', error);
     return [];
@@ -67,13 +63,9 @@ export async function fetchMyOrders() {
   return data ?? [];
 }
 
-// ── 전체 주문 목록 (관리자) ───────────────────────────────────────────────────
+// ── 전체 주문 목록 (관리자 RPC — 사용자 이메일 + 다운로드 추적 포함) ───────────
 export async function fetchAllOrders() {
-  const { data, error } = await supabase
-    .from('orders')
-    .select('*, order_items(*)')
-    .order('created_at', { ascending: false });
-
+  const { data, error } = await supabase.rpc('get_all_orders_admin');
   if (error) {
     console.error('[fetchAllOrders] 실패:', error);
     return [];
