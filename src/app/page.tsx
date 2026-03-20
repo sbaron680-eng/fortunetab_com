@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import ProductCard from '@/components/product/ProductCard';
-import PreviewImageCard from '@/components/home/PreviewImageCard';
+import PlannerPreviewSection from '@/components/home/PlannerPreviewSection';
 import { PRODUCTS } from '@/lib/products';
 
 export const metadata: Metadata = {
@@ -42,13 +42,6 @@ const FAQS = [
   },
 ];
 
-const PREVIEW_IMAGES = [
-  { src: '/products/planner-cover.png', label: '커버' },
-  { src: '/products/planner-year.png', label: '연간' },
-  { src: '/products/planner-monthly.png', label: '월간' },
-  { src: '/products/planner-weekly.png', label: '주간' },
-  { src: '/products/planner-daily.png', label: '일간' },
-];
 
 export default function HomePage() {
   return (
@@ -208,15 +201,8 @@ export default function HomePage() {
             <p className="text-xs font-semibold text-ft-ink-mid uppercase tracking-widest mb-2">✦ 샘플 미리보기</p>
             <h2 className="text-2xl sm:text-3xl font-serif font-black text-ft-ink">플래너 미리보기</h2>
             <p className="mt-2 text-ft-muted text-sm">실제 PDF 플래너 템플릿 일부를 미리 확인하세요</p>
-            <span className="inline-block mt-3 px-4 py-1.5 text-xs font-semibold rounded-full border border-ft-border bg-ft-paper-alt text-ft-muted">
-              📐 세로형 샘플
-            </span>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-            {PREVIEW_IMAGES.map(({ src, label }) => (
-              <PreviewImageCard key={label} src={src} label={label} />
-            ))}
-          </div>
+          <PlannerPreviewSection />
           <div className="text-center mt-8">
             <Link
               href="/products/common-planner"
