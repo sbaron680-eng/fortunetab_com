@@ -56,7 +56,7 @@ const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ko">
+    <html lang="ko" data-scroll-behavior="smooth">
       <head />
       <body className={`flex flex-col min-h-screen ${notoSans.variable} ${notoSerif.variable}`}>
         {/* GA4 */}
