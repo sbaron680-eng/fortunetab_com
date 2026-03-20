@@ -80,7 +80,7 @@ const C = {
 };
 
 // ── 폰트 헬퍼 ────────────────────────────────────────────────────────────────
-const SERIF = '"Noto Serif KR", "나눔명조", serif';
+const SERIF = '"나눔명조", "Noto Serif KR", "Nanum Myeongjo", "한국어", serif';
 const SANS  = '"Noto Sans KR", "맑은 고딕", "Apple SD Gothic Neo", sans-serif';
 
 function F(size: number, bold = false, serif = false): string {
@@ -89,6 +89,9 @@ function F(size: number, bold = false, serif = false): string {
 
 // ── 네비게이션 ────────────────────────────────────────────────────────────────
 const NAV_H_RATIO = 0.028;
+
+// ── 페이지 여백 (상하좌우 공통) ────────────────────────────────────────────────
+const PAGE_PAD = 52; // px — A4 150dpi 기준 약 4.2% (≈ 8.8mm)
 
 const NAV_SECTIONS: { type: PageType; label: string }[] = [
   { type: 'cover',      label: '표지' },
@@ -464,20 +467,21 @@ function drawYearIndex(
   const TEXT_Y     = BAR_H * 0.67;
 
   ctx.font = F(FONT_YEAR, true, true); ctx.fillStyle = C.goldFaint;
-  ctx.fillText(String(opts.year), 40, TEXT_Y);
+  ctx.fillText(String(opts.year), PAGE_PAD, TEXT_Y);
   const yearW = ctx.measureText(String(opts.year)).width;
 
   ctx.font = F(FONT_TITLE, false, false);
   ctx.fillStyle = 'rgba(255,230,240,0.75)';
-  ctx.fillText('연간 인덱스', 40 + yearW + 16, TEXT_Y - FONT_TITLE*0.05);
+  ctx.fillText('연간 인덱스', PAGE_PAD + yearW + 16, TEXT_Y - FONT_TITLE*0.05);
 
   // 12달 그리드
   const COLS   = isL ? 4 : 3;
   const ROWS   = isL ? 3 : 4;
-  const PAD    = isL ? 20 : 16;
-  const GX     = PAD;
+  const OUTER  = PAGE_PAD;
+  const GAP    = isL ? 14 : 10;
+  const GX     = OUTER;
   const GY     = BAR_H + (isL ? 18 : 14);
-  const CW_    = (W - PAD*(COLS+1)) / COLS;
+  const CW_    = (W - OUTER*2 - GAP*(COLS-1)) / COLS;
   const CELL_H = (CH - GY - (isL ? 12 : 10)) / ROWS;
 
   const FM  = Math.min(CW_*0.18, isL ? CH*0.046 : CH*0.027);
@@ -487,8 +491,8 @@ function drawYearIndex(
   for (let m = 0; m < 12; m++) {
     const col = m % COLS;
     const row = Math.floor(m / COLS);
-    const cx2 = GX + col*(CW_+PAD);
-    const cy2 = GY + row*(CELL_H+(isL?10:8));
+    const cx2 = GX + col*(CW_+GAP);
+    const cy2 = GY + row*(CELL_H+(isL?14:10));
 
     // NavLink: 이 셀 클릭 → 해당 월 페이지
     navLinks.push({ x: cx2, y: cy2, w: CW_, h: CELL_H, targetType: 'monthly', targetIdx: m });
@@ -574,14 +578,14 @@ function drawMonthly(
   ctx.fillStyle = hg; ctx.fillRect(0, 0, W, BAR_H);
 
   ctx.font = F(BAR_H*0.55, true, true); ctx.fillStyle = C.goldFaint;
-  ctx.fillText(MONTHS_KO[monthIdx], 40, BAR_H*0.70);
+  ctx.fillText(MONTHS_KO[monthIdx], PAGE_PAD, BAR_H*0.70);
   const mw = ctx.measureText(MONTHS_KO[monthIdx]).width;
   ctx.font = F(BAR_H*0.28, false, false);
   ctx.fillStyle = 'rgba(255,225,235,0.75)';
-  ctx.fillText(String(opts.year), 40 + mw + 14, BAR_H*0.67);
+  ctx.fillText(String(opts.year), PAGE_PAD + mw + 14, BAR_H*0.67);
 
   // 요일 헤더
-  const PAD    = 12;
+  const PAD    = PAGE_PAD;
   const GX     = PAD;
   const GY     = BAR_H + (isL ? 10 : 8);
   const CELL_W = (W - PAD*2) / 7;
@@ -650,9 +654,9 @@ function drawMonthly(
         if (isToday) {
           ctx.beginPath(); ctx.arc(cx2+NF, cy2+NF*1.1, NF*0.88, 0, Math.PI*2);
           ctx.fillStyle = T.todayCircle; ctx.fill();
-          ctx.font = F(NF, true, false); ctx.fillStyle = C.goldFaint;
+          ctx.font = F(NF, true, true); ctx.fillStyle = C.goldFaint;
         } else {
-          ctx.font = F(NF, true, false);
+          ctx.font = F(NF, true, true);
           if (hol?.type === 'holiday' || hol?.type === 'substitute') {
             ctx.fillStyle = C.holidayText;
           } else if (hol?.type === 'memorial') {
@@ -717,12 +721,13 @@ function drawWeekly(
   ctx.fillStyle = hg; ctx.fillRect(0, 0, W, BAR_H);
 
   ctx.font = F(BAR_H*0.52, true, true); ctx.fillStyle = C.goldFaint;
-  ctx.fillText(`${opts.year}년 ${weekNum}주차`, 40, BAR_H*0.70);
+  ctx.fillText(`${opts.year}년 ${weekNum}주차`, PAGE_PAD, BAR_H*0.70);
   ctx.font = F(BAR_H*0.27, false, false); ctx.fillStyle = T.weeklyAccent;
-  ctx.fillText(`${fmtMD(mon)} ~ ${fmtMD(sun)}`, W-200, BAR_H*0.68);
+  const rangeStr = `${fmtMD(mon)} ~ ${fmtMD(sun)}`;
+  ctx.fillText(rangeStr, W - PAGE_PAD - ctx.measureText(rangeStr).width, BAR_H*0.68);
 
   // 이번 주 목표 (세로 전용)
-  const PAD = 14;
+  const PAD = PAGE_PAD;
   let CONTENT_Y = BAR_H + PAD;
 
   if (!isL) {
@@ -732,8 +737,9 @@ function drawWeekly(
     ctx.strokeRect(PAD, CONTENT_Y, W-PAD*2, GOAL_H);
     ctx.font = F(GOAL_H*0.34, true, false); ctx.fillStyle = T.weeklyA;
     ctx.fillText('이번 주 목표', PAD+10, CONTENT_Y+GOAL_H*0.66);
+    const goalLabelW = ctx.measureText('이번 주 목표').width;
     ctx.strokeStyle = T.weeklyB + '80'; ctx.lineWidth = 0.5;
-    ctx.beginPath(); ctx.moveTo(PAD+96, CONTENT_Y); ctx.lineTo(PAD+96, CONTENT_Y+GOAL_H);
+    ctx.beginPath(); ctx.moveTo(PAD + goalLabelW + 20, CONTENT_Y); ctx.lineTo(PAD + goalLabelW + 20, CONTENT_Y+GOAL_H);
     ctx.stroke();
     CONTENT_Y += GOAL_H + PAD;
   }
@@ -846,12 +852,13 @@ function drawDaily(
   ctx.fillStyle = hg; ctx.fillRect(0, 0, W, BAR_H);
 
   ctx.font = F(BAR_H*0.50, true, true); ctx.fillStyle = C.goldFaint;
-  ctx.fillText('일간 계획', 40, BAR_H*0.70);
+  ctx.fillText('일간 계획', PAGE_PAD, BAR_H*0.70);
   ctx.font = F(BAR_H*0.26, false, false); ctx.fillStyle = 'rgba(255,225,235,0.8)';
-  ctx.fillText('DAILY PLANNER', W-162, BAR_H*0.68);
+  const dpLabel = 'DAILY PLANNER';
+  ctx.fillText(dpLabel, W - PAGE_PAD - ctx.measureText(dpLabel).width, BAR_H*0.68);
 
   // 날짜 입력 영역
-  const PAD    = 14;
+  const PAD    = PAGE_PAD;
   const DATE_Y = BAR_H + PAD;
   const DATE_H = isL ? CH*0.070 : CH*0.050;
 
