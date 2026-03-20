@@ -1,12 +1,20 @@
 'use client';
 
-import { useState, useEffect, FormEvent } from 'react';
+import { useState, useEffect, useRef, FormEvent } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 import { useCartStore, useAuthStore } from '@/lib/store';
 import { formatPrice } from '@/lib/products';
 import { createOrder } from '@/lib/orders';
+import dynamic from 'next/dynamic';
+import type { PaymentWidgetHandle } from '@/components/checkout/PaymentWidget';
+
+const PaymentWidget = dynamic(
+  () => import('@/components/checkout/PaymentWidget'),
+  { ssr: false }
+);
+
+const TOSS_CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY ?? '';
 
 type Step = 'info' | 'payment' | 'complete';
 
@@ -44,9 +52,10 @@ const BIRTH_TIMES = [
 ];
 
 export default function CheckoutPage() {
-  const router = useRouter();
   const { items, totalPrice, clearCart } = useCartStore();
   const { user } = useAuthStore();
+
+  const paymentWidgetRef = useRef<PaymentWidgetHandle>(null);
 
   const [mounted, setMounted] = useState(false);
   const [step, setStep] = useState<Step>('info');
@@ -55,6 +64,7 @@ export default function CheckoutPage() {
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [agreeError, setAgreeError] = useState('');
   const [infoErrors, setInfoErrors] = useState<InfoErrors>({});
+  const [widgetReady, setWidgetReady] = useState(false);
 
   const [form, setForm] = useState<OrderForm>({
     name: user?.name ?? '',
@@ -127,22 +137,17 @@ export default function CheckoutPage() {
         return;
       }
 
-      // TODO: Toss Payments 연동
-      // 1) 서버에서 orderId 생성 (Cloudflare Workers API)
-      // 2) window.TossPayments(clientKey).requestPayment({...}) 호출
-      // 3) 성공 시 /checkout/success?orderId=...&paymentKey=... 로 리다이렉트
-      // 4) Cloudflare Workers에서 Toss Payments confirm API 호출하여 최종 승인
-      //
-      // 아래는 UI 데모용 시뮬레이션 (결제 완료 후 주문 DB 저장):
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      let orderNum = `FT-${Date.now()}`;
-      if (user) {
-        const result = await createOrder(user.id, items, total);
-        if (result) orderNum = result.orderNumber;
-      }
-      setOrderNumber(orderNum);
-      clearCart();
-      setStep('complete');
+      // 토스페이먼츠 결제 요청 (성공 시 /checkout/success로 redirect)
+      const orderId = `FT-${Date.now()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
+      await paymentWidgetRef.current!.requestPayment({
+        orderId,
+        orderName: items.map((i) => i.product.name).join(', '),
+        customerName: form.name,
+        customerEmail: form.email,
+        customerMobilePhone: form.phone.replace(/[^0-9]/g, '') || undefined,
+      });
+      // requestPayment()는 페이지를 이동시키므로 아래 코드는 실행되지 않습니다
+      return;
     } finally {
       setIsSubmitting(false);
     }
@@ -188,7 +193,7 @@ export default function CheckoutPage() {
             {hasPaidItem ? (
               <>
                 <span className="font-medium text-gray-700">{form.email}</span>로<br />
-                영업일 기준 3~7일 내에 플래너를 발송해 드립니다.
+                영업일 기준 1~2일 이내에 플래너를 발송해 드립니다.
               </>
             ) : (
               '아래 버튼을 눌러 지금 바로 PDF를 다운로드하세요.'
@@ -500,34 +505,14 @@ export default function CheckoutPage() {
                   <h2 className="font-bold font-serif text-ft-ink mb-4">💳 결제 수단</h2>
 
                   {hasPaidItem ? (
-                    <div className="space-y-3">
-                      {/* Toss Payments 플레이스홀더 */}
-                      <div className="border-2 border-indigo-500 rounded-xl p-4 bg-indigo-50">
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="w-8 h-8 rounded-lg bg-ft-navy flex items-center justify-center">
-                            <span className="text-white text-xs font-bold">T</span>
-                          </div>
-                          <div>
-                            <p className="font-bold text-sm text-gray-900">Toss Payments</p>
-                            <p className="text-xs text-gray-500">카드 · 계좌이체 · 간편결제</p>
-                          </div>
-                          <div className="ml-auto w-4 h-4 rounded-full border-4 border-indigo-500 bg-white" />
-                        </div>
-                        <div className="bg-white rounded-lg p-3 text-xs text-gray-500 border border-indigo-200">
-                          {/* TODO: 실제 Toss Payments SDK 위젯 마운트 포인트 */}
-                          <div id="payment-widget" className="min-h-[60px] flex items-center justify-center text-gray-400">
-                            <span>🔒 Toss Payments 결제 위젯 (연동 예정)</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-wrap gap-2 justify-center pt-1">
-                        {['신한', '국민', '우리', '하나', '삼성', '현대'].map((bank) => (
-                          <span key={bank} className="px-2 py-1 bg-gray-100 rounded text-xs text-gray-500">{bank}</span>
-                        ))}
-                        <span className="px-2 py-1 bg-gray-100 rounded text-xs text-gray-500">카카오페이</span>
-                        <span className="px-2 py-1 bg-gray-100 rounded text-xs text-gray-500">네이버페이</span>
-                      </div>
+                    <div>
+                      <PaymentWidget
+                        ref={paymentWidgetRef}
+                        clientKey={TOSS_CLIENT_KEY}
+                        customerKey={user?.id}
+                        amount={total}
+                        onReady={() => setWidgetReady(true)}
+                      />
                     </div>
                   ) : (
                     <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center">
@@ -552,13 +537,16 @@ export default function CheckoutPage() {
                     <span className="text-sm text-gray-600 leading-relaxed">
                       <Link href="/terms" target="_blank" className="font-medium text-gray-900 underline hover:text-ft-ink transition-colors">
                         이용약관
-                      </Link>{' '}
-                      및{' '}
+                      </Link>{', '}
                       <Link href="/privacy" target="_blank" className="font-medium text-gray-900 underline hover:text-ft-ink transition-colors">
                         개인정보 처리방침
                       </Link>
+                      {', '}
+                      <Link href="/refund" target="_blank" className="font-medium text-gray-900 underline hover:text-ft-ink transition-colors">
+                        환불정책
+                      </Link>
                       에 동의합니다.
-                      디지털 콘텐츠 특성상 다운로드 이후 환불이 불가함을 확인합니다.
+                      디지털 콘텐츠 특성상 PDF 발송 이후 환불이 불가함을 확인합니다.
                     </span>
                   </label>
                   {agreeError && (
@@ -570,7 +558,7 @@ export default function CheckoutPage() {
 
                 <button
                   onClick={handlePayment}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || (hasPaidItem && !widgetReady)}
                   className={`w-full py-4 font-bold rounded-2xl transition-all shadow-lg flex items-center justify-center gap-2 ${
                     hasPaidItem
                       ? 'text-ft-navy bg-ft-gold hover:bg-ft-gold-h disabled:opacity-50 disabled:cursor-not-allowed'
@@ -650,7 +638,7 @@ export default function CheckoutPage() {
                 {hasSajuProduct ? (
                   <p className="flex items-start gap-1.5">
                     <span className="text-indigo-400">🔮</span>
-                    사주 맞춤 제작: 영업일 기준 3~7일
+                    사주 맞춤 제작: 영업일 기준 1~2일
                   </p>
                 ) : (
                   <p className="flex items-start gap-1.5">
@@ -658,6 +646,12 @@ export default function CheckoutPage() {
                     무료 플래너: 신청 즉시 발송
                   </p>
                 )}
+                <p className="flex items-start gap-1.5">
+                  <span className="text-indigo-400">📋</span>
+                  <Link href="/refund" target="_blank" className="underline hover:text-indigo-600 transition-colors">
+                    환불정책 확인하기
+                  </Link>
+                </p>
               </div>
             </div>
           </div>

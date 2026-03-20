@@ -69,8 +69,9 @@ export default function Footer() {
             <ul className="space-y-3 text-sm">
               <li><Link href="/#how-it-works" className="hover:text-white transition-colors">이용안내</Link></li>
               <li><Link href="/#faq" className="hover:text-white transition-colors">자주 묻는 질문</Link></li>
-              <li><Link href="/auth/login" className="hover:text-white transition-colors">로그인</Link></li>
-              <li><Link href="/auth/register" className="hover:text-white transition-colors">회원가입</Link></li>
+              <li><Link href="/refund" className="hover:text-white transition-colors">환불정책</Link></li>
+              <li><Link href="/terms" className="hover:text-white transition-colors">이용약관</Link></li>
+              <li><Link href="/privacy" className="hover:text-white transition-colors">개인정보 처리방침</Link></li>
             </ul>
           </div>
         </div>

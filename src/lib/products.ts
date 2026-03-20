@@ -116,7 +116,7 @@ export const PRODUCTS: Product[] = [
       { label: '페이지 수', value: '약 70~80페이지 (월간×12+주간×52+일간×30×12)' },
       { label: '크기', value: 'A4 (210×297mm), 고화질' },
       { label: '언어', value: '한국어' },
-      { label: '제작 기간', value: '결제 후 3~5 영업일 이내 이메일 발송' },
+      { label: '제작 기간', value: '결제 후 영업일 기준 1~2일 이내 이메일 발송' },
       { label: '가격', value: '19,000원 (얼리버드 할인가)' },
     ],
     downloadUrl: null, // TODO: 개인별 Google Drive 링크 연결
@@ -185,7 +185,7 @@ export const PRODUCTS: Product[] = [
       { label: '페이지 수', value: '플래너 80p + 리포트 20p+' },
       { label: '크기', value: 'A4 (210×297mm), 고화질' },
       { label: '언어', value: '한국어' },
-      { label: '제작 기간', value: '결제 후 5~7 영업일 이내 이메일 발송' },
+      { label: '제작 기간', value: '결제 후 영업일 기준 1~2일 이내 이메일 발송' },
       { label: '가격', value: '29,000원 (얼리버드 특별가)' },
     ],
     downloadUrl: null, // TODO: 개인별 Google Drive 링크 연결
