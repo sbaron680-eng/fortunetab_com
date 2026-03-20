@@ -40,7 +40,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
           setUser(null);
           return;
         }
-        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'PASSWORD_RECOVERY' || event === 'USER_UPDATED') {
           const { data: profile } = await supabase
             .from('profiles')
             .select('name, is_admin, created_at')

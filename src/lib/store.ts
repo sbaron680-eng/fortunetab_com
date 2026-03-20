@@ -79,7 +79,7 @@ interface AuthStore {
   isLoading: boolean;
   error: string | null;
   setUser: (user: User | null) => void;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<boolean | 'admin'>;
   register: (name: string, email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   clearError: () => void;
@@ -107,17 +107,18 @@ export const useAuthStore = create<AuthStore>()((set) => ({
       .select('name, is_admin, created_at')
       .eq('id', data.user.id)
       .single();
+    const isAdmin = profile?.is_admin ?? false;
     set({
       user: {
         id: data.user.id,
         email: data.user.email!,
         name: profile?.name ?? email.split('@')[0],
-        isAdmin: profile?.is_admin ?? false,
+        isAdmin,
         createdAt: profile?.created_at ?? data.user.created_at,
       },
       isLoading: false,
     });
-    return true;
+    return isAdmin ? 'admin' : true;
   },
 
   register: async (name, email, password) => {

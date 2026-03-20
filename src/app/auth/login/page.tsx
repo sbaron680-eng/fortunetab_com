@@ -49,8 +49,9 @@ export default function LoginPage() {
     if (emailErr || passwordErr) return;
 
     clearError();
-    const success = await login(email, password);
-    if (success) router.push('/');
+    const result = await login(email, password);
+    if (result === 'admin') router.push('/admin');
+    else if (result) router.push('/dashboard');
   };
 
   return (
