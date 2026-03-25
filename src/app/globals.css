@@ -1,23 +1,28 @@
 @import "tailwindcss";
 
 @theme {
-  /* === 묵향(Ink Wash) 팔레트 === */
-  --color-ft-paper:      #fdfcfb;   /* 기본 배경 (따뜻한 백지) */
-  --color-ft-paper-alt:  #f7f5f2;   /* 교차 섹션 배경 */
-  --color-ft-ink:        #1e1b4b;   /* 헤딩·강조 (먹물) */
-  --color-ft-ink-mid:    #312e81;   /* 서브 헤딩 */
-  --color-ft-body:       #2d2b3d;   /* 본문 텍스트 */
-  --color-ft-muted:      #6b6886;   /* 보조 텍스트 */
-  --color-ft-border:     #e4e1f0;   /* 카드·구분선 */
-  --color-ft-gold:       #f0c040;   /* CTA 버튼 전용 */
-  --color-ft-gold-h:     #e0b030;   /* 골드 hover */
+  /* === 고요한 병풍 팔레트 (Serene Byeongpung) === */
+  --color-ft-paper:      #faf9f7;   /* 기본 배경 (한지 화이트) */
+  --color-ft-paper-alt:  #f4f1ec;   /* 교차 섹션 배경 (낡은 종이) */
+  --color-ft-ink:        #111111;   /* 헤딩·강조 (먹물 블랙) */
+  --color-ft-ink-mid:    #333333;   /* 서브 헤딩 */
+  --color-ft-body:       #333333;   /* 본문 텍스트 */
+  --color-ft-muted:      #888888;   /* 보조 텍스트 */
+  --color-ft-border:     #e0dbd4;   /* 카드·구분선 (온화한 베이지) */
+  --color-ft-red:        #b5282a;   /* 한국 빨강 — 단일 악센트 */
+  --color-ft-red-h:      #951f21;   /* 빨강 hover */
+  --color-ft-navy:       #1a1a2e;   /* CTA/다크 영역 */
+  --color-ft-aged:       #e8e2d4;   /* 낡은 종이 강조 */
+  --color-ft-gray:       #888888;   /* 장식 회색 */
+  /* 하위 호환 유지 */
+  --color-ft-gold:       #f0c040;
+  --color-ft-gold-h:     #e0b030;
+  --color-ft-purple:     #1a1a2e;
 
-  --font-sans:  var(--font-noto-sans);   /* next/font 변수 참조 */
-  --font-serif: var(--font-noto-serif);  /* next/font 변수 참조 */
+  --font-sans:  var(--font-noto-sans);
+  --font-serif: var(--font-noto-serif);
 
-  /* === 하위호환 (DEPRECATED — Tasks 2~8 완료 후 제거 예정) === */
-  --color-ft-navy:       #1e1b4b;
-  --color-ft-purple:     #312e81;
+  /* === 레거시 (하위호환) === */
   --color-ft-deep:       #0b0a14;
   --color-ft-base:       #0f0e1a;
   --color-ft-card:       #15131f;
@@ -74,9 +79,9 @@ body {
 ::-webkit-scrollbar {
   width: 6px;
 }
-::-webkit-scrollbar-track { background: #f7f5f2; }
-::-webkit-scrollbar-thumb { background: #c4beff; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #312e81; }
+::-webkit-scrollbar-track { background: #f4f1ec; }
+::-webkit-scrollbar-thumb { background: #c8b9a8; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #b5282a; }
 
 /* 포커스 링 일관성 */
 :focus-visible {

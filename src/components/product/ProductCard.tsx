@@ -7,10 +7,10 @@ import { formatPrice } from '@/lib/products';
 import type { Product } from '@/types';
 
 const BADGE_STYLES: Record<string, string> = {
-  green: 'bg-ft-gold text-ft-ink',
-  gold: 'bg-ft-gold text-ft-ink',
-  red: 'bg-ft-gold text-ft-ink',
-  blue: 'bg-ft-ink text-white',
+  green: 'bg-ft-red text-white',
+  gold:  'bg-ft-red text-white',
+  red:   'bg-ft-ink text-white',
+  blue:  'bg-ft-ink text-white',
 };
 
 interface Props {
@@ -27,7 +27,7 @@ export default function ProductCard({ product, priority = false }: Props) {
       : null;
 
   return (
-    <div className="group relative bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 border border-ft-border flex flex-col hover:-translate-y-1">
+    <div className="group relative bg-white overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 border border-ft-border border-l-4 border-l-ft-red flex flex-col hover:-translate-y-1 rounded-r-2xl">
       {/* 배지 */}
       {product.badge && (
         <span
@@ -73,7 +73,7 @@ export default function ProductCard({ product, priority = false }: Props) {
                 {formatPrice(product.originalPrice)}
               </span>
               {discountRate && (
-                <span className="text-sm font-bold text-red-500">{discountRate}%</span>
+                <span className="text-sm font-bold text-ft-red">{discountRate}%</span>
               )}
             </>
           )}
@@ -90,7 +90,7 @@ export default function ProductCard({ product, priority = false }: Props) {
           {product.price === 0 ? (
             <Link
               href="/download"
-              className="flex-1 py-2.5 text-sm font-bold bg-ft-gold text-ft-ink rounded-xl hover:bg-ft-gold-h transition-colors text-center"
+              className="flex-1 py-2.5 text-sm font-bold bg-ft-red text-white rounded-xl hover:bg-ft-red-h transition-colors text-center"
             >
               무료 다운로드
             </Link>
@@ -98,7 +98,7 @@ export default function ProductCard({ product, priority = false }: Props) {
             <button
               onClick={() => { addItem(product); showToast(`${product.name}을(를) 담았습니다`); }}
               disabled={!product.inStock}
-              className="flex-1 py-2.5 text-sm font-bold bg-ft-gold text-ft-ink rounded-xl hover:bg-ft-gold-h transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 py-2.5 text-sm font-bold bg-ft-red text-white rounded-xl hover:bg-ft-red-h transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {product.inStock ? '담기' : '품절'}
             </button>

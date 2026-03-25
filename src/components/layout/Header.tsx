@@ -99,7 +99,7 @@ export default function Header() {
     href === '/' ? pathname === '/' : pathname.startsWith(href);
 
   return (
-    <header className="sticky top-0 z-50 bg-white border-b border-ft-border shadow-sm">
+    <header className="sticky top-0 z-50 bg-ft-paper border-b-2 border-ft-red shadow-sm">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* 로고 */}

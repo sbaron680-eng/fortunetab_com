@@ -42,8 +42,8 @@ export default function PlannerPreviewSection() {
               onClick={() => setActive(i)}
               className={`px-4 py-1.5 text-sm rounded-full border transition-all duration-200 ${
                 active === i
-                  ? 'bg-ft-ink text-white border-ft-ink'
-                  : 'bg-white text-ft-muted border-ft-border hover:border-ft-ink/50 hover:text-ft-ink'
+                  ? 'bg-white text-ft-navy border-white'
+                  : 'bg-transparent text-white/60 border-white/20 hover:border-white/50 hover:text-white'
               }`}
             >
               {label}
@@ -51,13 +51,13 @@ export default function PlannerPreviewSection() {
           ))}
         </div>
         {/* 가로/세로 전환 */}
-        <div className="flex items-center gap-1 p-1 bg-ft-paper-alt rounded-full border border-ft-border">
+        <div className="flex items-center gap-1 p-1 bg-white/10 rounded-full border border-white/20">
           <button
             onClick={() => setOrientation('portrait')}
             className={`px-3 py-1 text-xs rounded-full transition-all duration-200 ${
               orientation === 'portrait'
-                ? 'bg-white text-ft-ink shadow-sm font-medium border border-ft-border'
-                : 'text-ft-muted hover:text-ft-ink'
+                ? 'bg-white text-ft-navy shadow-sm font-medium'
+                : 'text-white/50 hover:text-white'
             }`}
           >
             ☐ 세로형
@@ -66,8 +66,8 @@ export default function PlannerPreviewSection() {
             onClick={() => setOrientation('landscape')}
             className={`px-3 py-1 text-xs rounded-full transition-all duration-200 ${
               orientation === 'landscape'
-                ? 'bg-white text-ft-ink shadow-sm font-medium border border-ft-border'
-                : 'text-ft-muted hover:text-ft-ink'
+                ? 'bg-white text-ft-navy shadow-sm font-medium'
+                : 'text-white/50 hover:text-white'
             }`}
           >
             ▭ 가로형
@@ -81,7 +81,7 @@ export default function PlannerPreviewSection() {
           pageIdx={tab.idx}
           opts={opts}
           displayWidth={displayWidth}
-          className="rounded-xl overflow-hidden shadow-xl border border-ft-border"
+          className="rounded-xl overflow-hidden shadow-2xl border border-white/10"
         />
       </div>
     </div>
