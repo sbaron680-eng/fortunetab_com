@@ -306,7 +306,7 @@ function drawNavBar(
   ctx.fillStyle = grad;
   ctx.fillRect(0, barY, W, NAV_H);
 
-  // NavBar 상단 골드 구분선 (Task 4-1)
+  // NavBar 상단 구분선 (흰색 반투명)
   ctx.beginPath();
   ctx.moveTo(0, barY);
   ctx.lineTo(W, barY);
@@ -324,7 +324,7 @@ function drawNavBar(
     const isAvail  = availablePages.includes(type);
 
     if (isActive) {
-      // 현재 탭 강조: 배경 T.navA + 골드 테두리 (Task 4-2)
+      // 현재 탭 강조: 배경 T.navA + 흰색 반투명 테두리
       ctx.fillStyle = T.navA;
       roundRect(ctx, i*tabW+3, barY+3, tabW-6, NAV_H-6, 4);
       ctx.fill();
