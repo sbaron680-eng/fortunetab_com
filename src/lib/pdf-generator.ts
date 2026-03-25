@@ -163,48 +163,115 @@ function getWeekDates(year: number, isoWeek: number): Date[] {
   });
 }
 
-// ── 장식 요소 ────────────────────────────────────────────────────────────────
-function drawStars(ctx: CanvasRenderingContext2D, W: number, H: number, seed = 2026) {
-  let s = seed;
-  const rng = () => { s = (s * 1664525 + 1013904223) & 0xffffffff; return (s >>> 0) / 0xffffffff; };
-  for (let i = 0; i < 200; i++) {
-    const x = rng() * W;
-    const y = rng() * (H * 0.85);
-    const r = rng() > 0.85 ? 2 : rng() > 0.7 ? 1 : 0.5;
-    const br = 55 + rng() * 130;
-    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(${Math.round(br+20)},${Math.round(br)},${Math.round(br+15)},0.9)`;
-    ctx.fill();
-  }
-  const bright: [number,number][] = [
-    [W*0.13, H*0.12], [W*0.87, H*0.10], [W*0.18, H*0.33],
-    [W*0.82, H*0.28], [W*0.06, H*0.51], [W*0.92, H*0.49],
+// ── 추상 브러시 스트로크 (서예 커버 배경) ─────────────────────────────────
+function drawBrushStrokes(
+  ctx: CanvasRenderingContext2D,
+  W: number, H: number,
+  color: string,
+) {
+  const strokes: [number, number, number, number, number][] = [
+    [0.10, 0.18, 0.55, 0.42, 0.07],
+    [0.45, 0.10, 0.90, 0.35, 0.05],
+    [0.05, 0.55, 0.50, 0.80, 0.06],
+    [0.55, 0.60, 0.95, 0.85, 0.04],
   ];
-  for (const [bx, by] of bright) {
-    ctx.beginPath(); ctx.arc(bx, by, 3, 0, Math.PI*2);
-    ctx.fillStyle = 'rgba(255,235,245,0.95)'; ctx.fill();
-    for (const [dx, dy] of [[0,-10],[0,10],[-10,0],[10,0]] as [number,number][]) {
-      ctx.beginPath(); ctx.arc(bx+dx, by+dy, 1, 0, Math.PI*2);
-      ctx.fillStyle = 'rgba(220,180,205,0.6)'; ctx.fill();
-    }
+  const [r, g, b] = hexToRgb(color);
+  for (const [sx, sy, ex, ey, op] of strokes) {
+    const grad = ctx.createLinearGradient(W*sx, H*sy, W*ex, H*ey);
+    grad.addColorStop(0,   `rgba(${r},${g},${b},0)`);
+    grad.addColorStop(0.4, `rgba(${r},${g},${b},${op})`);
+    grad.addColorStop(1,   `rgba(${r},${g},${b},0)`);
+    ctx.beginPath();
+    ctx.moveTo(W*sx, H*sy);
+    ctx.bezierCurveTo(
+      W*(sx+0.15), H*(sy-0.05),
+      W*(ex-0.15), H*(ey+0.05),
+      W*ex, H*ey,
+    );
+    ctx.lineWidth = 60 + Math.random() * 40;
+    ctx.strokeStyle = grad;
+    ctx.lineCap = 'round';
+    ctx.stroke();
   }
 }
 
-function drawMoon(
+// ── 계절 픽토그램 (커버 하단) ─────────────────────────────────────────────
+function drawSeasonPictos(
   ctx: CanvasRenderingContext2D,
-  cx: number, cy: number, r: number, bgColor: string,
+  centerX: number, y: number,
+  color: string, size = 36,
 ) {
-  const glow = ctx.createRadialGradient(cx, cy, r*0.8, cx, cy, r*1.6);
-  glow.addColorStop(0, 'rgba(200,100,140,0.22)');
-  glow.addColorStop(1, 'rgba(200,100,140,0)');
-  ctx.beginPath(); ctx.arc(cx, cy, r*1.6, 0, Math.PI*2);
-  ctx.fillStyle = glow; ctx.fill();
+  const gap = size * 1.8;
+  const startX = centerX - gap * 1.5;
+  const [r, g, b] = hexToRgb(color);
 
-  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2);
-  ctx.fillStyle = C.goldPale; ctx.fill();
+  const pictos = [
+    // 봄: 매화 5꽃잎
+    (cx: number, cy: number) => {
+      for (let i = 0; i < 5; i++) {
+        const rad = (i * 72 * Math.PI) / 180;
+        const px = cx + size*0.38 * Math.sin(rad);
+        const py = cy - size*0.38 * Math.cos(rad);
+        ctx.beginPath();
+        ctx.ellipse(px, py, size*0.18, size*0.13, rad, 0, Math.PI*2);
+        ctx.fillStyle = `rgba(${r},${g},${b},0.75)`;
+        ctx.fill();
+      }
+      ctx.beginPath(); ctx.arc(cx, cy, size*0.13, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(${r},${g},${b},0.9)`; ctx.fill();
+    },
+    // 여름: 연잎 (원+방사선)
+    (cx: number, cy: number) => {
+      ctx.beginPath(); ctx.arc(cx, cy, size*0.42, 0, Math.PI*2);
+      ctx.strokeStyle = `rgba(${r},${g},${b},0.7)`; ctx.lineWidth = 1.5; ctx.stroke();
+      ctx.beginPath(); ctx.arc(cx, cy, size*0.18, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(${r},${g},${b},0.6)`; ctx.fill();
+      for (let i = 0; i < 8; i++) {
+        const rad = (i * 45 * Math.PI) / 180;
+        ctx.beginPath();
+        ctx.moveTo(cx + size*0.2*Math.cos(rad), cy + size*0.2*Math.sin(rad));
+        ctx.lineTo(cx + size*0.42*Math.cos(rad), cy + size*0.42*Math.sin(rad));
+        ctx.strokeStyle = `rgba(${r},${g},${b},0.4)`; ctx.lineWidth = 1; ctx.stroke();
+      }
+    },
+    // 가을: 보름달
+    (cx: number, cy: number) => {
+      ctx.beginPath(); ctx.arc(cx, cy, size*0.45, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(${r},${g},${b},0.15)`; ctx.fill();
+      ctx.beginPath(); ctx.arc(cx, cy, size*0.45, 0, Math.PI*2);
+      ctx.strokeStyle = `rgba(${r},${g},${b},0.7)`; ctx.lineWidth = 1.5; ctx.stroke();
+      ctx.beginPath(); ctx.arc(cx - size*0.12, cy - size*0.1, size*0.1, 0, Math.PI*2);
+      ctx.strokeStyle = `rgba(${r},${g},${b},0.3)`; ctx.lineWidth = 1; ctx.stroke();
+    },
+    // 겨울: 설화 6가지
+    (cx: number, cy: number) => {
+      ctx.beginPath(); ctx.arc(cx, cy, size*0.1, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(${r},${g},${b},0.9)`; ctx.fill();
+      for (let i = 0; i < 6; i++) {
+        const rad = (i * 60 * Math.PI) / 180;
+        const x2 = cx + size*0.45*Math.cos(rad), y2 = cy + size*0.45*Math.sin(rad);
+        ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(x2, y2);
+        ctx.strokeStyle = `rgba(${r},${g},${b},0.75)`; ctx.lineWidth = 1.5; ctx.stroke();
+        const bRad1 = ((i*60+30)*Math.PI)/180, bRad2 = ((i*60-30)*Math.PI)/180;
+        const bx = cx + size*0.28*Math.cos(rad), by = cy + size*0.28*Math.sin(rad);
+        for (const br of [bRad1, bRad2]) {
+          ctx.beginPath();
+          ctx.moveTo(bx, by);
+          ctx.lineTo(bx + size*0.15*Math.cos(br), by + size*0.15*Math.sin(br));
+          ctx.strokeStyle = `rgba(${r},${g},${b},0.5)`; ctx.lineWidth = 1; ctx.stroke();
+        }
+      }
+    },
+  ];
 
-  ctx.beginPath(); ctx.arc(cx + r*0.47, cy - r*0.06, r*0.83, 0, Math.PI*2);
-  ctx.fillStyle = bgColor; ctx.fill();
+  pictos.forEach((draw, i) => {
+    const cx = startX + i * gap;
+    ctx.beginPath(); ctx.arc(cx, y, size*0.6, 0, Math.PI*2);
+    ctx.fillStyle = `rgba(${r},${g},${b},0.08)`; ctx.fill();
+    ctx.beginPath(); ctx.arc(cx, y, size*0.6, 0, Math.PI*2);
+    ctx.strokeStyle = `rgba(${r},${g},${b},0.2)`; ctx.lineWidth = 1; ctx.stroke();
+    draw(cx, y);
+  });
 }
 
 function drawRule(
@@ -291,154 +358,174 @@ function drawCover(
   const CH    = H - NAV_H;
   const isL   = opts.orientation === 'landscape';
 
+  // ── 배경: 한지 화이트 ────────────────────────────────────────────────────
+  ctx.fillStyle = C.bgPage;
+  ctx.fillRect(0, 0, W, CH);
+
+  // ── 상단 단청 띠 ─────────────────────────────────────────────────────────
+  const topBandH = isL ? CH * 0.06 : CH * 0.04;
+  ctx.fillStyle = T.coverDeep;
+  ctx.globalAlpha = 0.12;
+  ctx.fillRect(0, 0, W, topBandH);
+  ctx.globalAlpha = 1;
+
+  // ── 추상 브러시 스트로크 배경 ──────────────────────────────────────────
+  drawBrushStrokes(ctx, W, CH, T.coverMid);
+
+  // ── 세로 중심선 (선비/병풍 분할) ─────────────────────────────────────────
   if (!isL) {
-    // 세로형: 방사형 그라디언트
-    const radGrad = ctx.createRadialGradient(W/2, CH*0.28, 0, W/2, CH*0.28, CH*0.85);
-    radGrad.addColorStop(0, T.coverMid);
-    radGrad.addColorStop(0.45, T.coverDeep);
-    radGrad.addColorStop(1, '#060510');
-    ctx.fillStyle = radGrad;
-    ctx.fillRect(0, 0, W, CH);
-  } else {
-    // 가로형: 기존 선형 그라디언트
-    const grad = ctx.createLinearGradient(0, 0, W, 0);
-    grad.addColorStop(0, T.coverDeep);
-    grad.addColorStop(0.55, T.coverMid);
-    grad.addColorStop(1, T.coverLight);
-    ctx.fillStyle = grad; ctx.fillRect(0, 0, W, CH);
+    ctx.beginPath();
+    ctx.moveTo(W / 2, CH * 0.12);
+    ctx.lineTo(W / 2, CH * 0.82);
+    ctx.strokeStyle = T.coverDeep;
+    ctx.globalAlpha = 0.08;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
   }
-  drawStars(ctx, W, CH);
 
+  // ── 제목 블록 ────────────────────────────────────────────────────────────
   if (!isL) {
-    const MX = W / 2;
-    const MY = CH * 0.19;
-    const bgMid = lerpColor(hexToRgb(T.coverDeep), hexToRgb(T.coverMid), MY / CH);
-    drawMoon(ctx, MX, MY, W * 0.085, bgMid);
+    // 브랜드 서브타이틀
+    ctx.font = F(22, false, false);
+    ctx.fillStyle = C.goldFaint;
+    ctx.globalAlpha = 0.8;
+    centeredText(ctx, 'fortunetab', CH * 0.285, W);
+    ctx.globalAlpha = 1;
 
-    // 달 주위 골드 원형 프레임 (Task 2-2)
-    const fcx = W/2, fcy = CH * 0.19;
-    const fr1 = W * 0.16, fr2 = W * 0.175;
-    ctx.beginPath(); ctx.arc(fcx, fcy, fr2, 0, Math.PI*2);
-    ctx.strokeStyle = 'rgba(240,192,64,0.18)'; ctx.lineWidth = 1.5; ctx.stroke();
-    ctx.beginPath(); ctx.arc(fcx, fcy, fr1, 0, Math.PI*2);
-    ctx.strokeStyle = 'rgba(240,192,64,0.10)'; ctx.lineWidth = 1; ctx.stroke();
+    // 수평 구분선
+    ctx.beginPath();
+    ctx.moveTo(W * 0.25, CH * 0.310);
+    ctx.lineTo(W * 0.75, CH * 0.310);
+    ctx.strokeStyle = T.coverDeep;
+    ctx.globalAlpha = 0.15;
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
 
-    // 별자리 장식 (Task 2-3)
-    const constLeft: [number, number][] = [
-      [W*0.06, CH*0.09], [W*0.12, CH*0.06], [W*0.09, CH*0.14],
-      [W*0.16, CH*0.11], [W*0.14, CH*0.18],
-    ];
-    const constRight: [number, number][] = [
-      [W*0.84, CH*0.07], [W*0.90, CH*0.05], [W*0.88, CH*0.13],
-      [W*0.94, CH*0.10], [W*0.92, CH*0.17],
-    ];
-    ctx.strokeStyle = 'rgba(240,192,64,0.15)'; ctx.lineWidth = 0.8;
-    for (const pts of [constLeft, constRight]) {
-      ctx.beginPath();
-      pts.forEach(([x, y], i) => i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y));
-      ctx.stroke();
-      ctx.fillStyle = 'rgba(240,192,64,0.6)';
-      pts.forEach(([x, y]) => {
-        ctx.beginPath(); ctx.arc(x, y, 2.5, 0, Math.PI*2); ctx.fill();
-      });
-    }
-
-    ctx.font = F(26, false, false); ctx.fillStyle = C.goldFaint;
-    centeredText(ctx, 'fortunetab', CH * 0.33, W);
-
-    drawRule(ctx, CH * 0.355, W, 150, C.goldDim, false);
-
-    // 연도 텍스트 letterSpacing 적용 (Task 2-4)
+    // 연도 대형 타이포
     const ctxAny = ctx as CanvasRenderingContext2D & { letterSpacing?: string };
-    if (ctxAny.letterSpacing !== undefined) ctxAny.letterSpacing = '0.06em';
-    ctx.font = F(W * 0.148, true, true); ctx.fillStyle = C.gold;
-    centeredText(ctx, String(opts.year), CH * 0.535, W);
+    if (ctxAny.letterSpacing !== undefined) ctxAny.letterSpacing = '0.05em';
+    ctx.font = F(W * 0.155, true, true);
+    ctx.fillStyle = T.coverDeep;
+    ctx.globalAlpha = 0.85;
+    centeredText(ctx, String(opts.year), CH * 0.52, W);
+    ctx.globalAlpha = 1;
     if (ctxAny.letterSpacing !== undefined) ctxAny.letterSpacing = '0em';
 
-    drawRule(ctx, CH * 0.563, W, 150, C.goldDim, true);
+    // 플래너 부제
+    ctx.font = F(32, true, true);
+    ctx.fillStyle = C.textDark;
+    centeredText(ctx, '나만의 365일 플래너', CH * 0.588, W);
 
-    ctx.font = F(44, true, true); ctx.fillStyle = C.white;
-    centeredText(ctx, '나만의 365일 플래너', CH * 0.625, W);
+    ctx.font = F(20, false, false);
+    ctx.fillStyle = C.textLight;
+    centeredText(ctx, `사주로 읽는 ${opts.year}년 운세 일력`, CH * 0.634, W);
 
-    ctx.font = F(23, false, false); ctx.fillStyle = 'rgba(230,200,215,0.85)';
-    centeredText(ctx, `사주로 읽는 ${opts.year}년 운세 일력`, CH * 0.675, W);
+    // 하단 구분선
+    ctx.beginPath();
+    ctx.moveTo(W * 0.25, CH * 0.658);
+    ctx.lineTo(W * 0.75, CH * 0.658);
+    ctx.strokeStyle = T.coverDeep;
+    ctx.globalAlpha = 0.15;
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
 
-    const FX     = (W - 480) / 2;
-    const LBLY   = CH * 0.768;
-    const LINE_Y = CH * 0.808;
-
+    // 이름 라인
+    const FX = (W - 480) / 2;
+    const LINE_Y = CH * 0.768;
     ctx.font = F(18, false, false); ctx.fillStyle = C.goldFaint;
-    ctx.fillText('이름', FX, LBLY);
-
+    ctx.fillText('이름', FX, LINE_Y - 28);
     ctx.beginPath(); ctx.moveTo(FX, LINE_Y); ctx.lineTo(FX+480, LINE_Y);
-    ctx.strokeStyle = C.gold; ctx.lineWidth = 1.5; ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(FX, LINE_Y); ctx.lineTo(FX, LINE_Y-7); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(FX+480, LINE_Y); ctx.lineTo(FX+480, LINE_Y-7); ctx.stroke();
-
+    ctx.strokeStyle = T.coverMid; ctx.globalAlpha = 0.3; ctx.lineWidth = 1; ctx.stroke();
+    ctx.globalAlpha = 1;
+    ctx.beginPath(); ctx.moveTo(FX, LINE_Y); ctx.lineTo(FX, LINE_Y-6); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(FX+480, LINE_Y); ctx.lineTo(FX+480, LINE_Y-6); ctx.stroke();
     if (opts.name) {
-      ctx.font = F(28, true, true); ctx.fillStyle = C.white;
+      ctx.font = F(26, true, true); ctx.fillStyle = C.textDark;
       ctx.fillText(opts.name, FX+8, LINE_Y - 6);
     }
 
+    // 사주 박스
     if (opts.saju) {
-      const s  = opts.saju;
-      const SX = (W - 480) / 2;
-      const SY = CH * 0.838;
-
-      ctx.fillStyle = 'rgba(180,90,130,0.15)';
-      roundRect(ctx, SX, SY, 480, 84, 8); ctx.fill();
-      ctx.strokeStyle = 'rgba(180,90,130,0.35)'; ctx.lineWidth = 1;
-      roundRect(ctx, SX, SY, 480, 84, 8); ctx.stroke();
-
-      ctx.font = F(13, false, false); ctx.fillStyle = C.goldFaint;
-      centeredText(ctx, '사주팔자', SY + 17, W);
-      ctx.font = F(17, true, true); ctx.fillStyle = C.white;
-      centeredText(ctx, `${s.yearPillar}년  ${s.monthPillar}월  ${s.dayPillar}일  ${s.hourPillar}시`, SY + 43, W);
-      ctx.font = F(12, false, false); ctx.fillStyle = C.goldDim;
-      centeredText(ctx, `일간 ${s.dayElem} · 용신 ${s.yongsin} · ${s.elemSummary}`, SY + 66, W);
+      const s = opts.saju;
+      const SX = (W - 480) / 2, SY = CH * 0.800;
+      ctx.fillStyle = T.coverDeep; ctx.globalAlpha = 0.06;
+      roundRect(ctx, SX, SY, 480, 80, 8); ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = T.coverDeep; ctx.globalAlpha = 0.2; ctx.lineWidth = 1;
+      roundRect(ctx, SX, SY, 480, 80, 8); ctx.stroke();
+      ctx.globalAlpha = 1;
+      ctx.font = F(13, false, false); ctx.fillStyle = C.textLight;
+      centeredText(ctx, '사주팔자', SY + 16, W);
+      ctx.font = F(17, true, true); ctx.fillStyle = C.textDark;
+      centeredText(ctx, `${s.yearPillar}년  ${s.monthPillar}월  ${s.dayPillar}일  ${s.hourPillar}시`, SY + 42, W);
+      ctx.font = F(12, false, false); ctx.fillStyle = C.textLight;
+      centeredText(ctx, `일간 ${s.dayElem} · 용신 ${s.yongsin} · ${s.elemSummary}`, SY + 64, W);
     }
 
-    const tagY = opts.saju ? CH * 0.955 : CH * 0.930;
-    drawRule(ctx, tagY - CH*0.016, W, 200, C.goldDim, false);
-    ctx.font = F(15, false, false); ctx.fillStyle = C.goldDim;
-    centeredText(ctx, `✦  FORTUNE TAB  ✦  ${opts.year}  ✦`, tagY, W);
+    // 계절 픽토그램 4개
+    const pictoY = opts.saju ? CH * 0.916 : CH * 0.878;
+    drawSeasonPictos(ctx, W / 2, pictoY, T.coverDeep, 22);
 
   } else {
-    const MX = W * 0.26, MY = CH * 0.5;
-    const bgMid = lerpColor(hexToRgb(T.coverDeep), hexToRgb(T.coverMid), 0.5);
-    drawMoon(ctx, MX, MY, CH * 0.22, bgMid);
+    // ── 가로형 ────────────────────────────────────────────────────────────
+    ctx.fillStyle = T.coverDeep;
+    ctx.globalAlpha = 0.08;
+    ctx.fillRect(0, 0, W * 0.08, CH);
+    ctx.globalAlpha = 1;
 
-    ctx.beginPath(); ctx.moveTo(W*0.5, CH*0.08); ctx.lineTo(W*0.5, CH*0.92);
-    ctx.strokeStyle = 'rgba(180,90,130,0.25)'; ctx.lineWidth = 1; ctx.stroke();
+    const RX = W * 0.15, RW = W * 0.75;
 
-    const RX = W*0.5, RW = W*0.5;
-
-    ctx.font = F(32, false, false); ctx.fillStyle = C.goldFaint;
+    ctx.font = F(26, false, false); ctx.fillStyle = C.goldFaint;
+    ctx.globalAlpha = 0.75;
     const bw = ctx.measureText('fortunetab').width;
-    ctx.fillText('fortunetab', RX+(RW-bw)/2, CH*0.295);
+    ctx.fillText('fortunetab', RX+(RW-bw)/2, CH*0.28);
+    ctx.globalAlpha = 1;
 
-    drawRule(ctx, CH*0.355, W, W*0.52, C.goldDim, false);
+    ctx.beginPath();
+    ctx.moveTo(RX + RW*0.1, CH*0.32);
+    ctx.lineTo(RX + RW*0.9, CH*0.32);
+    ctx.strokeStyle = T.coverDeep; ctx.globalAlpha = 0.15; ctx.lineWidth = 0.8; ctx.stroke();
+    ctx.globalAlpha = 1;
 
-    ctx.font = F(CH*0.27, true, true); ctx.fillStyle = C.gold;
+    ctx.font = F(CH*0.28, true, true);
+    ctx.fillStyle = T.coverDeep; ctx.globalAlpha = 0.85;
     const yw = ctx.measureText(String(opts.year)).width;
-    ctx.fillText(String(opts.year), RX+(RW-yw)/2, CH*0.645);
+    ctx.fillText(String(opts.year), RX+(RW-yw)/2, CH*0.67);
+    ctx.globalAlpha = 1;
 
-    drawRule(ctx, CH*0.695, W, W*0.52, C.goldDim, true);
+    ctx.beginPath();
+    ctx.moveTo(RX + RW*0.1, CH*0.70);
+    ctx.lineTo(RX + RW*0.9, CH*0.70);
+    ctx.strokeStyle = T.coverDeep; ctx.globalAlpha = 0.15; ctx.lineWidth = 0.8; ctx.stroke();
+    ctx.globalAlpha = 1;
 
-    ctx.font = F(28, true, true); ctx.fillStyle = C.white;
+    ctx.font = F(22, true, true); ctx.fillStyle = C.textDark;
     const tw = ctx.measureText('사주·운세로 설계한 나만의 플래너').width;
-    ctx.fillText('사주·운세로 설계한 나만의 플래너', RX+(RW-tw)/2, CH*0.788);
+    ctx.fillText('사주·운세로 설계한 나만의 플래너', RX+(RW-tw)/2, CH*0.78);
 
-    const FX2 = RX + RW*0.14, FW2 = RW*0.72;
-    ctx.font = F(20, false, false); ctx.fillStyle = C.goldFaint;
-    ctx.fillText('이름', FX2, CH*0.875);
-    ctx.beginPath(); ctx.moveTo(FX2, CH*0.915); ctx.lineTo(FX2+FW2, CH*0.915);
-    ctx.strokeStyle = C.gold; ctx.lineWidth = 1.5; ctx.stroke();
+    const FX2 = RX + RW*0.12, FW2 = RW*0.76;
+    ctx.font = F(18, false, false); ctx.fillStyle = C.textLight;
+    ctx.fillText('이름', FX2, CH*0.855);
+    ctx.beginPath(); ctx.moveTo(FX2, CH*0.895); ctx.lineTo(FX2+FW2, CH*0.895);
+    ctx.strokeStyle = T.coverMid; ctx.globalAlpha = 0.3; ctx.lineWidth = 1; ctx.stroke();
+    ctx.globalAlpha = 1;
     if (opts.name) {
-      ctx.font = F(26, true, true); ctx.fillStyle = C.white;
-      ctx.fillText(opts.name, FX2+8, CH*0.910);
+      ctx.font = F(22, true, true); ctx.fillStyle = C.textDark;
+      ctx.fillText(opts.name, FX2+6, CH*0.890);
     }
+
+    drawSeasonPictos(ctx, RX + RW/2, CH * 0.945, T.coverDeep, 18);
   }
+
+  // ── 하단 단청 띠 ─────────────────────────────────────────────────────────
+  const botBandH = isL ? CH * 0.04 : CH * 0.028;
+  ctx.fillStyle = T.coverDeep;
+  ctx.globalAlpha = 0.10;
+  ctx.fillRect(0, CH - botBandH, W, botBandH);
+  ctx.globalAlpha = 1;
 
   drawNavBar(ctx, W, H, 'cover', opts.pages);
 }
