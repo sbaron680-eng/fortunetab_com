@@ -51,17 +51,17 @@ let T: ColorTheme = DEFAULT_THEME;
 
 // ── 고정 팔레트 (중립 색상) ──────────────────────────────────────────────────
 const C = {
-  bgPage:     '#faf5f0',
-  bgCard:     '#fffbf8',
+  bgPage:     '#faf9f7',   // 한지 화이트 (기존: #faf5f0 핑크)
+  bgCard:     '#ffffff',   // 카드 배경 (기존: #fffbf8)
 
-  textDark:   '#2a1a22',
-  textMid:    '#7a5560',
-  textLight:  '#b898a4',
+  textDark:   '#111111',   // 먹물 블랙 (기존: #2a1a22 핑크계)
+  textMid:    '#444444',   // 중간 텍스트 (기존: #7a5560)
+  textLight:  '#888888',   // 보조 텍스트 (기존: #9a8a90)
 
-  ruleColor:  '#eedde4',
-  ruleFaint:  '#f6eef1',
+  ruleColor:  '#e0dbd4',   // 규칙선 한지 경계 (기존: #eedde4 핑크)
+  ruleFaint:  '#eeebe6',   // 흐린 규칙선 (기존: #f6eef1)
 
-  // 공휴일/대체공휴일/기념일 (고정)
+  // 공휴일/대체공휴일/기념일 (고정 — 변경 없음)
   holidayBg:      '#ffecec',
   holidayText:    '#b84060',
   substituteBg:   '#fff0e0',
@@ -69,14 +69,14 @@ const C = {
   memorialBg:     '#e8eeff',
   memorialText:   '#5060b0',
 
-  // 표지 골드/크림
-  gold:       '#c8a060',
-  goldPale:   '#d8b880',
-  goldFaint:  '#ecd8b0',
-  goldDim:    '#a88048',
+  // 커버 악센트 (테마 중립 — 병풍 한지 계열)
+  gold:       '#b5282a',   // 한국 빨강 — 커버 포인트 (기존: 골드)
+  goldPale:   '#c8972a',   // 커버 세부 악센트 (기존: #d8b880)
+  goldFaint:  '#888888',   // 흐린 텍스트 (기존: #ecd8b0)
+  goldDim:    '#aaaaaa',   // 구분선 (기존: #a88048)
 
   white:      '#ffffff',
-  whiteSoft:  '#fff5f8',
+  whiteSoft:  '#f5f5f5',
 };
 
 // ── 폰트 헬퍼 ────────────────────────────────────────────────────────────────
