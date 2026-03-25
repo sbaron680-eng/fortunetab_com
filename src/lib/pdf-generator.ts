@@ -310,7 +310,7 @@ function drawNavBar(
   ctx.beginPath();
   ctx.moveTo(0, barY);
   ctx.lineTo(W, barY);
-  ctx.strokeStyle = 'rgba(240,192,64,0.25)';
+  ctx.strokeStyle = 'rgba(255,255,255,0.15)';
   ctx.lineWidth = 1;
   ctx.stroke();
 
@@ -328,7 +328,7 @@ function drawNavBar(
       ctx.fillStyle = T.navA;
       roundRect(ctx, i*tabW+3, barY+3, tabW-6, NAV_H-6, 4);
       ctx.fill();
-      ctx.strokeStyle = 'rgba(240,192,64,0.55)';
+      ctx.strokeStyle = 'rgba(255,255,255,0.35)';
       ctx.lineWidth = 1;
       roundRect(ctx, i*tabW+3, barY+3, tabW-6, NAV_H-6, 4);
       ctx.stroke();
@@ -336,10 +336,10 @@ function drawNavBar(
 
     ctx.font = F(fontSize, isActive);
     ctx.fillStyle = isActive
-      ? C.gold
+      ? '#ffffff'
       : isAvail
-        ? 'rgba(255,215,230,0.85)'
-        : 'rgba(200,155,175,0.45)';
+        ? 'rgba(255,255,255,0.75)'
+        : 'rgba(255,255,255,0.30)';
 
     const tw = ctx.measureText(label).width;
     ctx.fillText(label, cx - tw/2, barY + NAV_H*0.68);
