@@ -169,14 +169,15 @@ function drawBrushStrokes(
   W: number, H: number,
   color: string,
 ) {
-  const strokes: [number, number, number, number, number][] = [
-    [0.10, 0.18, 0.55, 0.42, 0.07],
-    [0.45, 0.10, 0.90, 0.35, 0.05],
-    [0.05, 0.55, 0.50, 0.80, 0.06],
-    [0.55, 0.60, 0.95, 0.85, 0.04],
+  // [startX%, startY%, endX%, endY%, opacity, lineWidth]
+  const strokes: [number, number, number, number, number, number][] = [
+    [0.10, 0.18, 0.55, 0.42, 0.07, 75],
+    [0.45, 0.10, 0.90, 0.35, 0.05, 65],
+    [0.05, 0.55, 0.50, 0.80, 0.06, 80],
+    [0.55, 0.60, 0.95, 0.85, 0.04, 60],
   ];
   const [r, g, b] = hexToRgb(color);
-  for (const [sx, sy, ex, ey, op] of strokes) {
+  for (const [sx, sy, ex, ey, op, lw] of strokes) {
     const grad = ctx.createLinearGradient(W*sx, H*sy, W*ex, H*ey);
     grad.addColorStop(0,   `rgba(${r},${g},${b},0)`);
     grad.addColorStop(0.4, `rgba(${r},${g},${b},${op})`);
@@ -188,7 +189,7 @@ function drawBrushStrokes(
       W*(ex-0.15), H*(ey+0.05),
       W*ex, H*ey,
     );
-    ctx.lineWidth = 60 + Math.random() * 40;
+    ctx.lineWidth = lw;
     ctx.strokeStyle = grad;
     ctx.lineCap = 'round';
     ctx.stroke();
