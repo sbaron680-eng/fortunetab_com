@@ -7,6 +7,7 @@
  *   - 주간: ISO 주차 기반 실제 날짜 표시 (월~일 순서)
  *   - 월간/주간: 공휴일·기념일 셀 색상 표시
  *   - 연간 인덱스 → 월간 / 월간 → 주간 내부 하이퍼링크
+ *   - 월간 헤더 ◀ / ▶ 이전·다음 달 이동 하이퍼링크
  */
 
 import { getHoliday, getSolarTerm } from './korean-holidays';
@@ -671,6 +672,23 @@ function drawMonthly(
   ctx.font = F(BAR_H*0.28, false, false);
   ctx.fillStyle = 'rgba(255,225,235,0.75)';
   ctx.fillText(String(opts.year), PAGE_PAD + mw + 14, BAR_H*0.67);
+
+  // 이전/다음 달 화살표 (헤더 우측)
+  const ARW   = Math.round(BAR_H * 1.4);  // 화살표 터치 영역 너비
+  const ARF   = BAR_H * 0.44;             // 화살표 폰트 크기
+  const prevX = W - ARW * 2 - 6;
+  const nextX = W - ARW - 4;
+  ctx.font = F(ARF, false, false);
+  if (monthIdx > 0) {
+    ctx.fillStyle = 'rgba(255,255,255,0.60)';
+    ctx.fillText('◀', prevX + (ARW - ctx.measureText('◀').width) / 2, BAR_H * 0.70);
+    navLinks.push({ x: prevX, y: 0, w: ARW, h: BAR_H, targetType: 'monthly', targetIdx: monthIdx - 1 });
+  }
+  if (monthIdx < 11) {
+    ctx.fillStyle = 'rgba(255,255,255,0.60)';
+    ctx.fillText('▶', nextX + (ARW - ctx.measureText('▶').width) / 2, BAR_H * 0.70);
+    navLinks.push({ x: nextX, y: 0, w: ARW, h: BAR_H, targetType: 'monthly', targetIdx: monthIdx + 1 });
+  }
 
   // 요일 헤더
   const PAD    = PAGE_PAD;
