@@ -1,17 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useCartStore } from '@/lib/store';
 import { formatPrice } from '@/lib/products';
 
 export default function CartDrawer() {
-  const [mounted, setMounted] = useState(false);
   const { items, isOpen, closeCart, removeItem, updateQty, totalPrice, totalItems } =
     useCartStore();
-
-  useEffect(() => { setMounted(true); }, []);
 
   // ESC 키로 닫기
   useEffect(() => {
@@ -24,11 +21,11 @@ export default function CartDrawer() {
 
   // 열려 있을 때 body 스크롤 방지
   useEffect(() => {
-    document.body.style.overflow = isOpen ? 'hidden' : '';
-    return () => { document.body.style.overflow = ''; };
+    document.body.style.overflow = isOpen ? 'hidden' : 'unset';
+    return () => { document.body.style.overflow = 'unset'; };
   }, [isOpen]);
 
-  if (!mounted || !isOpen) return null;
+  if (!isOpen) return null;
 
   return (
     <>

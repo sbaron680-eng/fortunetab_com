@@ -24,10 +24,11 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         .select('name, is_admin, created_at')
         .eq('id', session.user.id)
         .single();
+      const email = session.user.email ?? '';
       setUser({
         id: session.user.id,
-        email: session.user.email!,
-        name: profile?.name ?? session.user.email!.split('@')[0],
+        email,
+        name: profile?.name ?? email.split('@')[0],
         isAdmin: profile?.is_admin ?? false,
         createdAt: profile?.created_at ?? session.user.created_at,
       });
@@ -46,10 +47,11 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
             .select('name, is_admin, created_at')
             .eq('id', session.user.id)
             .single();
+          const email = session.user.email ?? '';
           setUser({
             id: session.user.id,
-            email: session.user.email!,
-            name: profile?.name ?? session.user.email!.split('@')[0],
+            email,
+            name: profile?.name ?? email.split('@')[0],
             isAdmin: profile?.is_admin ?? false,
             createdAt: profile?.created_at ?? session.user.created_at,
           });

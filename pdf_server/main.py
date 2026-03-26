@@ -78,7 +78,7 @@ app.add_middleware(
         "https://fortunetab-landing.pages.dev",
     ],
     allow_methods=["GET", "POST", "OPTIONS"],
-    allow_headers=["*"],
+    allow_headers=["Content-Type"],
 )
 
 
