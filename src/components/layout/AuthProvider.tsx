@@ -11,14 +11,14 @@ import { useAuthStore } from '@/lib/store';
  */
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
   const setUser = useAuthStore((s) => s.setUser);
-  const setAuthLoading = useAuthStore((s) => s.setAuthLoading);
+  const setAuthReady = useAuthStore((s) => s.setAuthReady);
 
   useEffect(() => {
     // 1) 앱 마운트 시 기존 세션 복원
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session?.user) {
         setUser(null);
-        setAuthLoading(false);
+        setAuthReady();  // 세션 없어도 초기화 완료
         return;
       }
       const { data: profile } = await supabase
@@ -34,7 +34,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         isAdmin: profile?.is_admin ?? false,
         createdAt: profile?.created_at ?? session.user.created_at,
       });
-      setAuthLoading(false);
+      setAuthReady();  // 세션 복원 완료
     });
 
     // 2) 로그인/로그아웃 이벤트 구독 (탭 간 동기화 포함)

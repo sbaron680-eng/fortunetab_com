@@ -38,26 +38,26 @@ interface MyOrder {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { user, isLoading, logout } = useAuthStore();
+  const { user, isAuthReady, logout } = useAuthStore();
   const [orders, setOrders] = useState<MyOrder[]>([]);
   const [fetching, setFetching] = useState(true);
 
   useEffect(() => {
-    if (isLoading) return;
+    if (!isAuthReady) return;  // 인증 초기화 완료 대기
     if (!user) { router.replace('/auth/login'); return; }
 
     fetchMyOrders().then((data) => {
       setOrders(data as MyOrder[]);
       setFetching(false);
     });
-  }, [user, isLoading, router]);
+  }, [user, isAuthReady, router]);
 
   const handleLogout = async () => {
     await logout();
     router.push('/');
   };
 
-  if (isLoading || fetching) {
+  if (!isAuthReady || fetching) {
     return (
       <div className="min-h-[calc(100vh-4rem)] bg-ft-paper flex items-center justify-center">
         <svg className="animate-spin w-7 h-7 text-ft-ink" fill="none" viewBox="0 0 24 24">

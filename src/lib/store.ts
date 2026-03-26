@@ -76,10 +76,11 @@ export const useCartStore = create<CartStore>()(
 
 interface AuthStore {
   user: User | null;
-  isLoading: boolean;
+  isLoading: boolean;    // 로그인/회원가입 액션 진행 중
+  isAuthReady: boolean;  // AuthProvider의 getSession() 완료 여부 (인증 초기화 완료)
   error: string | null;
   setUser: (user: User | null) => void;
-  setAuthLoading: (loading: boolean) => void;
+  setAuthReady: () => void;
   login: (email: string, password: string) => Promise<boolean | 'admin'>;
   register: (name: string, email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
@@ -88,11 +89,12 @@ interface AuthStore {
 
 export const useAuthStore = create<AuthStore>()((set) => ({
   user: null,
-  isLoading: true,  // AuthProvider의 getSession() 완료 전까지 true
+  isLoading: false,     // 로그인/회원가입 버튼 비활성화용 — 기본 false
+  isAuthReady: false,   // getSession() 완료 전까지 false → 어드민/대시보드 가드에서 대기
   error: null,
 
   setUser: (user) => set({ user }),
-  setAuthLoading: (loading) => set({ isLoading: loading }),
+  setAuthReady: () => set({ isAuthReady: true }),
 
   login: async (email, password) => {
     // supabase를 동적으로 import하여 SSR 환경에서 안전하게 처리

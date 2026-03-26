@@ -49,7 +49,7 @@ interface UserRow {
 
 export default function AdminPage() {
   const router = useRouter();
-  const { user, isLoading } = useAuthStore();
+  const { user, isAuthReady } = useAuthStore();
   const [tab, setTab] = useState<Tab>('orders');
 
   // ── 주문 상태 ────────────────────────────────────────────────────────────────
@@ -66,7 +66,7 @@ export default function AdminPage() {
 
   // ── 인증 가드 ────────────────────────────────────────────────────────────────
   useEffect(() => {
-    if (isLoading) return;
+    if (!isAuthReady) return;  // 인증 초기화 완료 대기
     if (!user) { router.replace('/auth/login'); return; }
     if (!user.isAdmin) { router.replace('/'); return; }
 
@@ -74,7 +74,7 @@ export default function AdminPage() {
       setOrders(data as AdminOrder[]);
       setFetchingOrders(false);
     });
-  }, [user, isLoading, router]);
+  }, [user, isAuthReady, router]);
 
   useEffect(() => {
     if (tab !== 'users' || users.length > 0) return;
@@ -125,7 +125,7 @@ export default function AdminPage() {
     .reduce((sum, o) => sum + o.total, 0);
 
   // ── 로딩 ─────────────────────────────────────────────────────────────────────
-  if (isLoading || fetchingOrders) {
+  if (!isAuthReady || fetchingOrders) {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center">
         <div className="animate-pulse text-gray-500">불러오는 중…</div>
