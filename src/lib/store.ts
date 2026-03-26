@@ -79,6 +79,7 @@ interface AuthStore {
   isLoading: boolean;
   error: string | null;
   setUser: (user: User | null) => void;
+  setAuthLoading: (loading: boolean) => void;
   login: (email: string, password: string) => Promise<boolean | 'admin'>;
   register: (name: string, email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
@@ -87,10 +88,11 @@ interface AuthStore {
 
 export const useAuthStore = create<AuthStore>()((set) => ({
   user: null,
-  isLoading: false,
+  isLoading: true,  // AuthProvider의 getSession() 완료 전까지 true
   error: null,
 
   setUser: (user) => set({ user }),
+  setAuthLoading: (loading) => set({ isLoading: loading }),
 
   login: async (email, password) => {
     // supabase를 동적으로 import하여 SSR 환경에서 안전하게 처리
