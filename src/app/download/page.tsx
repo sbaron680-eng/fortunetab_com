@@ -23,17 +23,26 @@ const PRESETS: { label: string; pages: PageType[] }[] = [
   { label: '커버만',     pages: ['cover'] },
 ];
 
-const YEARS = [2025, 2026, 2027];
+// 현재 날짜 기준 표시할 연도 배열 계산
+// 1~10월: 금년만 / 11~12월: 금년 + 내년
+function getAvailableYears(): number[] {
+  const now = new Date();
+  const cy  = now.getFullYear();
+  const mo  = now.getMonth() + 1; // 1-based
+  return mo >= 11 ? [cy, cy + 1] : [cy];
+}
 
 export default function DownloadPage() {
   const savedSaju = useSajuStore((s) => s.savedSaju);
+
+  const YEARS = getAvailableYears();
 
   const [orientation, setOrientation] = useState<Orientation>('portrait');
   const [selectedPages, setSelectedPages] = useState<Set<PageType>>(
     new Set(['cover', 'year-index', 'monthly', 'weekly', 'daily'])
   );
   const [name, setName]       = useState('');
-  const [year, setYear]       = useState(2026);
+  const [year, setYear]       = useState(() => getAvailableYears()[0]);
   const [theme, setTheme]     = useState('rose');
 
   const [isGenerating, setIsGenerating] = useState(false);
@@ -125,7 +134,7 @@ export default function DownloadPage() {
             <span className="w-1.5 h-4 bg-ft-gold rounded-full inline-block" />
             연도
           </h2>
-          <div className="grid grid-cols-3 gap-3">
+          <div className={`grid gap-3 ${YEARS.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
             {YEARS.map((y) => {
               const isSel = year === y;
               return (
