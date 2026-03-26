@@ -15,7 +15,14 @@
       "Bash(npm show react version)",
       "Bash(npm show react-dom version)",
       "Bash(npm show @cloudflare/next-on-pages peerDependencies)",
-      "Bash(npm show wrangler version)"
+      "Bash(npm show wrangler version)",
+      "mcp__d9be1d2a-a00f-44cb-9f0e-dbc0ea0804d9__execute_sql",
+      "Bash(claude mcp:*)",
+      "Bash(npm install:*)",
+      "Bash(node -e \"const l = require\\(''./package-lock.json''\\); const p = l.packages[''node_modules/typescript'']; console.log\\(JSON.stringify\\(p, null, 2\\)\\)\")",
+      "Bash(npm ci:*)",
+      "Bash(node -e \":*)",
+      "Bash(gh pr:*)"
     ]
   }
 }
