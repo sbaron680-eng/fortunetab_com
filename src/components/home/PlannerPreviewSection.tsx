@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
+import { PLANNER_YEAR } from '@/lib/products';
 import type { PageType, Orientation } from '@/lib/pdf-generator';
 
 const PlannerPreviewCanvas = dynamic(
@@ -25,7 +26,7 @@ export default function PlannerPreviewSection() {
   const displayWidth = orientation === 'landscape' ? 360 : 260;
 
   const opts = {
-    year: 2026,
+    year: PLANNER_YEAR,
     theme: 'rose' as const,
     orientation,
     name: '플래너 미리보기',

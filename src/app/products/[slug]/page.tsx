@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { PRODUCTS, getProductBySlug, formatPrice } from '@/lib/products';
+import { PRODUCTS, getProductBySlug, formatPrice, PLANNER_YEAR } from '@/lib/products';
 import PlannerProductPreview from '@/components/product/PlannerProductPreview';
 import AddToCartButton from './AddToCartButton';
 
@@ -60,7 +60,7 @@ export default async function ProductDetailPage({ params }: Props) {
           {/* 갤러리 — 실시간 캔버스 미리보기 */}
           <div>
             <PlannerProductPreview
-              year={2026}
+              year={PLANNER_YEAR}
               theme={
                 slug === 'common-planner'
                   ? 'blue'

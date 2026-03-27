@@ -4,17 +4,17 @@ import ProductCard from '@/components/product/ProductCard';
 import PlannerPreviewSection from '@/components/home/PlannerPreviewSection';
 import SansuBackground from '@/components/home/SansuBackground';
 import SeasonIcons from '@/components/home/SeasonIcons';
-import { PRODUCTS } from '@/lib/products';
+import { PRODUCTS, PLANNER_YEAR } from '@/lib/products';
 
 export const metadata: Metadata = {
-  title: '사주·운세로 설계한 나만의 2026 플래너',
+  title: `사주·운세로 설계한 나만의 ${PLANNER_YEAR} 플래너`,
   description:
-    '사주팔자로 맞춤 제작되는 2026년 PDF 플래너. 운세 흐름 캘린더 + 월간/주간/일간 플래너. 무료 체험판 다운로드 가능.',
+    `사주팔자로 맞춤 제작되는 ${PLANNER_YEAR}년 PDF 플래너. 운세 흐름 캘린더 + 월간/주간/일간 플래너. 무료 체험판 다운로드 가능.`,
 };
 
 const HOW_IT_WORKS = [
   { step: '01', title: '생년월일시 입력', desc: '출생 정보를 입력하면 사주팔자를 분석합니다.' },
-  { step: '02', title: '운세 분석', desc: '2026년 월별 운세 흐름, 길일·주의일을 계산합니다.' },
+  { step: '02', title: '운세 분석', desc: `${PLANNER_YEAR}년 월별 운세 흐름, 길일·주의일을 계산합니다.` },
   { step: '03', title: '맞춤 플래너 제작', desc: '분석 결과를 반영한 개인 맞춤 PDF를 제작합니다.' },
   { step: '04', title: '이메일 발송', desc: '완성된 플래너를 이메일로 바로 받아보세요.' },
 ];
@@ -61,7 +61,7 @@ export default function HomePage() {
             {/* 얼리버드 배지 */}
             <span className="inline-flex items-center gap-2 px-4 py-1.5 text-xs font-semibold border border-ft-red/30 text-ft-red rounded-full mb-10 tracking-widest bg-ft-red/5">
               <span className="w-1.5 h-1.5 rounded-full bg-ft-red animate-pulse" />
-              2026년 얼리버드 특가 진행 중
+              {PLANNER_YEAR}년 얼리버드 특가 진행 중
             </span>
 
             {/* 메인 헤드라인 */}
@@ -69,7 +69,7 @@ export default function HomePage() {
               <span className="block text-4xl sm:text-5xl lg:text-[3.5rem]">사주·운세로</span>
               <span className="block text-4xl sm:text-5xl lg:text-[3.5rem]">설계한 나만의</span>
               <span className="block text-4xl sm:text-5xl lg:text-[3.5rem]">
-                <span className="text-ft-red">2026</span> 플래너
+                <span className="text-ft-red">{PLANNER_YEAR}</span> 플래너
               </span>
             </h1>
 
@@ -211,7 +211,7 @@ export default function HomePage() {
               </h2>
               <p className="text-ft-muted text-sm leading-loose mb-8">
                 생년월일만 입력하면 사주팔자 4기둥, 오행 분포, 용신,
-                그리고 <span className="text-ft-ink font-semibold">2026년 12개월 운세</span>를 무료로 확인하세요.
+                그리고 <span className="text-ft-ink font-semibold">{PLANNER_YEAR}년 12개월 운세</span>를 무료로 확인하세요.
               </p>
               <Link
                 href="/saju"
@@ -228,7 +228,7 @@ export default function HomePage() {
                 { num: '一', label: '사주팔자', desc: '4기둥 천간지지' },
                 { num: '二', label: '오행분포', desc: '목화토금수 분석' },
                 { num: '三', label: '용신', desc: '나를 돕는 기운' },
-                { num: '四', label: '월운', desc: '2026 12개월 운세' },
+                { num: '四', label: '월운', desc: `${PLANNER_YEAR} 12개월 운세` },
               ].map(({ num, label, desc }, idx, arr) => (
                 <div key={label} className="flex items-stretch gap-4">
                   {/* 수직선 + 한자 번호 */}
@@ -333,7 +333,7 @@ export default function HomePage() {
           </div>
 
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-serif font-black mb-4">
-            2026년을 운세와 함께 시작하세요
+            {PLANNER_YEAR}년을 운세와 함께 시작하세요
           </h2>
           <p className="text-white/60 mb-10 leading-loose">
             지금 무료 플래너를 받아보고,<br />내 사주로 맞춤 제작된 플래너를 경험해보세요.

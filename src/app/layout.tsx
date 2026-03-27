@@ -6,21 +6,22 @@ import Footer from '@/components/layout/Footer';
 import CartDrawer from '@/components/cart/CartDrawer';
 import Toast from '@/components/ui/Toast';
 import AuthProvider from '@/components/layout/AuthProvider';
+import { PLANNER_YEAR } from '@/lib/products';
 import './globals.css';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://fortunetab.com'),
   title: {
-    default: 'FortuneTab — 사주·운세로 설계한 나만의 2026 플래너',
+    default: `FortuneTab — 사주·운세로 설계한 나만의 ${PLANNER_YEAR} 플래너`,
     template: '%s | FortuneTab',
   },
   description:
-    '사주팔자 분석으로 맞춤 제작되는 2026년 PDF 플래너. 운세 흐름 캘린더, 월간·주간·일간 플래너 포함. 지금 무료 체험판을 다운로드하세요.',
-  keywords: ['사주 플래너', '운세 플래너', '2026 플래너', 'PDF 플래너', '사주팔자', '다이어리 PDF', '운세 달력'],
+    `사주팔자 분석으로 맞춤 제작되는 ${PLANNER_YEAR}년 PDF 플래너. 운세 흐름 캘린더, 월간·주간·일간 플래너 포함. 지금 무료 체험판을 다운로드하세요.`,
+  keywords: ['사주 플래너', '운세 플래너', `${PLANNER_YEAR} 플래너`, 'PDF 플래너', '사주팔자', '다이어리 PDF', '운세 달력'],
   authors: [{ name: 'FortuneTab' }],
   openGraph: {
-    title: 'FortuneTab — 사주·운세로 설계한 나만의 2026 플래너',
-    description: '사주팔자 분석으로 맞춤 제작되는 2026년 PDF 플래너. 운세 흐름 캘린더 포함.',
+    title: `FortuneTab — 사주·운세로 설계한 나만의 ${PLANNER_YEAR} 플래너`,
+    description: `사주팔자 분석으로 맞춤 제작되는 ${PLANNER_YEAR}년 PDF 플래너. 운세 흐름 캘린더 포함.`,
     locale: 'ko_KR',
     type: 'website',
     siteName: 'FortuneTab',
@@ -28,8 +29,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'FortuneTab — 사주·운세 2026 플래너',
-    description: '사주팔자 분석으로 맞춤 제작되는 2026년 PDF 플래너.',
+    title: `FortuneTab — 사주·운세 ${PLANNER_YEAR} 플래너`,
+    description: `사주팔자 분석으로 맞춤 제작되는 ${PLANNER_YEAR}년 PDF 플래너.`,
   },
   robots: {
     index: true,

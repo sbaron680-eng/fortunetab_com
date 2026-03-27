@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { PLANNER_YEAR } from '@/lib/products';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -22,7 +23,7 @@ export default function Footer() {
               </Link>
               <p className="mt-2 text-sm leading-relaxed max-w-xs">
                 사주·운세의 흐름으로 설계하는 나만의 플래너.<br />
-                2026년을 전략적으로 살아가는 첫걸음.
+                {PLANNER_YEAR}년을 전략적으로 살아가는 첫걸음.
               </p>
               <a
                 href="https://www.instagram.com/fortunetab"

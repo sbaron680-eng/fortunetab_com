@@ -13,13 +13,23 @@ import {
   ELEM_COLOR,
   ELEM_EMOJI,
   STEMS_KO,
+  STEMS_HJ,
   BRANCHES_KO,
+  BRANCHES_HJ,
   TIME_TO_BRANCH,
   type SajuResult,
   type FortuneMonth,
   type ElemKo,
 } from '@/lib/saju';
 import { useSajuStore } from '@/lib/store';
+import { PLANNER_YEAR } from '@/lib/products';
+
+// 연도 → 간지(干支) 이름 계산
+function getYearGanzhi(year: number) {
+  const si = ((year - 4) % 10 + 10) % 10;
+  const bi = ((year - 4) % 12 + 12) % 12;
+  return `${STEMS_KO[si]}${BRANCHES_KO[bi]}(${STEMS_HJ[si]}${BRANCHES_HJ[bi]})`;
+}
 
 // ─── 입력 폼 타입 ────────────────────────────────────────────────────
 interface BirthForm {
@@ -278,7 +288,7 @@ export default function SajuPage() {
     setError('');
 
     const result  = calculateSaju(y, m, d, form.time);
-    const monthly = getMonthlyFortune(result, 2026);
+    const monthly = getMonthlyFortune(result, PLANNER_YEAR);
     setSaju(result);
     setFortune(monthly);
     setCalculated(true);
@@ -314,7 +324,7 @@ export default function SajuPage() {
             무료 사주 계산기
           </h1>
           <p className="text-indigo-300 mt-2">
-            생년월일을 입력하면 사주팔자와 2026년 월별 운세를 즉시 확인하세요
+            생년월일을 입력하면 사주팔자와 {PLANNER_YEAR}년 월별 운세를 즉시 확인하세요
           </p>
         </div>
 
@@ -463,7 +473,7 @@ export default function SajuPage() {
             <section className="mb-8">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold font-serif text-ft-ink">
-                  2026년 병오(丙午)년 월별 운세
+                  {PLANNER_YEAR}년 {getYearGanzhi(PLANNER_YEAR)}년 월별 운세
                 </h2>
                 <span className="text-xs text-ft-muted">
                   일간: {ELEM_EMOJI[ELEM_KO.indexOf(saju.dayElem)]} {saju.dayElem} · 용신: {ELEM_EMOJI[ELEM_KO.indexOf(saju.yongsin)]} {saju.yongsin}
@@ -488,7 +498,7 @@ export default function SajuPage() {
                 나만의 사주 맞춤 플래너로 업그레이드
               </h3>
               <p className="text-indigo-300 text-sm mb-5 leading-relaxed">
-                방금 계산한 사주팔자와 2026년 운세를{' '}
+                방금 계산한 사주팔자와 {PLANNER_YEAR}년 운세를{' '}
                 <span className="text-ft-gold font-semibold">아름다운 PDF 플래너</span>로 제작해드립니다.
                 <br />매월 운세 해설, 일간 플래너, 용신 컬러 테마까지 개인화된 플래너를 받아보세요.
               </p>
