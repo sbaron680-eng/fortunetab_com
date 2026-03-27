@@ -192,47 +192,36 @@ export default function CheckoutPage() {
           <p className="text-gray-500 text-sm mb-8">
             {hasPaidItem ? (
               <>
-                <span className="font-medium text-gray-700">{form.email}</span>로<br />
-                영업일 기준 1~2일 이내에 플래너를 발송해 드립니다.
+                결제가 확인되었습니다.<br />
+                아래 버튼을 눌러 지금 바로 PDF를 생성하세요.
               </>
             ) : (
               '아래 버튼을 눌러 지금 바로 PDF를 다운로드하세요.'
             )}
           </p>
 
-          {!hasPaidItem && (
-            <div className="bg-emerald-50 rounded-2xl p-4 text-left text-sm text-emerald-700 mb-6 space-y-1.5 border border-emerald-200">
-              <p className="font-medium">브라우저에서 즉시 PDF가 생성됩니다.</p>
-              <p className="text-emerald-600">서버 전송 없이 내 기기에서 바로 다운로드됩니다.</p>
-            </div>
-          )}
-
-          {hasPaidItem && (
-            <div className="bg-indigo-50 rounded-2xl p-4 text-left text-sm text-gray-600 mb-6 space-y-1.5">
-              <p>📧 이메일 수신함(스팸 포함)을 확인해 주세요.</p>
-              <p>💬 문의: sbaron680@gmail.com</p>
-              {hasSajuProduct && (
-                <p>🔮 사주 분석 후 맞춤 제작되어 발송 기간이 소요됩니다.</p>
-              )}
-            </div>
-          )}
+          <div className="bg-emerald-50 rounded-2xl p-4 text-left text-sm text-emerald-700 mb-6 space-y-1.5 border border-emerald-200">
+            <p className="font-medium">브라우저에서 즉시 PDF가 생성됩니다.</p>
+            <p className="text-emerald-600">서버 전송 없이 내 기기에서 바로 다운로드됩니다.</p>
+            {hasSajuProduct && (
+              <p className="text-emerald-600">🔮 사주 플래너는 /사주 계산기에서 생년월일을 입력하면 개인화됩니다.</p>
+            )}
+          </div>
 
           <div className="flex flex-col gap-3">
-            {!hasPaidItem && (
-              <Link
-                href="/download"
-                className="block w-full py-3.5 font-bold text-ft-navy bg-ft-gold rounded-xl hover:bg-ft-gold-h transition-colors text-center"
-              >
-                PDF 다운로드 →
-              </Link>
-            )}
+            <Link
+              href={
+                hasSajuProduct
+                  ? `/download?mode=fortune&orderId=${orderNumber}`
+                  : '/download'
+              }
+              className="block w-full py-3.5 font-bold text-ft-navy bg-ft-gold rounded-xl hover:bg-ft-gold-h transition-colors text-center"
+            >
+              {hasSajuProduct ? '🔮 지금 바로 사주 플래너 PDF 만들기 →' : 'PDF 다운로드 →'}
+            </Link>
             <Link
               href="/"
-              className={`block w-full text-center rounded-xl transition-colors ${
-                hasPaidItem
-                  ? 'py-3.5 font-bold text-ft-navy bg-ft-gold hover:bg-ft-gold-h'
-                  : 'py-3 text-sm text-gray-600 border border-gray-200 hover:bg-gray-50'
-              }`}
+              className="block w-full text-center py-3 text-sm text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
             >
               홈으로 가기
             </Link>

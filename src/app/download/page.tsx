@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { generatePlannerPDF, PageType, Orientation, PlannerOptions } from '@/lib/pdf-generator';
 import { THEMES } from '@/lib/pdf-themes';
-import { useSajuStore } from '@/lib/store';
+import { useSajuStore, useAuthStore } from '@/lib/store';
 import PlannerPreviewCanvas from '@/components/planner/PlannerPreviewCanvas';
+import { getUserTier, verifyOrderForSaju, TIER_FEATURES, type Tier } from '@/lib/tier-gate';
 
 // ── 페이지 선택 옵션 ─────────────────────────────────────────────────────────
 const PAGE_OPTIONS: { type: PageType; label: string; sublabel: string; icon: string }[] = [
@@ -34,8 +35,41 @@ function getAvailableYears(): number[] {
 
 export default function DownloadPage() {
   const savedSaju = useSajuStore((s) => s.savedSaju);
+  const { user }  = useAuthStore();
 
   const YEARS = getAvailableYears();
+
+  // ── 티어 & 주문 검증 ──────────────────────────────────────────────────────
+  const [tier, setTier]           = useState<Tier>('free');
+  const [orderVerified, setOrderVerified] = useState(false);
+  const [orderId, setOrderId]     = useState<string | null>(null);
+
+  // URL params 읽기 (window 사용 → SSR 안전)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const orderParam = params.get('orderId');
+    const modeParam  = params.get('mode') as PlannerOptions['mode'] | null;
+    if (orderParam) setOrderId(orderParam);
+    if (modeParam === 'fortune' || modeParam === 'practice') setMode(modeParam);
+  }, []);
+
+  // 로그인 유저의 티어 조회
+  useEffect(() => {
+    if (user?.id) {
+      getUserTier(user.id).then(setTier);
+    } else {
+      setTier('free');
+    }
+  }, [user?.id]);
+
+  // orderId로 사주 상품 구매 검증
+  useEffect(() => {
+    if (!user?.id || !orderId) return;
+    verifyOrderForSaju(user.id, orderId).then(setOrderVerified);
+  }, [user?.id, orderId]);
+
+  // 사주 개인화 가능 여부: 티어 기반 OR 방금 구매한 주문 검증
+  const canUseSaju = TIER_FEATURES[tier].sajuPersonalization || orderVerified;
 
   const [mode, setMode]       = useState<PlannerOptions['mode']>('fortune');
   const [orientation, setOrientation] = useState<Orientation>('portrait');
@@ -291,27 +325,48 @@ export default function DownloadPage() {
         </section>
 
         {/* ── 사주 데이터 연동 배지 ─────────────────────────────────────────────── */}
-        {savedSaju ? (
-          <div className="flex items-center gap-3 px-4 py-3 bg-ft-paper-alt border border-ft-border rounded-xl text-sm">
-            <span className="text-xl">🔮</span>
-            <div className="flex-1 min-w-0">
-              <span className="text-ft-body font-medium">사주 데이터 연동됨</span>
-              <span className="ml-2 text-ft-muted text-xs truncate">{savedSaju.ganzhi}</span>
+        {mode === 'fortune' && (
+          canUseSaju ? (
+            savedSaju ? (
+              <div className="flex items-center gap-3 px-4 py-3 bg-ft-paper-alt border border-ft-border rounded-xl text-sm">
+                <span className="text-xl">🔮</span>
+                <div className="flex-1 min-w-0">
+                  <span className="text-ft-body font-medium">사주 데이터 연동됨</span>
+                  {orderVerified && (
+                    <span className="ml-2 px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-xs rounded-full">✓ 구매 확인</span>
+                  )}
+                  <span className="ml-2 text-ft-muted text-xs truncate">{savedSaju.ganzhi}</span>
+                </div>
+                <button
+                  onClick={() => useSajuStore.getState().clearSaju()}
+                  className="text-ft-muted hover:text-ft-body transition-colors text-xs flex-shrink-0"
+                >
+                  해제
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3 px-4 py-3 bg-white border border-ft-border rounded-xl text-sm text-ft-muted">
+                <span className="text-xl">💡</span>
+                <span>
+                  <a href="/saju" className="underline underline-offset-2 hover:text-ft-body transition-colors">사주 계산기</a>에서 생년월일을 입력하면 커버에 사주 정보가 자동으로 추가됩니다.
+                </span>
+              </div>
+            )
+          ) : (
+            <div className="flex items-center gap-3 px-4 py-3 bg-white border border-amber-200 rounded-xl text-sm">
+              <span className="text-xl">🔒</span>
+              <div className="flex-1 min-w-0">
+                <span className="text-ft-body font-medium">사주 개인화</span>
+                <span className="ml-2 text-ft-muted text-xs">사주 플래너 구매 후 이용 가능</span>
+              </div>
+              <a
+                href="/products/saju-planner-basic"
+                className="flex-shrink-0 px-3 py-1.5 bg-ft-gold text-ft-ink rounded-lg text-xs font-bold hover:bg-ft-gold-h transition-colors whitespace-nowrap"
+              >
+                구매하기 →
+              </a>
             </div>
-            <button
-              onClick={() => useSajuStore.getState().clearSaju()}
-              className="text-ft-muted hover:text-ft-body transition-colors text-xs flex-shrink-0"
-            >
-              해제
-            </button>
-          </div>
-        ) : (
-          <div className="flex items-center gap-3 px-4 py-3 bg-white border border-ft-border rounded-xl text-sm text-ft-muted">
-            <span className="text-xl">💡</span>
-            <span>
-              <a href="/saju" className="underline underline-offset-2 hover:text-ft-body transition-colors">사주 계산기</a>에서 생년월일을 입력하면 커버에 사주 정보가 자동으로 추가됩니다.
-            </span>
-          </div>
+          )
         )}
 
         {/* ── 카드: 템플릿 선택 ─────────────────────────────────────────────────── */}
