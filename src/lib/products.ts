@@ -1,5 +1,9 @@
 import type { Product } from '@/types';
 
+// 11월부터는 다음 해 플래너를 판매 → 연도 자동 전환
+const d = new Date();
+export const PLANNER_YEAR = d.getMonth() >= 10 ? d.getFullYear() + 1 : d.getFullYear();
+
 export const PRODUCTS: Product[] = [
   {
     id: 'common-planner',
@@ -53,6 +57,7 @@ export const PRODUCTS: Product[] = [
       { label: '가격', value: '무료' },
     ],
     downloadUrl: '/download',
+    previewTheme: 'rose',
     category: 'free',
     inStock: true,
     seo: {
@@ -120,6 +125,7 @@ export const PRODUCTS: Product[] = [
       { label: '가격', value: '19,000원 (얼리버드 할인가)' },
     ],
     downloadUrl: null, // TODO: 개인별 Google Drive 링크 연결
+    previewTheme: 'navy',
     category: 'basic',
     inStock: true,
     seo: {
@@ -189,6 +195,7 @@ export const PRODUCTS: Product[] = [
       { label: '가격', value: '29,000원 (얼리버드 특별가)' },
     ],
     downloadUrl: null, // TODO: 개인별 Google Drive 링크 연결
+    previewTheme: 'gold',
     category: 'premium',
     inStock: true,
     seo: {

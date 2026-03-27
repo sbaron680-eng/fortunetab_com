@@ -1,9 +1,9 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import { useCartStore, useToastStore } from '@/lib/store';
-import { formatPrice } from '@/lib/products';
+import { formatPrice, PLANNER_YEAR } from '@/lib/products';
+import PlannerPreviewCanvas from '@/components/planner/PlannerPreviewCanvas';
 import type { Product } from '@/types';
 
 const BADGE_STYLES: Record<string, string> = {
@@ -39,16 +39,14 @@ export default function ProductCard({ product, priority = false }: Props) {
         </span>
       )}
 
-      {/* 상품 이미지 */}
-      <Link href={`/products/${product.slug}`} className="block overflow-hidden bg-ft-paper-alt">
-        <div className="relative aspect-[4/3] w-full">
-          <Image
-            src={product.thumbnailImage}
-            alt={product.name}
-            fill
-            priority={priority}
-            className="object-cover group-hover:scale-105 transition-transform duration-500"
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+      {/* 상품 미리보기 — 실시간 캔버스 렌더링 */}
+      <Link href={`/products/${product.slug}`} className="block overflow-hidden bg-[#0f0e17]">
+        <div className="flex items-center justify-center py-6 group-hover:scale-[1.03] transition-transform duration-500">
+          <PlannerPreviewCanvas
+            pageType="cover"
+            opts={{ orientation: 'portrait', year: PLANNER_YEAR, theme: product.previewTheme ?? 'rose', name: '' }}
+            displayWidth={180}
+            className="shadow-xl"
           />
         </div>
       </Link>

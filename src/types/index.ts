@@ -15,6 +15,7 @@ export interface Product {
   features: ProductFeature[];
   specs: ProductSpec[];
   downloadUrl: string | null; // Google Drive link — 추후 연결
+  previewTheme?: string;       // 상품 카드 미리보기 테마 (기본: 'rose')
   category: 'free' | 'basic' | 'premium';
   inStock: boolean;
   seo: {

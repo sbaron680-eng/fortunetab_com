@@ -9,6 +9,7 @@
 import { useState } from 'react';
 import PlannerPreviewCanvas from '@/components/planner/PlannerPreviewCanvas';
 import PreviewLightbox from '@/components/ui/PreviewLightbox';
+import { PLANNER_YEAR } from '@/lib/products';
 import type { PageType } from '@/lib/pdf-generator';
 
 const PAGES: { type: PageType; label: string; icon: string; idx: number }[] = [
@@ -24,7 +25,7 @@ interface Props {
   theme?: string;
 }
 
-export default function PlannerProductPreview({ year = 2026, theme = 'rose' }: Props) {
+export default function PlannerProductPreview({ year = PLANNER_YEAR, theme = 'rose' }: Props) {
   const [activeIdx, setActiveIdx] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const active = PAGES[activeIdx];
