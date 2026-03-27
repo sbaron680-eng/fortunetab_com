@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { generatePlannerPDF, PageType, Orientation } from '@/lib/pdf-generator';
+import { generatePlannerPDF, PageType, Orientation, PlannerOptions } from '@/lib/pdf-generator';
 import { THEMES } from '@/lib/pdf-themes';
 import { useSajuStore } from '@/lib/store';
 import PlannerPreviewCanvas from '@/components/planner/PlannerPreviewCanvas';
@@ -37,6 +37,7 @@ export default function DownloadPage() {
 
   const YEARS = getAvailableYears();
 
+  const [mode, setMode]       = useState<PlannerOptions['mode']>('fortune');
   const [orientation, setOrientation] = useState<Orientation>('portrait');
   const [selectedPages, setSelectedPages] = useState<Set<PageType>>(
     new Set(['cover', 'year-index', 'monthly', 'weekly', 'daily'])
@@ -83,7 +84,8 @@ export default function DownloadPage() {
           .filter((o) => selectedPages.has(o.type))
           .map((o) => o.type),
         theme,
-        saju: savedSaju ?? undefined,
+        mode,
+        saju: mode === 'practice' ? undefined : (savedSaju ?? undefined),
         onProgress: (current, total, label) => {
           setProgress({ current, total, label });
         },
@@ -96,7 +98,7 @@ export default function DownloadPage() {
       setIsGenerating(false);
       setProgress(null);
     }
-  }, [orientation, selectedPages, name, year, theme, savedSaju]);
+  }, [orientation, selectedPages, name, year, theme, mode, savedSaju]);
 
   // ── 예상 페이지 수 계산 ──────────────────────────────────────────────────────
   const estimatedPages = [...selectedPages].reduce((acc, t) => {
@@ -127,6 +129,46 @@ export default function DownloadPage() {
       </div>
 
       <div className="max-w-2xl mx-auto space-y-6">
+
+        {/* ── 카드: 플래너 모드 선택 ───────────────────────────────────────────── */}
+        <section className="bg-white border border-ft-border rounded-2xl p-6">
+          <h2 className="text-ft-ink font-semibold text-sm uppercase tracking-widest mb-4 flex items-center gap-2">
+            <span className="w-1.5 h-4 bg-ft-gold rounded-full inline-block" />
+            플래너 종류
+          </h2>
+          <div className="grid grid-cols-2 gap-3">
+            {([
+              { value: 'fortune', icon: '🔮', label: '운세 플래너', desc: '사주·운세 흐름 기반' },
+              { value: 'practice', icon: '🎯', label: '실천 플래너', desc: '목표달성·습관형성' },
+            ] as const).map(({ value, icon, label, desc }) => {
+              const isSel = mode === value;
+              return (
+                <button
+                  key={value}
+                  onClick={() => { setMode(value); setDone(false); }}
+                  className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all text-center ${
+                    isSel
+                      ? 'bg-ft-ink text-white ring-2 ring-ft-ink border-ft-ink'
+                      : 'bg-white border-ft-border text-ft-body hover:bg-ft-paper-alt'
+                  }`}
+                >
+                  <span className="text-2xl">{icon}</span>
+                  <div>
+                    <div className={`text-sm font-semibold ${isSel ? 'text-white' : 'text-ft-body'}`}>{label}</div>
+                    <div className={`text-xs mt-0.5 ${isSel ? 'text-white/70' : 'text-ft-muted'}`}>{desc}</div>
+                  </div>
+                  {isSel && (
+                    <span className="absolute top-2 right-2 w-5 h-5 bg-ft-gold rounded-full flex items-center justify-center">
+                      <svg className="w-3 h-3 text-ft-ink" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </section>
 
         {/* ── 카드: 연도 선택 ───────────────────────────────────────────────────── */}
         <section className="bg-white border border-ft-border rounded-2xl p-6">
@@ -363,7 +405,7 @@ export default function DownloadPage() {
                   <PlannerPreviewCanvas
                     pageType={type}
                     pageIdx={idx}
-                    opts={{ orientation, year, name: name.trim() || '나의 플래너', theme }}
+                    opts={{ orientation, year, name: name.trim() || '나의 플래너', theme, mode }}
                     displayWidth={140}
                   />
                   <span className="text-xs text-ft-muted">{label}</span>

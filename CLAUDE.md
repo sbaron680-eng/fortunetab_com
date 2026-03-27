@@ -7,6 +7,11 @@
 - **GitHub**: sbaron680-eng/fortunetab_com (main 브랜치 → 자동 배포)
 - **팀**: 1인 개발 (박성준)
 
+> **세부 가이드 문서**
+> - [`docs/CLAUDE-planner.md`](docs/CLAUDE-planner.md) — PDF 생성기, 테마, fortune/practice 모드
+> - [`docs/CLAUDE-products.md`](docs/CLAUDE-products.md) — 상품 카탈로그, PLANNER_YEAR, 추가 체크리스트
+> - [`docs/CLAUDE-philosophy.md`](docs/CLAUDE-philosophy.md) — 4가지 철학 원문, 페이지별 적용 위치
+
 ---
 
 ## 기술 스택
@@ -24,42 +29,12 @@
 
 ---
 
-## 핵심 아키텍처
-
-### PDF 생성 흐름
-```
-PlannerOptions (년도/테마/방향/페이지목록)
-  → generatePlannerPDF()
-    → T = getTheme(opts.theme)          // 테마 전역 변수 설정
-    → 각 페이지: drawXxx(ctx, W, H, opts)  // Canvas 2D 렌더링
-    → canvas.toDataURL('image/jpeg')    // JPEG 변환
-    → doc.addImage() + doc.link()       // jsPDF 삽입 + 하이퍼링크
-  → doc.save('filename.pdf')
-```
-
-### 미리보기 = PDF 동일성 보장
-- `renderPreviewPage(canvas, pageType, pageIdx, opts)` 으로 동일한 draw 함수 호출
-- `PlannerPreviewCanvas` 컴포넌트가 캔버스를 CSS `transform: scale()` 로 축소
-- **정적 이미지(public/products/*.png) 는 참고용 레거시 — 상품 페이지는 PlannerProductPreview 컴포넌트 사용**
-
-### 테마 시스템
-- `src/lib/pdf-themes.ts`: 7개 테마 정의 (`ColorTheme` 인터페이스)
-- 모듈 레벨 `let T: ColorTheme` 변수 — `generatePlannerPDF`/`renderPreviewPage` 시작 시 설정
-- draw 함수는 `T.headerA`, `T.navA` 등 참조 (thread-safe: 브라우저 단일 스레드)
-
-### 공휴일 시스템
-- `src/lib/korean-holidays.ts`: 2025-2027 공휴일/대체공휴일/기념일
-- `getHoliday(year, month0based, day)` → `HolidayInfo | null`
-- 색상: `holiday/substitute` = 파스텔 레드(`#ffecec`/`#b84060`), `memorial` = 파스텔 블루(`#e8eeff`/`#5060b0`)
-
----
-
 ## 파일 구조 (핵심)
 
 ```
 src/
 ├── app/
-│   ├── download/page.tsx          ← PDF 생성 UI (연도/테마/방향/템플릿 선택 + 실시간 미리보기)
+│   ├── download/page.tsx          ← PDF 생성 UI (모드/연도/테마/방향/템플릿 + 미리보기)
 │   ├── products/[slug]/page.tsx   ← 상품 상세 (PlannerProductPreview 사용)
 │   └── saju/page.tsx              ← 사주 계산기
 ├── components/
@@ -70,35 +45,15 @@ src/
 ├── lib/
 │   ├── pdf-generator.ts           ← PDF/미리보기 핵심 엔진 (v4)
 │   ├── pdf-themes.ts              ← 7가지 컬러 테마
+│   ├── planner-philosophy.ts      ← 4가지 플래너 철학 데이터
 │   ├── korean-holidays.ts         ← 공휴일 데이터 2025-2027
-│   ├── products.ts                ← 상품 카탈로그 (정적)
+│   ├── products.ts                ← 상품 카탈로그 + PLANNER_YEAR
 │   └── store.ts                   ← Zustand 스토어 (사주, 카트, 인증)
+docs/
+├── CLAUDE-planner.md              ← PDF 엔진 상세 가이드
+├── CLAUDE-products.md             ← 상품 관리 가이드
+└── CLAUDE-philosophy.md           ← 플래너 철학 & 모드 가이드
 ```
-
----
-
-## PDF 생성기 규칙
-
-### 새 페이지 타입 추가 시
-1. `PageType` union에 추가
-2. `drawXxx()` 함수 작성 (마지막에 `drawNavBar()` 호출 필수)
-3. `renderPreviewPage()` switch에 케이스 추가
-4. `generatePlannerPDF()` 의 expandedPages 루프에 케이스 추가
-
-### 컬러 사용 규칙
-- **테마 의존 색상** → `T.xxx` 사용 (헤더, 날짜 색, 네비 바)
-- **고정 중립 색상** → `C.xxx` 사용 (배경, 텍스트, 규칙선, 공휴일 색)
-- **절대 하드코딩 금지**: `#8b3f5c` 같은 특정 테마 색을 C 객체에 새로 추가하지 말 것
-
-### ISO 주차
-- `getWeekDates(year, isoWeek)` → `[Mon, Tue, Wed, Thu, Fri, Sat, Sun]` (0=월요일)
-- 주간 페이지 컬럼 순서: 월~일 (ISO 기준)
-- 일요일 = 인덱스 6 (isSun = d === 6)
-
-### NavLink (내부 하이퍼링크)
-- draw 함수가 `NavLink[]` 반환 → `generatePlannerPDF`에서 `doc.link()` 처리
-- 좌표: canvas 픽셀 단위 → `scalX = PW/CW`, `scalY = PH/CH` 로 PDF pt 변환
-- 현재 구현: `drawYearIndex` → 월간 페이지, `drawMonthly` → 주간 페이지
 
 ---
 
@@ -158,7 +113,10 @@ MCP 서버: `.mcp.json` → `cwnzezlgtcqkmnyojhbd` 프로젝트
 `src/lib/pdf-themes.ts` → `THEMES` 배열에 `ColorTheme` 객체 추가
 
 ### 상품 정보 수정
-`src/lib/products.ts` → `PRODUCTS` 배열 직접 수정
+`src/lib/products.ts` → `PRODUCTS` 배열 직접 수정. 자세한 체크리스트: `docs/CLAUDE-products.md`
+
+### PDF 페이지 수정
+draw 함수 상세 규칙: `docs/CLAUDE-planner.md`
 
 ### 폰트 로딩 이슈
-`document.fonts.ready` 를 `await` 한 후 canvas 렌더링. Google Fonts (`Noto Serif KR`) 로드 실패 시 fallback 폰트로 렌더링됩니다.
+`document.fonts.ready` 를 `await` 한 후 canvas 렌더링.

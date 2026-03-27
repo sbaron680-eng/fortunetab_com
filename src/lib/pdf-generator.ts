@@ -12,6 +12,7 @@
 
 import { getHoliday, getSolarTerm } from './korean-holidays';
 import { getTheme, ColorTheme, DEFAULT_THEME } from './pdf-themes';
+import { PHILOSOPHIES, getMonthPhilosophy } from './planner-philosophy';
 
 export type Orientation = 'portrait' | 'landscape';
 export type PageType = 'cover' | 'year-index' | 'monthly' | 'weekly' | 'daily';
@@ -39,6 +40,7 @@ export interface PlannerOptions {
   name: string;
   pages: PageType[];
   theme?: string;
+  mode?: 'fortune' | 'practice'; // 'fortune'(기본): 사주·운세 플래너 | 'practice': 목표달성·실천 플래너
   saju?: SajuData;
   onProgress?: (current: number, total: number, label: string) => void;
 }
@@ -415,14 +417,20 @@ function drawCover(
     ctx.globalAlpha = 1;
     if (ctxAny.letterSpacing !== undefined) ctxAny.letterSpacing = '0em';
 
-    // 플래너 부제
+    // 플래너 부제 (모드별 분기)
     ctx.font = F(32, true, true);
     ctx.fillStyle = C.textDark;
-    centeredText(ctx, '나만의 365일 플래너', CH * 0.588, W);
+    const coverTitle = opts.mode === 'practice'
+      ? '계획하는 사람들을 위한 플래너'
+      : '나만의 365일 플래너';
+    centeredText(ctx, coverTitle, CH * 0.588, W);
 
     ctx.font = F(20, false, false);
     ctx.fillStyle = C.textLight;
-    centeredText(ctx, `사주로 읽는 ${opts.year}년 운세 일력`, CH * 0.634, W);
+    const coverSub = opts.mode === 'practice'
+      ? '목표 달성 · 습관 형성 · 실천력 강화'
+      : `사주로 읽는 ${opts.year}년 운세 일력`;
+    centeredText(ctx, coverSub, CH * 0.634, W);
 
     // 하단 구분선
     ctx.beginPath();
@@ -432,6 +440,14 @@ function drawCover(
     ctx.globalAlpha = 0.15;
     ctx.lineWidth = 0.8;
     ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    // 철학 인용구 (하단 구분선 아래 · 이름 위)
+    const philCover = opts.mode === 'practice' ? PHILOSOPHIES[3] : PHILOSOPHIES[1];
+    ctx.font = F(14, false, true);
+    ctx.fillStyle = T.coverMid;
+    ctx.globalAlpha = 0.65;
+    centeredText(ctx, philCover.quote, CH * 0.698, W);
     ctx.globalAlpha = 1;
 
     // 이름 라인
@@ -505,8 +521,19 @@ function drawCover(
     ctx.globalAlpha = 1;
 
     ctx.font = F(22, true, true); ctx.fillStyle = C.textDark;
-    const tw = ctx.measureText('사주·운세로 설계한 나만의 플래너').width;
-    ctx.fillText('사주·운세로 설계한 나만의 플래너', RX+(RW-tw)/2, CH*0.78);
+    const lCoverTitle = opts.mode === 'practice'
+      ? '계획하는 사람들을 위한 플래너'
+      : '사주·운세로 설계한 나만의 플래너';
+    const tw = ctx.measureText(lCoverTitle).width;
+    ctx.fillText(lCoverTitle, RX+(RW-tw)/2, CH*0.78);
+
+    // 철학 인용구 (가로형)
+    const lPhil = opts.mode === 'practice' ? PHILOSOPHIES[3] : PHILOSOPHIES[1];
+    ctx.font = F(13, false, true); ctx.fillStyle = T.coverMid;
+    ctx.globalAlpha = 0.60;
+    const lpw = ctx.measureText(lPhil.shortQuote).width;
+    ctx.fillText(lPhil.shortQuote, RX+(RW-lpw)/2, CH*0.825);
+    ctx.globalAlpha = 1;
 
     const FX2 = RX + RW*0.12, FW2 = RW*0.76;
     ctx.font = F(18, false, false); ctx.fillStyle = C.textLight;
@@ -563,7 +590,109 @@ function drawYearIndex(
   ctx.fillStyle = 'rgba(255,230,240,0.75)';
   ctx.fillText('연간 인덱스', PAGE_PAD + yearW + 16, TEXT_Y - FONT_TITLE*0.05);
 
-  // 12달 그리드
+  // 철학 ① — 헤더 우측 정렬 (fortune) / ④ (practice)
+  const yiPhil = opts.mode === 'practice' ? PHILOSOPHIES[3] : PHILOSOPHIES[0];
+  ctx.font = F(FONT_TITLE * 0.82, false, true);
+  ctx.fillStyle = C.goldFaint;
+  ctx.globalAlpha = 0.60;
+  const yiPhilW = ctx.measureText(yiPhil.shortQuote).width;
+  ctx.fillText(yiPhil.shortQuote, W - PAGE_PAD - yiPhilW, TEXT_Y - FONT_TITLE * 0.05);
+  ctx.globalAlpha = 1;
+
+  // ── 실천 플래너: 연간 목표 + 분기별 계획 ──────────────────────────────────
+  if (opts.mode === 'practice') {
+    const OUTER = PAGE_PAD;
+    const GAP   = isL ? 14 : 10;
+    const contentY = BAR_H + (isL ? 18 : 16);
+    const contentH = CH - contentY - OUTER;
+
+    // 연간 목표 섹션 (위쪽 35%)
+    const goalH = contentH * 0.35;
+    const goalBoxY = contentY;
+
+    // 섹션 헤더
+    ctx.font = F(isL ? 22 : 20, true, false); ctx.fillStyle = T.headerA;
+    ctx.fillText(`${opts.year}년 나의 3가지 목표`, OUTER, goalBoxY + (isL ? 22 : 20));
+
+    // 목표 3개 입력 라인
+    const goalLineGap = (goalH - (isL ? 36 : 30)) / 3;
+    for (let i = 0; i < 3; i++) {
+      const lx = OUTER;
+      const ly = goalBoxY + (isL ? 44 : 38) + i * goalLineGap;
+      // 번호
+      ctx.font = F(isL ? 18 : 16, true, true); ctx.fillStyle = T.headerA;
+      ctx.globalAlpha = 0.85;
+      ctx.fillText(`${i + 1}.`, lx, ly + (isL ? 18 : 15));
+      ctx.globalAlpha = 1;
+      // 입력 라인
+      ctx.strokeStyle = C.ruleColor; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(lx + 28, ly + (isL ? 20 : 18)); ctx.lineTo(W - OUTER, ly + (isL ? 20 : 18)); ctx.stroke();
+    }
+
+    // 철학 ① 인용 (목표 섹션 하단)
+    ctx.font = F(isL ? 13 : 12, false, true);
+    ctx.fillStyle = C.textLight; ctx.globalAlpha = 0.65;
+    centeredText(ctx, PHILOSOPHIES[0].quote, goalBoxY + goalH - 4, W);
+    ctx.globalAlpha = 1;
+
+    // 분기별 계획 그리드 (아래쪽 60%)
+    const QY   = contentY + goalH + (isL ? 16 : 12);
+    const QGAP = isL ? 14 : 10;
+    const QW   = (W - OUTER * 2 - QGAP * 3) / 4;
+    const QH   = CH - QY - OUTER;
+    const Q_MONTHS = ['1월 — 3월', '4월 — 6월', '7월 — 9월', '10월 — 12월'];
+
+    for (let q = 0; q < 4; q++) {
+      const qx = OUTER + q * (QW + QGAP);
+      const qy = QY;
+
+      // 분기 카드 배경
+      ctx.fillStyle = C.bgCard;
+      roundRect(ctx, qx, qy, QW, QH, 8); ctx.fill();
+      ctx.strokeStyle = C.ruleColor; ctx.lineWidth = 1;
+      roundRect(ctx, qx, qy, QW, QH, 8); ctx.stroke();
+
+      // 분기 헤더 그라디언트
+      const qHdrH = QH * 0.14;
+      const qhg = ctx.createLinearGradient(qx, qy, qx + QW, qy);
+      qhg.addColorStop(0, T.headerA); qhg.addColorStop(1, T.headerB);
+      ctx.fillStyle = qhg;
+      roundRect(ctx, qx, qy, QW, qHdrH + 4, 8); ctx.fill();
+      ctx.fillRect(qx, qy + qHdrH / 2, QW, qHdrH / 2 + 4);
+
+      // Q 라벨
+      ctx.font = F(QH * 0.09, true, true); ctx.fillStyle = C.goldFaint;
+      const qlW = ctx.measureText(`Q${q + 1}`).width;
+      ctx.fillText(`Q${q + 1}`, qx + (QW - qlW) / 2, qy + qHdrH * 0.80);
+
+      // 월 범위
+      ctx.font = F(QH * 0.055, false, false); ctx.fillStyle = C.textMid;
+      const qmW = ctx.measureText(Q_MONTHS[q]).width;
+      ctx.fillText(Q_MONTHS[q], qx + (QW - qmW) / 2, qy + qHdrH + QH * 0.06);
+
+      // 목표/계획 입력 라인 (6줄)
+      const lineAreaY = qy + qHdrH + QH * 0.12;
+      const lineAreaH = QH - qHdrH - QH * 0.14;
+      const lineGap   = lineAreaH / 6;
+      const LABELS    = ['목표', '', '', '계획', '', ''];
+      ctx.strokeStyle = C.ruleColor; ctx.lineWidth = 0.7;
+      for (let r = 0; r < 6; r++) {
+        const ry = lineAreaY + r * lineGap + lineGap * 0.85;
+        if (LABELS[r]) {
+          ctx.font = F(lineGap * 0.28, true, false); ctx.fillStyle = T.headerA;
+          ctx.globalAlpha = 0.75;
+          ctx.fillText(LABELS[r], qx + 7, ry);
+          ctx.globalAlpha = 1;
+        }
+        ctx.beginPath(); ctx.moveTo(qx + 7, ry + 3); ctx.lineTo(qx + QW - 7, ry + 3); ctx.stroke();
+      }
+    }
+
+    drawNavBar(ctx, W, H, 'year-index', opts.pages);
+    return navLinks;
+  }
+
+  // 12달 그리드 (fortune 모드)
   const COLS   = isL ? 4 : 3;
   const ROWS   = isL ? 3 : 4;
   const OUTER  = PAGE_PAD;
@@ -690,11 +819,27 @@ function drawMonthly(
     navLinks.push({ x: nextX, y: 0, w: ARW, h: BAR_H, targetType: 'monthly', targetIdx: monthIdx + 1 });
   }
 
-  // 요일 헤더
+  // 철학 배너 (헤더 바로 아래, 달력 위)
   const PAD    = PAGE_PAD;
   const GX     = PAD;
-  const GY     = BAR_H + (isL ? 10 : 8);
-  const CELL_W = (W - PAD*2) / 7;
+  const BANNER_H = 24;
+  const BANNER_Y = BAR_H + 3;
+  const monthPhil = getMonthPhilosophy(monthIdx);
+  ctx.fillStyle = T.headerA;
+  ctx.globalAlpha = 0.07;
+  ctx.fillRect(PAD, BANNER_Y, W - PAD*2, BANNER_H);
+  ctx.globalAlpha = 1;
+  ctx.font = F(11, false, true);
+  ctx.fillStyle = T.headerA;
+  ctx.globalAlpha = 0.70;
+  ctx.fillText(`✦  ${monthPhil.shortQuote}`, PAD + 10, BANNER_Y + BANNER_H * 0.73);
+  ctx.globalAlpha = 1;
+
+  const GY     = BANNER_Y + BANNER_H + (isL ? 5 : 4);
+  // 실천 모드 세로형: 달력 63% 너비 → 오른쪽 OKR 패널 확보
+  const CAL_RATIO = (opts.mode === 'practice' && !isL) ? 0.63 : 1.0;
+  const CAL_W  = (W - PAD * 2) * CAL_RATIO;
+  const CELL_W = CAL_W / 7;
   const DAY_H  = isL ? CH*0.052 : CH*0.037;
 
   const DAY_BG  = [T.dayBgSun, T.dayBgMid, T.dayBgMid, T.dayBgMid, T.dayBgMid, T.dayBgMid, T.dayBgSat];
@@ -725,7 +870,7 @@ function drawMonthly(
       const isoWeek = getISOWeek(wed);
       navLinks.push({
         x: GX, y: CELL_Y + row*CELL_H,
-        w: W - PAD*2, h: CELL_H,
+        w: CAL_W, h: CELL_H,
         targetType: 'weekly', targetIdx: isoWeek,
       });
     }
@@ -795,6 +940,76 @@ function drawMonthly(
         ctx.strokeStyle = C.ruleColor; ctx.lineWidth = 0.5;
         ctx.strokeRect(cx2, cy2, CELL_W-1, CELL_H-1);
       }
+    }
+  }
+
+  // ── 실천 플래너 세로형: 오른쪽 OKR 패널 ──────────────────────────────────
+  if (opts.mode === 'practice' && !isL) {
+    const OKR_X = PAD + CAL_W + 12;
+    const OKR_W = W - OKR_X - PAD;
+    const OKR_Y = GY;
+    const OKR_H = CH - OKR_Y - PAD;
+
+    // OKR 패널 — 위쪽 55%: 이달의 목표
+    const OKR_TOP_H = OKR_H * 0.54;
+    ctx.fillStyle = C.bgCard; ctx.strokeStyle = C.ruleColor; ctx.lineWidth = 1;
+    roundRect(ctx, OKR_X, OKR_Y, OKR_W, OKR_TOP_H, 8); ctx.fill(); ctx.stroke();
+
+    // OKR 헤더
+    const oHdrH = OKR_TOP_H * 0.13;
+    const ohg = ctx.createLinearGradient(OKR_X, OKR_Y, OKR_X + OKR_W, OKR_Y);
+    ohg.addColorStop(0, T.headerA); ohg.addColorStop(1, T.headerB);
+    ctx.fillStyle = ohg;
+    roundRect(ctx, OKR_X, OKR_Y, OKR_W, oHdrH + 4, 8); ctx.fill();
+    ctx.fillRect(OKR_X, OKR_Y + oHdrH / 2, OKR_W, oHdrH / 2 + 4);
+    ctx.font = F(oHdrH * 0.62, true, false); ctx.fillStyle = C.goldFaint;
+    ctx.fillText('이달의 목표', OKR_X + 8, OKR_Y + oHdrH * 0.78);
+
+    // OKR 입력 라인 (목표 + KR 3개)
+    const oLineStart = OKR_Y + oHdrH + 6;
+    const oLineH = (OKR_TOP_H - oHdrH - 10) / 4;
+    const OKR_LABELS = ['목표', 'KR 1', 'KR 2', 'KR 3'];
+    ctx.strokeStyle = C.ruleColor; ctx.lineWidth = 0.8;
+    for (let i = 0; i < 4; i++) {
+      const oly = oLineStart + i * oLineH;
+      ctx.font = F(oLineH * 0.26, true, false); ctx.fillStyle = T.headerA;
+      ctx.globalAlpha = 0.80;
+      ctx.fillText(OKR_LABELS[i], OKR_X + 6, oly + oLineH * 0.52);
+      ctx.globalAlpha = 1;
+      const labelW = ctx.measureText(OKR_LABELS[i]).width + 10;
+      ctx.beginPath();
+      ctx.moveTo(OKR_X + labelW, oly + oLineH * 0.56);
+      ctx.lineTo(OKR_X + OKR_W - 6, oly + oLineH * 0.56);
+      ctx.stroke();
+    }
+
+    // OKR 패널 — 아래쪽 42%: 월말 회고
+    const REV_Y = OKR_Y + OKR_TOP_H + 8;
+    const REV_H = OKR_H - OKR_TOP_H - 8;
+    ctx.fillStyle = C.bgCard; ctx.strokeStyle = C.ruleColor; ctx.lineWidth = 1;
+    roundRect(ctx, OKR_X, REV_Y, OKR_W, REV_H, 8); ctx.fill(); ctx.stroke();
+
+    ctx.font = F(REV_H * 0.085, true, false); ctx.fillStyle = T.headerA;
+    ctx.fillText('이달의 회고', OKR_X + 8, REV_Y + REV_H * 0.11);
+
+    const rLineStart = REV_Y + REV_H * 0.18;
+    const rLineH = (REV_H * 0.78) / 4;
+    const REV_LABELS = ['잘한 점', '개선점', '배운 것', '다음 달'];
+    ctx.strokeStyle = C.ruleColor; ctx.lineWidth = 0.7;
+    for (let i = 0; i < 4; i++) {
+      const rly = rLineStart + i * rLineH;
+      ctx.font = F(rLineH * 0.25, true, false); ctx.fillStyle = T.headerA;
+      ctx.globalAlpha = 0.75;
+      ctx.fillText(REV_LABELS[i], OKR_X + 6, rly + rLineH * 0.42);
+      ctx.globalAlpha = 1;
+      ctx.beginPath();
+      ctx.moveTo(OKR_X + 6, rly + rLineH * 0.56);
+      ctx.lineTo(OKR_X + OKR_W - 6, rly + rLineH * 0.56);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(OKR_X + 6, rly + rLineH * 0.80);
+      ctx.lineTo(OKR_X + OKR_W - 6, rly + rLineH * 0.80);
+      ctx.stroke();
     }
   }
 
@@ -982,16 +1197,66 @@ function drawDaily(
     ctx.fillText(label, x+56, DATE_Y+DATE_H*0.70);
   }
 
-  // 오늘의 한마디
+  // 오늘의 다짐 (철학 의도 포함)
   const QUOTE_Y = DATE_Y + DATE_H + PAD;
-  const QUOTE_H = isL ? CH*0.066 : CH*0.044;
+  const QUOTE_H = isL ? CH*0.066 : CH*0.050;
   ctx.fillStyle = T.dayBgSun;
   ctx.fillRect(PAD, QUOTE_Y, W-PAD*2, QUOTE_H);
-  ctx.font = F(QUOTE_H*0.38, true, true); ctx.fillStyle = T.headerA;
-  ctx.fillText('✦ 오늘의 한마디', PAD+12, QUOTE_Y+QUOTE_H*0.68);
+  ctx.font = F(QUOTE_H*0.32, true, true); ctx.fillStyle = T.headerA;
+  ctx.fillText('✦ 오늘의 다짐', PAD+12, QUOTE_Y+QUOTE_H*0.42);
+  // 철학 의도 (④ 실행 철학 고정 — 일간 플래너 핵심 철학)
+  const dailyPhil = opts.mode === 'practice' ? PHILOSOPHIES[3] : PHILOSOPHIES[((opts.year) % 4 + 4) % 4];
+  ctx.font = F(QUOTE_H*0.26, false, true); ctx.fillStyle = T.headerA;
+  ctx.globalAlpha = 0.72;
+  ctx.fillText(dailyPhil.intent, PAD + 12, QUOTE_Y + QUOTE_H * 0.80);
+  ctx.globalAlpha = 1;
+
+  // ── 실천 플래너: MIT + 습관 체크 섹션 ────────────────────────────────────
+  let TIME_Y = QUOTE_Y + QUOTE_H + (isL ? PAD : Math.round(PAD * 0.6));
+  if (opts.mode === 'practice') {
+    // MIT (Most Important Tasks) 섹션
+    const MIT_Y = TIME_Y;
+    const MIT_H = isL ? Math.round(CH * 0.115) : Math.round(CH * 0.096);
+    ctx.fillStyle = T.wkDayBgMid; ctx.strokeStyle = T.weeklyB + '60'; ctx.lineWidth = 1;
+    ctx.fillRect(PAD, MIT_Y, W - PAD * 2, MIT_H);
+    ctx.strokeRect(PAD, MIT_Y, W - PAD * 2, MIT_H);
+
+    ctx.font = F(MIT_H * 0.20, true, false); ctx.fillStyle = T.headerA;
+    ctx.fillText('오늘의 3 MITs', PAD + 10, MIT_Y + MIT_H * 0.30);
+
+    const MIT_COL_W = (W - PAD * 2) / 3;
+    for (let i = 0; i < 3; i++) {
+      const mx = PAD + i * MIT_COL_W;
+      ctx.font = F(MIT_H * 0.19, false, false); ctx.fillStyle = C.textMid;
+      ctx.fillText(`□  ${i + 1}.`, mx + 8, MIT_Y + MIT_H * 0.65);
+      ctx.strokeStyle = C.ruleColor; ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      ctx.moveTo(mx + 8, MIT_Y + MIT_H * 0.82);
+      ctx.lineTo(mx + MIT_COL_W - 10, MIT_Y + MIT_H * 0.82);
+      ctx.stroke();
+    }
+
+    // 습관 체크 섹션
+    const HAB_Y = MIT_Y + MIT_H + 6;
+    const HAB_H = isL ? Math.round(CH * 0.065) : Math.round(CH * 0.055);
+    ctx.fillStyle = T.cellBgSat; ctx.strokeStyle = C.ruleColor; ctx.lineWidth = 1;
+    ctx.fillRect(PAD, HAB_Y, W - PAD * 2, HAB_H);
+    ctx.strokeRect(PAD, HAB_Y, W - PAD * 2, HAB_H);
+
+    ctx.font = F(HAB_H * 0.34, true, false); ctx.fillStyle = T.headerA;
+    ctx.fillText('습관 체크', PAD + 10, HAB_Y + HAB_H * 0.66);
+    const habLabelW = ctx.measureText('습관 체크').width + 20;
+    const HABITS = ['□ 운동', '□ 독서', '□ 명상', '□ 감사일기', '□ 수분섭취'];
+    const habItemW = (W - PAD * 2 - habLabelW) / HABITS.length;
+    ctx.font = F(HAB_H * 0.28, false, false); ctx.fillStyle = C.textMid;
+    HABITS.forEach((h, i) => {
+      ctx.fillText(h, PAD + habLabelW + i * habItemW, HAB_Y + HAB_H * 0.66);
+    });
+
+    TIME_Y = HAB_Y + HAB_H + 6;
+  }
 
   // 시간대 블록
-  const TIME_Y = QUOTE_Y + QUOTE_H + PAD;
   const HOURS  = [6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22];
   const TIME_COLORS: Record<number, string> = {
     6: '#fdf4f7', 7: '#fdf4f7', 8: '#fdf4f7',

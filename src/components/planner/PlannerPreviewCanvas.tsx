@@ -71,7 +71,7 @@ export default function PlannerPreviewCanvas({
 
     return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pageType, idx, opts.theme, opts.year, opts.orientation, opts.name, cw, ch]);
+  }, [pageType, idx, opts.theme, opts.year, opts.orientation, opts.name, opts.mode, cw, ch]);
 
   return (
     <div

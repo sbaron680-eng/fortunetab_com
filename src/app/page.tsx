@@ -81,8 +81,8 @@ export default function HomePage() {
             </div>
 
             <p className="text-ft-muted text-base sm:text-lg leading-loose mb-10">
-              생년월일시로 분석한 운세 흐름이 플래너에 녹아듭니다.<br />
-              단순한 일정표가 아닌, 내 운의 흐름을 읽는 도구.
+              운의 흐름을 알고, 노력으로 운명을 개척하는 나만의 플래너.<br />
+              단순한 일정표가 아닌, 의지와 실천이 담긴 도구.
             </p>
 
             {/* CTA 버튼 */}
