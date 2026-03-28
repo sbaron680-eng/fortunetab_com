@@ -13,7 +13,8 @@ function generateOrderNumber(): string {
 export async function createOrder(
   userId: string,
   items: CartItem[],
-  total: number
+  total: number,
+  sajuData?: Record<string, string>
 ): Promise<{ orderNumber: string; orderId: string } | null> {
   const orderNumber = generateOrderNumber();
 
@@ -24,6 +25,7 @@ export async function createOrder(
       order_number: orderNumber,
       status: 'pending',
       total,
+      ...(sajuData ? { saju_data: sajuData } : {}),
     })
     .select('id')
     .single();

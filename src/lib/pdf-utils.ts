@@ -35,6 +35,7 @@ export interface PlannerOptions {
   mode?: 'fortune' | 'practice'; // 'fortune'(기본): 사주·운세 플래너 | 'practice': 목표달성·실천 플래너
   saju?: SajuData;
   onProgress?: (current: number, total: number, label: string) => void;
+  returnBlob?: boolean;  // true면 다운로드 대신 Blob 반환 (서버 사이드용)
 }
 
 // ── 캔버스 해상도 (150dpi A4) ────────────────────────────────────────────────

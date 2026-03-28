@@ -50,7 +50,7 @@ export function renderPreviewPage(
   else if (pageType === 'daily')      drawDaily(ctx, W, H, opts);
 }
 
-export async function generatePlannerPDF(opts: PlannerOptions): Promise<void> {
+export async function generatePlannerPDF(opts: PlannerOptions): Promise<Blob | void> {
   const { jsPDF } = await import('jspdf');
 
   // 테마 설정
@@ -160,6 +160,11 @@ export async function generatePlannerPDF(opts: PlannerOptions): Promise<void> {
         } catch { /* ignore */ }
       }
     }
+  }
+
+  // returnBlob 모드: 서버 사이드 PDF 생성용 (다운로드 대신 Blob 반환)
+  if (opts.returnBlob) {
+    return doc.output('blob');
   }
 
   doc.save(`fortunetab_${opts.year}_planner_${opts.orientation}.pdf`);

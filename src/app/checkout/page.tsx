@@ -128,7 +128,17 @@ export default function CheckoutPage() {
         await new Promise((resolve) => setTimeout(resolve, 800));
         let orderNum = `FT-FREE-${Date.now()}`;
         if (user) {
-          const result = await createOrder(user.id, items, 0);
+          const sajuData = hasSajuProduct ? {
+            name: form.name,
+            email: form.email,
+            birthDate: form.birthDate,
+            birthTime: form.birthTime,
+            birthGender: form.birthGender,
+            theme: 'navy',
+            orientation: 'portrait',
+            notes: form.notes,
+          } : undefined;
+          const result = await createOrder(user.id, items, 0, sajuData);
           if (result) orderNum = result.orderNumber;
         }
         setOrderNumber(orderNum);
@@ -138,6 +148,9 @@ export default function CheckoutPage() {
       }
 
       // 토스페이먼츠 결제 요청 (성공 시 /checkout/success로 redirect)
+      // 토스 리디렉트 전 폼 데이터 임시 저장
+      sessionStorage.setItem('checkout-form', JSON.stringify(form));
+
       const orderId = `FT-${Date.now()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
       await paymentWidgetRef.current!.requestPayment({
         orderId,

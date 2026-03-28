@@ -28,6 +28,10 @@ function SuccessContent() {
   const orderId    = searchParams.get('orderId') ?? '';
   const amount     = Number(searchParams.get('amount') ?? '0');
 
+  const savedForm = typeof window !== 'undefined'
+    ? JSON.parse(sessionStorage.getItem('checkout-form') || '{}')
+    : {};
+
   const [status, setStatus] = useState<ConfirmStatus>('confirming');
   const [orderNumber, setOrderNumber] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
@@ -54,10 +58,21 @@ function SuccessContent() {
          * 현재는 클라이언트에서 직접 주문 저장 (개발/테스트용)
          */
         let orderNum = orderId;
+        const sajuData = savedForm.birthDate ? {
+          name: savedForm.name || '',
+          email: savedForm.email || '',
+          birthDate: savedForm.birthDate,
+          birthTime: savedForm.birthTime || '',
+          birthGender: savedForm.birthGender || '',
+          theme: 'navy',
+          orientation: 'portrait',
+          notes: savedForm.notes || '',
+        } : undefined;
         if (user) {
-          const result = await createOrder(user.id, items, amount);
+          const result = await createOrder(user.id, items, amount, sajuData);
           if (result) orderNum = result.orderNumber;
         }
+        sessionStorage.removeItem('checkout-form');
         clearCart();
         setOrderNumber(orderNum);
         setStatus('done');
