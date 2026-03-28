@@ -548,7 +548,7 @@ export default function CheckoutPage() {
                         환불정책
                       </Link>
                       에 동의합니다.
-                      디지털 콘텐츠 특성상 PDF 발송 이후 환불이 불가함을 확인합니다.
+                      디지털 콘텐츠 특성상 PDF 발송 이후 환불이 불가하며, PDF는 발송일로부터 30일간 보관됨을 확인합니다.
                     </span>
                   </label>
                   {agreeError && (
@@ -648,6 +648,10 @@ export default function CheckoutPage() {
                     무료 플래너: 신청 즉시 발송
                   </p>
                 )}
+                <p className="flex items-start gap-1.5">
+                  <span className="text-amber-400">⏰</span>
+                  PDF 파일은 발송일로부터 30일간 보관됩니다. 수신 후 즉시 다운로드해 주세요.
+                </p>
                 <p className="flex items-start gap-1.5">
                   <span className="text-indigo-400">📋</span>
                   <Link href="/refund" target="_blank" className="underline hover:text-indigo-600 transition-colors">

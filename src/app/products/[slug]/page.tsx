@@ -146,8 +146,13 @@ export default async function ProductDetailPage({ params }: Props) {
               </svg>
               {product.price === 0
                 ? '이메일 주소 입력 후 즉시 다운로드 링크 발송'
-                : '결제 완료 후 이메일로 PDF 발송 (3~7 영업일)'}
+                : '결제 완료 후 이메일로 PDF 발송'}
             </div>
+            {product.price > 0 && (
+              <p className="mt-1.5 text-[11px] text-amber-600">
+                * PDF 파일은 발송일로부터 30일간 보관됩니다. 수신 후 즉시 다운로드해 주세요.
+              </p>
+            )}
           </div>
         </div>
 

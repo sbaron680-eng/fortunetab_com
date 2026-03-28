@@ -180,6 +180,7 @@ export default function DashboardPage() {
                       <div>
                         <p className="font-medium">맞춤 플래너가 이메일로 발송되었습니다</p>
                         <p className="mt-0.5 opacity-80">주문 시 입력하신 이메일의 받은편지함을 확인해 주세요. 스팸함도 함께 확인해 주시기 바랍니다.</p>
+                        <p className="mt-1 text-amber-600 opacity-90">PDF 파일은 발송일로부터 30일간 보관됩니다. 수신 후 즉시 다운로드해 주세요.</p>
                       </div>
                     </div>
                   )}

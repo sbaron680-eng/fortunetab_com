@@ -1,0 +1,25 @@
+# FortuneTab 서비스 스택
+# NAS에서 실행: docker compose up -d
+services:
+  pdf-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.pdf-server
+    container_name: fortunetab-pdf-server
+    ports:
+      - "4001:4001"
+    volumes:
+      - ./pdf-server/output:/app/output
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - TOSS_SECRET_KEY=${TOSS_SECRET_KEY}
+      - PDF_SERVER_HOST=0.0.0.0
+      - PDF_SERVER_PORT=4001
+    restart: unless-stopped
+    networks:
+      - fortunetab
+
+networks:
+  fortunetab:
+    external: true
+    name: n8n_default  # n8n이 사용하는 Docker 네트워크에 합류

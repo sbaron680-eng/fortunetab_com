@@ -1,0 +1,36 @@
+# FortuneTab PDF Server + Fortune API
+# Build context: 프로젝트 루트 (fortunetab_com/)
+FROM node:20-slim
+
+# Chromium 의존성 + 한글 폰트
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    chromium \
+    fonts-noto-cjk \
+    fonts-noto-cjk-extra \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+
+WORKDIR /app
+
+# pdf-server 의존성
+COPY pdf-server/package.json pdf-server/package-lock.json ./
+RUN npm ci && npm install tsx esbuild
+
+# pdf-server 소스
+COPY pdf-server/ ./
+
+# 프론트엔드 소스 (번들 빌드 + fortune.ts import용)
+COPY src/lib/ /app/src/lib/
+
+# bundle.js 빌드 (src/lib/pdf-generator.ts → bundle.js)
+RUN node build-bundle.mjs
+
+# PDF 출력 디렉토리
+RUN mkdir -p /app/output
+
+EXPOSE 4001
+
+CMD ["npx", "tsx", "server.ts"]

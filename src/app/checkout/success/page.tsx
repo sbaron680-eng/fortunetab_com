@@ -131,9 +131,12 @@ function SuccessContent() {
       </p>
 
       <div className="mt-6 bg-indigo-50 rounded-2xl p-4 text-left text-sm text-gray-600 space-y-2 border border-indigo-100">
-        <p>📧 이메일로 영업일 기준 1~2일 이내 PDF를 발송해 드립니다.</p>
+        <p>📧 이메일로 맞춤 PDF를 발송해 드립니다.</p>
+        <p>🔮 사주 분석 후 맞춤 제작되어 발송됩니다.</p>
         <p>💬 문의: <a href="mailto:sbaron680@gmail.com" className="text-ft-ink underline">sbaron680@gmail.com</a></p>
-        <p>🔮 사주 분석 후 맞춤 제작되어 발송 기간이 소요됩니다.</p>
+      </div>
+      <div className="mt-3 bg-amber-50 rounded-xl p-3 text-left text-xs text-amber-700 border border-amber-100">
+        ⏰ PDF 파일은 발송일로부터 30일간 보관됩니다. 이메일 수신 후 반드시 다운로드하여 보관해 주세요.
       </div>
 
       <div className="mt-8 flex flex-col gap-3">

@@ -1,0 +1,10 @@
+node_modules
+.next
+out
+.git
+.env
+.env.local
+pdf-server/node_modules
+pdf-server/output/*.pdf
+pdf-server/.env
+Planner-001
