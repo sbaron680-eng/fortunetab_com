@@ -45,18 +45,18 @@ function SuccessContent() {
 
     (async () => {
       try {
-        /**
-         * TODO: Cloudflare Worker를 통해 토스페이먼츠 결제 최종 승인
-         *
-         * const res = await fetch('/api/payments/confirm', {
-         *   method: 'POST',
-         *   headers: { 'Content-Type': 'application/json' },
-         *   body: JSON.stringify({ paymentKey, orderId, amount }),
-         * });
-         * if (!res.ok) throw new Error('결제 승인 실패');
-         *
-         * 현재는 클라이언트에서 직접 주문 저장 (개발/테스트용)
-         */
+        // 토스페이먼츠 결제 최종 승인 (서버 → 토스 API)
+        const confirmUrl = process.env.NEXT_PUBLIC_FORTUNE_API_URL || 'http://localhost:4001';
+        const confirmRes = await fetch(`${confirmUrl}/payments/confirm`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ paymentKey, orderId, amount }),
+        });
+        const confirmData = await confirmRes.json();
+        if (!confirmData.ok) {
+          throw new Error(confirmData.error || '결제 승인에 실패했습니다.');
+        }
+
         let orderNum = orderId;
         const sajuData = savedForm.birthDate ? {
           name: savedForm.name || '',

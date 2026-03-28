@@ -4,8 +4,10 @@ out/
 node_modules/
 
 # Environment
+.env
 .env.local
 .env.*.local
+pdf-server/.env
 
 # OS
 .DS_Store

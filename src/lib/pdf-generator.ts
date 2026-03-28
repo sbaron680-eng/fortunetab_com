@@ -12,12 +12,14 @@
 
 // ── 타입 re-export (하위 호환성) ─────────────────────────────────────────────
 export type { Orientation, PageType, NavLink, SajuData, PlannerOptions } from './pdf-utils';
+export { calculateSaju } from './saju';
 
 import { getTheme } from './pdf-themes';
 import {
   themeHolder,
   PORTRAIT_W, PORTRAIT_H,
   NAV_H_RATIO, NAV_SECTIONS, MONTHS_KO,
+  getISOWeek,
   type PageType, type NavLink, type PlannerOptions,
 } from './pdf-utils';
 import { drawCover, drawYearIndex, drawMonthly, drawWeekly, drawDaily } from './pdf-pages';
@@ -80,7 +82,12 @@ export async function generatePlannerPDF(opts: PlannerOptions): Promise<Blob | v
       for (let m = 0; m < 12; m++)
         expandedPages.push({ type: 'monthly', label: MONTHS_KO[m]+'간 플래너', idx: m });
     } else if (p === 'weekly') {
-      for (let w = 1; w <= 52; w++)
+      // 해당 연도의 마지막 ISO 주차 계산 (52 또는 53)
+      const dec31 = new Date(opts.year, 11, 31);
+      const lastWeek = getISOWeek(dec31);
+      // 12/31이 다음해 1주차에 속하면 12/28로 재확인
+      const maxWeek = lastWeek === 1 ? getISOWeek(new Date(opts.year, 11, 28)) : lastWeek;
+      for (let w = 1; w <= maxWeek; w++)
         expandedPages.push({ type: 'weekly', label: `${w}주차`, idx: w });
     } else if (p === 'daily') {
       expandedPages.push({ type: 'daily', label: '일간 플래너 샘플' });

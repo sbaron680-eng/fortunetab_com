@@ -14,10 +14,12 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { useAuthStore } from '@/lib/store';
 
 function CallbackContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { setUser } = useAuthStore();
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -26,26 +28,50 @@ function CallbackContent() {
     const next  = searchParams.get('next') ?? '/';
 
     (async () => {
-      if (!code) {
-        // code 없으면 그냥 next로 이동
-        router.replace(next);
-        return;
-      }
-
       const { supabase } = await import('@/lib/supabase');
-      const { error: exchError } = await supabase.auth.exchangeCodeForSession(code);
 
-      if (exchError) {
-        setError('링크가 만료되었거나 유효하지 않습니다. 다시 요청해 주세요.');
+      // PKCE 코드가 있으면 세션 교환
+      if (code) {
+        const { error: exchError } = await supabase.auth.exchangeCodeForSession(code);
+        if (exchError) {
+          setError('링크가 만료되었거나 유효하지 않습니다. 다시 요청해 주세요.');
+          return;
+        }
+        if (type === 'recovery') {
+          router.replace('/auth/reset-password');
+          return;
+        }
+      }
+
+      // OAuth 또는 code 교환 후 세션 확인
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const user = session.user;
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('name, is_admin, created_at')
+          .eq('id', user.id)
+          .single();
+
+        const name = profile?.name
+          || user.user_metadata?.full_name
+          || user.user_metadata?.name
+          || user.email?.split('@')[0]
+          || '사용자';
+
+        setUser({
+          id: user.id,
+          email: user.email!,
+          name,
+          isAdmin: profile?.is_admin ?? false,
+          createdAt: profile?.created_at ?? user.created_at,
+        });
+
+        router.replace(profile?.is_admin ? '/admin' : '/dashboard');
         return;
       }
 
-      // 비밀번호 재설정 플로우
-      if (type === 'recovery') {
-        router.replace('/auth/reset-password');
-        return;
-      }
-
+      // 세션도 없고 코드도 없으면 next로 이동
       router.replace(next);
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps

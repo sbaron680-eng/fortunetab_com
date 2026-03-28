@@ -1,0 +1,492 @@
+'use client';
+
+import { useState } from 'react';
+import Link from 'next/link';
+import {
+  calculateSaju, getSipsinMap, detectSinsal, calcDaeun,
+  detectZodiac, getYearGanzhi, elemCountToPercent,
+  ELEM_KO, ELEM_HJ, ELEM_COLOR, ELEM_EMOJI,
+  TIME_TO_BRANCH, ZODIAC_LIST, ZODIAC_SYMBOL,
+  type SajuResult, type ElemKo, type SipsinName, type Sinsal, type DaeunPeriod,
+} from '@/lib/saju';
+
+// ── 타입 ──────────────────────────────────────────────────────
+type FortuneTab = 'saju' | 'zodiac' | 'couple';
+
+interface FortuneResult {
+  summary: string;
+  yearly_fortune: string;
+  relationships: string;
+  career: string;
+  wealth: string;
+  health: string;
+  lucky_colors: string[];
+  lucky_numbers: number[];
+  lucky_directions?: string[];
+  ohhaeng_balance?: Record<string, number>;
+  shinsal?: string[];
+  caution_months?: number[];
+  saju_advice?: string;
+  day_master?: string;
+  compatibility_score?: number;
+  compatibility_summary?: string;
+  couple_advice?: string;
+  couple_caution?: string;
+  zodiac?: string;
+  monthly_fortunes: Array<{ month: number; fortune: string; score: number; keywords: string[] }>;
+}
+
+const API_URL = process.env.NEXT_PUBLIC_FORTUNE_API_URL || 'http://localhost:4001';
+const TIME_OPTIONS = Object.keys(TIME_TO_BRANCH);
+
+// ── 메인 페이지 ───────────────────────────────────────────────
+export default function FortunePage() {
+  const [tab, setTab] = useState<FortuneTab>('saju');
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<FortuneResult | null>(null);
+  const [error, setError] = useState('');
+
+  // 사주 폼
+  const [sajuForm, setSajuForm] = useState({
+    name: '', year: '1990', month: '1', day: '1', time: '모름', gender: 'male' as const,
+  });
+
+  // 별자리 폼
+  const [zodiacForm, setZodiacForm] = useState({ name: '', birthDate: '' });
+
+  // 궁합 폼
+  const [coupleForm, setCoupleForm] = useState({
+    name1: '', birthDate1: '', gender1: 'female' as const,
+    name2: '', birthDate2: '', gender2: 'male' as const,
+  });
+
+  // 사주 엔진 결과 (로컬 계산)
+  const [localSaju, setLocalSaju] = useState<{
+    saju: SajuResult;
+    sipsin: ReturnType<typeof getSipsinMap>;
+    sinsal: Sinsal[];
+    daeun: DaeunPeriod[];
+  } | null>(null);
+
+  async function handleAnalyze() {
+    setLoading(true);
+    setError('');
+    setResult(null);
+    setLocalSaju(null);
+
+    try {
+      let body: { type: string; input: Record<string, unknown> };
+
+      if (tab === 'saju') {
+        const { name, year, month, day, time, gender } = sajuForm;
+        const birthDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+
+        // 로컬 사주 계산
+        const saju = calculateSaju(Number(year), Number(month), Number(day), time);
+        setLocalSaju({
+          saju,
+          sipsin: getSipsinMap(saju),
+          sinsal: detectSinsal(saju),
+          daeun: calcDaeun(saju, gender),
+        });
+
+        body = {
+          type: 'saju',
+          input: { name: name || '사용자', birth_date: birthDate, birth_time: time, gender, year: 2026 },
+        };
+      } else if (tab === 'zodiac') {
+        const [y, m, d] = zodiacForm.birthDate.split('-').map(Number);
+        const zodiac = detectZodiac(m, d);
+        body = {
+          type: 'astrology',
+          input: { name: zodiacForm.name || '사용자', birth_date: zodiacForm.birthDate, zodiac, year: 2026 },
+        };
+      } else {
+        body = {
+          type: 'couple',
+          input: {
+            person1: { name: coupleForm.name1, birth_date: coupleForm.birthDate1, gender: coupleForm.gender1 },
+            person2: { name: coupleForm.name2, birth_date: coupleForm.birthDate2, gender: coupleForm.gender2 },
+            year: 2026,
+          },
+        };
+      }
+
+      const res = await fetch(`${API_URL}/fortune`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || '분석 실패');
+      setResult(data.data);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : '오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="min-h-[calc(100vh-4rem)] bg-ft-paper py-8 px-4">
+      <div className="max-w-2xl mx-auto space-y-6">
+
+        {/* 헤더 */}
+        <div className="text-center">
+          <h1 className="text-2xl font-bold font-serif text-ft-ink">AI 운세 분석</h1>
+          <p className="text-sm text-ft-muted mt-1">사주명리학 + Claude AI 심층 분석</p>
+        </div>
+
+        {/* 탭 */}
+        <div className="flex gap-1 bg-gray-100 rounded-xl p-1">
+          {([
+            ['saju', '사주 분석'],
+            ['zodiac', '별자리 운세'],
+            ['couple', '궁합 분석'],
+          ] as [FortuneTab, string][]).map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => { setTab(key); setResult(null); setLocalSaju(null); }}
+              className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all ${
+                tab === key
+                  ? 'bg-white text-ft-ink shadow-sm'
+                  : 'text-ft-muted hover:text-ft-ink'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* 입력 폼 */}
+        <div className="bg-white border border-ft-border rounded-2xl p-5 space-y-4">
+          {tab === 'saju' && <SajuForm form={sajuForm} setForm={setSajuForm} />}
+          {tab === 'zodiac' && <ZodiacForm form={zodiacForm} setForm={setZodiacForm} />}
+          {tab === 'couple' && <CoupleForm form={coupleForm} setForm={setCoupleForm} />}
+
+          <button
+            onClick={handleAnalyze}
+            disabled={loading}
+            className="w-full py-3.5 bg-ft-gold text-ft-ink font-bold rounded-xl hover:bg-ft-gold-h transition-all disabled:opacity-50"
+          >
+            {loading ? (
+              <span className="flex items-center justify-center gap-2">
+                <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                AI 분석 중... (10~15초 소요)
+              </span>
+            ) : (
+              tab === 'couple' ? '궁합 분석하기' : '운세 분석하기'
+            )}
+          </button>
+        </div>
+
+        {/* 에러 */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-700">{error}</div>
+        )}
+
+        {/* 로컬 사주 결과 (사주 탭에서 즉시 표시) */}
+        {localSaju && <LocalSajuCard data={localSaju} />}
+
+        {/* AI 분석 결과 */}
+        {result && <FortuneResultCard result={result} tab={tab} />}
+
+        {/* 면책 */}
+        <p className="text-center text-xs text-ft-muted">
+          이 분석은 사주명리학의 학문적 관점에서 참고용으로 제공됩니다.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ── 사주 폼 ───────────────────────────────────────────────────
+function SajuForm({ form, setForm }: { form: any; setForm: (f: any) => void }) {
+  const u = (k: string, v: string) => setForm({ ...form, [k]: v });
+  return (
+    <>
+      <input placeholder="이름 (선택)" value={form.name} onChange={e => u('name', e.target.value)}
+        className="w-full px-4 py-2.5 border border-ft-border rounded-xl text-sm focus:ring-2 focus:ring-ft-gold/50 outline-none" />
+      <div className="grid grid-cols-3 gap-3">
+        <input type="number" placeholder="년" value={form.year} onChange={e => u('year', e.target.value)}
+          className="px-3 py-2.5 border border-ft-border rounded-xl text-sm text-center" min="1920" max="2020" />
+        <input type="number" placeholder="월" value={form.month} onChange={e => u('month', e.target.value)}
+          className="px-3 py-2.5 border border-ft-border rounded-xl text-sm text-center" min="1" max="12" />
+        <input type="number" placeholder="일" value={form.day} onChange={e => u('day', e.target.value)}
+          className="px-3 py-2.5 border border-ft-border rounded-xl text-sm text-center" min="1" max="31" />
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <select value={form.time} onChange={e => u('time', e.target.value)}
+          className="px-3 py-2.5 border border-ft-border rounded-xl text-sm">
+          {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+        </select>
+        <select value={form.gender} onChange={e => u('gender', e.target.value)}
+          className="px-3 py-2.5 border border-ft-border rounded-xl text-sm">
+          <option value="male">남성</option>
+          <option value="female">여성</option>
+        </select>
+      </div>
+    </>
+  );
+}
+
+// ── 별자리 폼 ─────────────────────────────────────────────────
+function ZodiacForm({ form, setForm }: { form: any; setForm: (f: any) => void }) {
+  const u = (k: string, v: string) => setForm({ ...form, [k]: v });
+  const detected = form.birthDate ? (() => {
+    const [, m, d] = form.birthDate.split('-').map(Number);
+    return m && d ? detectZodiac(m, d) : null;
+  })() : null;
+
+  return (
+    <>
+      <input placeholder="이름 (선택)" value={form.name} onChange={e => u('name', e.target.value)}
+        className="w-full px-4 py-2.5 border border-ft-border rounded-xl text-sm focus:ring-2 focus:ring-ft-gold/50 outline-none" />
+      <input type="date" value={form.birthDate} onChange={e => u('birthDate', e.target.value)}
+        className="w-full px-4 py-2.5 border border-ft-border rounded-xl text-sm" />
+      {detected && (
+        <div className="flex items-center gap-2 px-4 py-2 bg-indigo-50 rounded-xl text-sm text-indigo-700">
+          <span className="text-lg">{ZODIAC_SYMBOL[detected]}</span>
+          <span className="font-medium">{detected}</span>
+        </div>
+      )}
+    </>
+  );
+}
+
+// ── 궁합 폼 ──────────────────────────────────────────────────
+function CoupleForm({ form, setForm }: { form: any; setForm: (f: any) => void }) {
+  const u = (k: string, v: string) => setForm({ ...form, [k]: v });
+  return (
+    <div className="grid grid-cols-2 gap-4">
+      <div className="space-y-3">
+        <p className="text-xs font-medium text-rose-500 text-center">첫 번째</p>
+        <input placeholder="이름" value={form.name1} onChange={e => u('name1', e.target.value)}
+          className="w-full px-3 py-2 border border-rose-200 rounded-xl text-sm" />
+        <input type="date" value={form.birthDate1} onChange={e => u('birthDate1', e.target.value)}
+          className="w-full px-3 py-2 border border-rose-200 rounded-xl text-sm" />
+        <select value={form.gender1} onChange={e => u('gender1', e.target.value)}
+          className="w-full px-3 py-2 border border-rose-200 rounded-xl text-sm">
+          <option value="female">여성</option>
+          <option value="male">남성</option>
+        </select>
+      </div>
+      <div className="space-y-3">
+        <p className="text-xs font-medium text-blue-500 text-center">두 번째</p>
+        <input placeholder="이름" value={form.name2} onChange={e => u('name2', e.target.value)}
+          className="w-full px-3 py-2 border border-blue-200 rounded-xl text-sm" />
+        <input type="date" value={form.birthDate2} onChange={e => u('birthDate2', e.target.value)}
+          className="w-full px-3 py-2 border border-blue-200 rounded-xl text-sm" />
+        <select value={form.gender2} onChange={e => u('gender2', e.target.value)}
+          className="w-full px-3 py-2 border border-blue-200 rounded-xl text-sm">
+          <option value="male">남성</option>
+          <option value="female">여성</option>
+        </select>
+      </div>
+    </div>
+  );
+}
+
+// ── 로컬 사주 카드 (즉시 표시) ────────────────────────────────
+function LocalSajuCard({ data }: { data: {
+  saju: SajuResult; sipsin: ReturnType<typeof getSipsinMap>;
+  sinsal: Sinsal[]; daeun: DaeunPeriod[];
+} }) {
+  const { saju, sipsin, sinsal, daeun } = data;
+  const pct = elemCountToPercent(saju.elemCount, saju.hasHour);
+
+  return (
+    <div className="bg-white border border-ft-border rounded-2xl overflow-hidden">
+      <div className="bg-gradient-to-r from-indigo-900 to-indigo-700 p-4">
+        <h3 className="text-white font-bold font-serif">사주 원국 (엔진 계산)</h3>
+      </div>
+      <div className="p-5 space-y-4">
+        {/* 4주 8자 테이블 */}
+        <div className="grid grid-cols-4 gap-2 text-center text-sm">
+          {(['year', 'month', 'day', 'hour'] as const).map(k => {
+            const p = saju[k];
+            const label = { year: '년주', month: '월주', day: '일주', hour: '시주' }[k];
+            const s = k === 'day' ? '일간' : (sipsin as any)[`${k}Stem`];
+            return (
+              <div key={k} className="border border-ft-border rounded-xl p-2">
+                <p className="text-xs text-ft-muted mb-1">{label} {k === 'day' && <span className="text-ft-gold">★</span>}</p>
+                <p className="font-bold text-lg text-ft-ink">{p.stemKo}{p.branchKo}</p>
+                <p className="text-xs text-ft-muted">{p.stemHj}{p.branchHj}</p>
+                <p className="text-xs mt-1 text-indigo-600">{s}</p>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* 오행 분포 */}
+        <div>
+          <p className="text-xs text-ft-muted mb-2">오행 분포</p>
+          <div className="flex gap-1">
+            {ELEM_KO.map((elem, i) => (
+              <div key={elem} className="flex-1 text-center">
+                <div className="h-16 bg-gray-100 rounded-lg relative overflow-hidden">
+                  <div
+                    className="absolute bottom-0 w-full rounded-b-lg transition-all"
+                    style={{ height: `${pct[elem]}%`, backgroundColor: ELEM_COLOR[i] + '80' }}
+                  />
+                  <span className="absolute inset-0 flex items-center justify-center text-xs font-medium">
+                    {ELEM_EMOJI[i]} {pct[elem]}%
+                  </span>
+                </div>
+                <p className="text-xs mt-1 text-ft-muted">{elem}({ELEM_HJ[i]})</p>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-ft-muted mt-2">용신(用神): <span className="font-medium text-ft-ink">{saju.yongsin}행</span></p>
+        </div>
+
+        {/* 신살 */}
+        {sinsal.length > 0 && (
+          <div>
+            <p className="text-xs text-ft-muted mb-2">신살</p>
+            <div className="flex flex-wrap gap-2">
+              {sinsal.map(s => (
+                <span key={s.name} className={`px-2.5 py-1 rounded-full text-xs border ${
+                  s.type === 'good' ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  : s.type === 'bad' ? 'bg-red-50 text-red-700 border-red-200'
+                  : 'bg-yellow-50 text-yellow-700 border-yellow-200'
+                }`}>
+                  {s.name}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 대운 */}
+        <div>
+          <p className="text-xs text-ft-muted mb-2">대운 흐름</p>
+          <div className="flex gap-1 overflow-x-auto pb-1">
+            {daeun.map(d => (
+              <div key={d.startAge} className="shrink-0 text-center px-2 py-1.5 bg-gray-50 rounded-lg border border-gray-100">
+                <p className="text-[10px] text-ft-muted">{d.startAge}~{d.endAge}세</p>
+                <p className="text-xs font-medium text-ft-ink">{d.stemKo}{d.branchKo}</p>
+                <p className="text-[10px] text-indigo-600">{d.sipsin}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── AI 분석 결과 카드 ─────────────────────────────────────────
+function FortuneResultCard({ result, tab }: { result: FortuneResult; tab: FortuneTab }) {
+  return (
+    <div className="bg-white border border-ft-border rounded-2xl overflow-hidden">
+      <div className="bg-gradient-to-r from-amber-600 to-amber-500 p-4">
+        <h3 className="text-white font-bold font-serif">AI 운세 분석 결과</h3>
+      </div>
+      <div className="p-5 space-y-5">
+
+        {/* 궁합 점수 */}
+        {tab === 'couple' && result.compatibility_score !== undefined && (
+          <div className="text-center py-4">
+            <p className="text-5xl font-bold text-ft-ink">{result.compatibility_score}<span className="text-xl text-ft-muted">점</span></p>
+            <p className="text-sm text-ft-muted mt-1">{result.compatibility_summary}</p>
+          </div>
+        )}
+
+        {/* 요약 */}
+        <Section title="종합 운세" content={result.summary} />
+        <Section title="2026년 운세" content={result.yearly_fortune} />
+
+        {/* 분야별 */}
+        <div className="grid grid-cols-2 gap-3">
+          <MiniCard icon="💕" title="인간관계" text={result.relationships} />
+          <MiniCard icon="💼" title="직업·사업" text={result.career} />
+          <MiniCard icon="💰" title="재물·투자" text={result.wealth} />
+          <MiniCard icon="💪" title="건강" text={result.health} />
+        </div>
+
+        {/* 행운 정보 */}
+        <div className="flex flex-wrap gap-2">
+          {result.lucky_colors?.map(c => (
+            <span key={c} className="px-3 py-1 bg-amber-50 text-amber-700 rounded-full text-xs border border-amber-200">
+              행운색: {c}
+            </span>
+          ))}
+          {result.lucky_numbers?.map(n => (
+            <span key={n} className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs border border-blue-200">
+              행운숫자: {n}
+            </span>
+          ))}
+          {result.lucky_directions?.map(d => (
+            <span key={d} className="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-xs border border-emerald-200">
+              행운방향: {d}
+            </span>
+          ))}
+        </div>
+
+        {/* 조심 월 */}
+        {result.caution_months && result.caution_months.length > 0 && (
+          <div className="p-3 bg-red-50 rounded-xl text-xs text-red-700 border border-red-100">
+            주의 시기: {result.caution_months.map(m => `${m}월`).join(', ')}
+          </div>
+        )}
+
+        {/* 조언 */}
+        {result.saju_advice && <Section title="행동 지침" content={result.saju_advice} />}
+        {result.couple_advice && <Section title="관계 조언" content={result.couple_advice} />}
+
+        {/* 월별 운세 */}
+        {result.monthly_fortunes.length > 0 && (
+          <div>
+            <p className="text-sm font-bold text-ft-ink mb-3">월별 운세</p>
+            <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+              {result.monthly_fortunes.map(m => (
+                <div key={m.month} className="text-center p-2 bg-gray-50 rounded-xl border border-gray-100">
+                  <p className="text-xs text-ft-muted">{m.month}월</p>
+                  <p className={`text-lg font-bold ${
+                    m.score >= 8 ? 'text-emerald-600' : m.score >= 5 ? 'text-ft-ink' : 'text-red-500'
+                  }`}>{m.score}</p>
+                  <div className="flex flex-wrap justify-center gap-0.5 mt-1">
+                    {m.keywords.slice(0, 2).map(k => (
+                      <span key={k} className="text-[9px] text-ft-muted">{k}</span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 플래너 CTA */}
+        <Link
+          href="/products/saju-planner-basic"
+          className="block text-center py-3 bg-ft-ink text-white font-bold rounded-xl text-sm hover:bg-ft-ink-mid transition-colors"
+        >
+          이 사주로 맞춤 플래너 만들기 →
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function Section({ title, content }: { title: string; content: string }) {
+  return (
+    <div>
+      <p className="text-sm font-bold text-ft-ink mb-1">{title}</p>
+      <p className="text-sm text-ft-muted leading-relaxed">{content}</p>
+    </div>
+  );
+}
+
+function MiniCard({ icon, title, text }: { icon: string; title: string; text: string }) {
+  return (
+    <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
+      <p className="text-xs font-medium text-ft-ink mb-1">{icon} {title}</p>
+      <p className="text-xs text-ft-muted leading-relaxed">{text}</p>
+    </div>
+  );
+}

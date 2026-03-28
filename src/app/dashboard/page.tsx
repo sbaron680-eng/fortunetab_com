@@ -155,7 +155,7 @@ export default function DashboardPage() {
                     </span>
                   </div>
 
-                  {/* 다운로드 버튼 */}
+                  {/* 다운로드 버튼 (file_url이 있는 경우) */}
                   {order.status === 'completed' && order.file_url && (
                     <a
                       href={`/download/view?order=${order.id}&token=${order.access_token}`}
@@ -166,15 +166,35 @@ export default function DashboardPage() {
                       </svg>
                       PDF 다운로드
                       {order.download_opened_at && (
-                        <span className="text-xs font-normal opacity-70">(열람 {order.download_opened_at ? '완료' : ''})</span>
+                        <span className="text-xs font-normal opacity-70">(열람 완료)</span>
                       )}
                     </a>
+                  )}
+
+                  {/* 이메일 발송 완료 안내 (file_url 없이 completed된 자동 생성 주문) */}
+                  {order.status === 'completed' && !order.file_url && (
+                    <div className="mt-3 p-3 bg-emerald-50 rounded-xl text-xs text-emerald-700 border border-emerald-100 flex items-start gap-2">
+                      <svg className="w-4 h-4 mt-0.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                      </svg>
+                      <div>
+                        <p className="font-medium">맞춤 플래너가 이메일로 발송되었습니다</p>
+                        <p className="mt-0.5 opacity-80">주문 시 입력하신 이메일의 받은편지함을 확인해 주세요. 스팸함도 함께 확인해 주시기 바랍니다.</p>
+                      </div>
+                    </div>
                   )}
 
                   {/* 제작 중 안내 */}
                   {(order.status === 'paid' || order.status === 'processing') && (
                     <div className="mt-3 p-3 bg-indigo-50 rounded-xl text-xs text-indigo-700 border border-indigo-100">
-                      🔮 사주 분석 후 맞춤 제작 중입니다. 영업일 기준 1~2일 이내 이메일로 다운로드 링크를 보내드립니다.
+                      사주 분석 후 맞춤 제작 중입니다. 완료 시 이메일로 PDF가 발송됩니다.
+                    </div>
+                  )}
+
+                  {/* 대기 중 안내 (pending) */}
+                  {order.status === 'pending' && order.total > 0 && (
+                    <div className="mt-3 p-3 bg-yellow-50 rounded-xl text-xs text-yellow-700 border border-yellow-100">
+                      결제 확인 후 맞춤 플래너를 자동으로 생성하여 이메일로 발송해 드립니다.
                     </div>
                   )}
                 </div>

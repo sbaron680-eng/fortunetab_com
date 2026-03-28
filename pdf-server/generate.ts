@@ -20,8 +20,8 @@ export async function generatePDF(input: GenerateInput) {
   const outputDir = path.join(__dirname, 'output');
   if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
 
-  const fileName = `fortunetab_2026_saju_planner_${input.theme}.pdf`;
-  const outputPath = path.join(outputDir, `${input.orderId}_${fileName}`);
+  const fileName = `${input.orderId}_fortunetab_2026_saju_planner_${input.theme}.pdf`;
+  const outputPath = path.join(outputDir, fileName);
 
   console.log(`[PDF] 생성 시작: ${input.orderId} (${input.name})`);
   const startTime = Date.now();

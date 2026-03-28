@@ -482,3 +482,259 @@ export function getSajuSummary(saju: SajuResult): string {
 
 // 2026년 월별 천간 (표시용)
 export { MONTH_STEM_2026 };
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 십신(十神) 계산
+// ═══════════════════════════════════════════════════════════════════════════
+
+export const SIPSIN_NAMES = [
+  '비견','겁재','식신','상관','편재','정재','편관','정관','편인','정인',
+] as const;
+export type SipsinName = typeof SIPSIN_NAMES[number];
+
+/**
+ * 일간(dayStemIdx) 기준으로 대상 천간(targetStemIdx)의 십신을 반환
+ * saju-master 스킬의 부록 "일간별 십성 조견표" 기반
+ */
+export function getSipsin(dayStemIdx: number, targetStemIdx: number): SipsinName {
+  // 오행 관계: 같은 오행(0), 내가 생(1), 내가 극(2), 나를 극(3), 나를 생(4)
+  const dayElemIdx   = Math.floor(dayStemIdx / 2);   // 0=목,1=화,2=토,3=금,4=수
+  const targetElemIdx = Math.floor(targetStemIdx / 2);
+  const elemDiff = (targetElemIdx - dayElemIdx + 5) % 5;
+
+  // 음양 관계: 같으면 편(偏), 다르면 정(正)
+  const sameYinYang = (dayStemIdx % 2) === (targetStemIdx % 2);
+
+  // elemDiff → 십신 매핑
+  //   0=비겁, 1=식상, 2=재성, 3=관성, 4=인성
+  const baseIdx = elemDiff * 2; // 0,2,4,6,8
+  return SIPSIN_NAMES[baseIdx + (sameYinYang ? 0 : 1)];
+}
+
+/** 사주 전체의 십신 배치 반환 (일간 제외 7자리) */
+export function getSipsinMap(saju: SajuResult): {
+  yearStem: SipsinName; yearBranch: SipsinName;
+  monthStem: SipsinName; monthBranch: SipsinName;
+  dayStem: string; dayBranch: SipsinName;
+  hourStem: SipsinName | '?'; hourBranch: SipsinName | '?';
+} {
+  const d = saju.day.stemIdx;
+  // 지지의 십신은 지지의 정기(正氣) 천간으로 판단
+  const branchMainStem = [9,5,0,1,4,2,3,5,6,7,4,8]; // 자→계, 축→기, 인→갑...
+  const bSipsin = (branchIdx: number) => getSipsin(d, branchMainStem[branchIdx]);
+
+  return {
+    yearStem:   getSipsin(d, saju.year.stemIdx),
+    yearBranch: bSipsin(saju.year.branchIdx),
+    monthStem:  getSipsin(d, saju.month.stemIdx),
+    monthBranch: bSipsin(saju.month.branchIdx),
+    dayStem:    '일간',
+    dayBranch:  bSipsin(saju.day.branchIdx),
+    hourStem:   saju.hasHour ? getSipsin(d, saju.hour.stemIdx) : '?',
+    hourBranch: saju.hasHour ? bSipsin(saju.hour.branchIdx) : '?',
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 신살(神殺) 탐지
+// ═══════════════════════════════════════════════════════════════════════════
+
+export interface Sinsal {
+  name: string;
+  description: string;
+  type: 'good' | 'bad' | 'neutral';
+}
+
+/** 주요 신살 탐지 (일간/일지 기준) */
+export function detectSinsal(saju: SajuResult): Sinsal[] {
+  const results: Sinsal[] = [];
+  const allBranches = [saju.year.branchIdx, saju.month.branchIdx, saju.day.branchIdx];
+  if (saju.hasHour) allBranches.push(saju.hour.branchIdx);
+  const dayBranch = saju.day.branchIdx;
+
+  // 도화살(桃花殺): 일지 기준 → 자오묘유(0,6,3,9)가 다른 지지에 있으면
+  const doHwaMap: Record<number, number> = {
+    2:3, 6:3, 10:3,  // 인오술 → 묘(3)
+    0:9, 4:9, 8:9,   // 자진신 → 유(9)
+    3:0, 7:0, 11:0,  // 묘미해 → 자(0)
+    1:6, 5:6, 9:6,   // 축사유 → 오(6)
+  };
+  const doHwaTarget = doHwaMap[dayBranch];
+  if (doHwaTarget !== undefined) {
+    const others = allBranches.filter((_, i) => i !== 2); // 일지 제외
+    if (others.includes(doHwaTarget)) {
+      results.push({ name: '도화살', description: '매력과 인기가 있으나 이성 문제에 주의', type: 'neutral' });
+    }
+  }
+
+  // 역마살(驛馬殺): 일지 기준
+  const yeokmaMap: Record<number, number> = {
+    2:8, 6:8, 10:8,  // 인오술 → 신(8)
+    0:2, 4:2, 8:2,   // 자진신 → 인(2)
+    3:5, 7:5, 11:5,  // 묘미해 → 사(5)
+    1:11, 5:11, 9:11, // 축사유 → 해(11)
+  };
+  const yeokmaTarget = yeokmaMap[dayBranch];
+  if (yeokmaTarget !== undefined) {
+    const others = allBranches.filter((_, i) => i !== 2);
+    if (others.includes(yeokmaTarget)) {
+      results.push({ name: '역마살', description: '이동·변화가 많고 활동적인 삶, 해외 인연', type: 'neutral' });
+    }
+  }
+
+  // 화개살(華蓋殺): 일지 기준
+  const hwagaeMap: Record<number, number> = {
+    2:10, 6:10, 10:10, // 인오술 → 술(10)
+    0:4, 4:4, 8:4,     // 자진신 → 진(4)
+    3:7, 7:7, 11:7,    // 묘미해 → 미(7)
+    1:1, 5:1, 9:1,     // 축사유 → 축(1)
+  };
+  const hwagaeTarget = hwagaeMap[dayBranch];
+  if (hwagaeTarget !== undefined) {
+    const others = allBranches.filter((_, i) => i !== 2);
+    if (others.includes(hwagaeTarget)) {
+      results.push({ name: '화개살', description: '예술적 재능, 종교·학문 인연, 고독한 면', type: 'neutral' });
+    }
+  }
+
+  // 천을귀인(天乙貴人): 일간 기준 → 가장 좋은 귀인
+  const guiinMap: Record<number, number[]> = {
+    0: [1,7],  // 갑 → 축,미
+    1: [0,8],  // 을 → 자,신
+    2: [9,11], // 병 → 유,해
+    3: [9,11], // 정 → 유,해
+    4: [1,7],  // 무 → 축,미
+    5: [0,8],  // 기 → 자,신
+    6: [1,7],  // 경 → 축,미
+    7: [2,6],  // 신 → 인,오
+    8: [3,5],  // 임 → 묘,사
+    9: [3,5],  // 계 → 묘,사
+  };
+  const guiinTargets = guiinMap[saju.day.stemIdx] ?? [];
+  if (allBranches.some(b => guiinTargets.includes(b))) {
+    results.push({ name: '천을귀인', description: '어려울 때 귀인의 도움을 받는 길한 신살', type: 'good' });
+  }
+
+  // 양인살(羊刃殺): 일간이 건록의 다음 지지
+  const yangInMap: Record<number, number> = {
+    0:3, 2:6, 4:6, 6:9, 8:0, // 양간만 해당: 갑→묘, 병→오, 무→오, 경→유, 임→자
+  };
+  const yangInTarget = yangInMap[saju.day.stemIdx];
+  if (yangInTarget !== undefined) {
+    const others = allBranches.filter((_, i) => i !== 2);
+    if (others.includes(yangInTarget)) {
+      results.push({ name: '양인살', description: '강한 추진력과 결단력, 과격해질 수 있으니 주의', type: 'bad' });
+    }
+  }
+
+  // 원진살(怨嗔殺): 일지 기준 6쌍
+  const wonJinPairs: [number, number][] = [[0,7],[1,6],[2,5],[3,4],[8,11],[9,10]];
+  for (const [a, b] of wonJinPairs) {
+    if (dayBranch === a && allBranches.includes(b) || dayBranch === b && allBranches.includes(a)) {
+      results.push({ name: '원진살', description: '가까운 사이에서 미움이 생기기 쉬움, 인간관계 주의', type: 'bad' });
+      break;
+    }
+  }
+
+  return results;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 대운(大運) 계산
+// ═══════════════════════════════════════════════════════════════════════════
+
+export interface DaeunPeriod {
+  startAge: number;
+  endAge: number;
+  stemIdx: number;
+  branchIdx: number;
+  stemKo: string;
+  branchKo: string;
+  sipsin: SipsinName;
+}
+
+/**
+ * 대운 계산: 월주 기준으로 순행/역행
+ * @param gender 'male' | 'female'
+ */
+export function calcDaeun(saju: SajuResult, gender: string): DaeunPeriod[] {
+  const yearStemYang = !STEMS_YIN[saju.year.stemIdx]; // 양간 여부
+  const isMale = gender === 'male';
+  // 양남음녀 → 순행, 음남양녀 → 역행
+  const forward = (isMale && yearStemYang) || (!isMale && !yearStemYang);
+
+  const result: DaeunPeriod[] = [];
+  let stemIdx = saju.month.stemIdx;
+  let branchIdx = saju.month.branchIdx;
+
+  // 대운 시작 나이 (간략화: 평균 3세 시작)
+  const startAge = 3;
+
+  for (let i = 0; i < 8; i++) {
+    if (forward) {
+      stemIdx = (stemIdx + 1) % 10;
+      branchIdx = (branchIdx + 1) % 12;
+    } else {
+      stemIdx = (stemIdx - 1 + 10) % 10;
+      branchIdx = (branchIdx - 1 + 12) % 12;
+    }
+    const age = startAge + i * 10;
+    result.push({
+      startAge: age,
+      endAge: age + 9,
+      stemIdx,
+      branchIdx,
+      stemKo: STEMS_KO[stemIdx],
+      branchKo: BRANCHES_KO[branchIdx],
+      sipsin: getSipsin(saju.day.stemIdx, stemIdx),
+    });
+  }
+
+  return result;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 별자리(Zodiac) 데이터 — Planner-001에서 이식
+// ═══════════════════════════════════════════════════════════════════════════
+
+export const ZODIAC_LIST = [
+  '양자리','황소자리','쌍둥이자리','게자리',
+  '사자자리','처녀자리','천칭자리','전갈자리',
+  '사수자리','염소자리','물병자리','물고기자리',
+] as const;
+export type ZodiacSign = typeof ZODIAC_LIST[number];
+
+export const ZODIAC_SYMBOL: Record<ZodiacSign, string> = {
+  양자리:'♈', 황소자리:'♉', 쌍둥이자리:'♊', 게자리:'♋',
+  사자자리:'♌', 처녀자리:'♍', 천칭자리:'♎', 전갈자리:'♏',
+  사수자리:'♐', 염소자리:'♑', 물병자리:'♒', 물고기자리:'♓',
+};
+
+export const ZODIAC_DATES: Record<ZodiacSign, string> = {
+  양자리:'3.21–4.19', 황소자리:'4.20–5.20', 쌍둥이자리:'5.21–6.20',
+  게자리:'6.21–7.22', 사자자리:'7.23–8.22', 처녀자리:'8.23–9.22',
+  천칭자리:'9.23–10.22', 전갈자리:'10.23–11.21', 사수자리:'11.22–12.21',
+  염소자리:'12.22–1.19', 물병자리:'1.20–2.18', 물고기자리:'2.19–3.20',
+};
+
+export const ZODIAC_ELEMENT: Record<ZodiacSign, string> = {
+  양자리:'🔥불', 사자자리:'🔥불', 사수자리:'🔥불',
+  황소자리:'🌍흙', 처녀자리:'🌍흙', 염소자리:'🌍흙',
+  쌍둥이자리:'💨바람', 천칭자리:'💨바람', 물병자리:'💨바람',
+  게자리:'💧물', 전갈자리:'💧물', 물고기자리:'💧물',
+};
+
+export function detectZodiac(month: number, day: number): ZodiacSign {
+  if ((month===3 && day>=21) || (month===4 && day<=19)) return '양자리';
+  if ((month===4 && day>=20) || (month===5 && day<=20)) return '황소자리';
+  if ((month===5 && day>=21) || (month===6 && day<=20)) return '쌍둥이자리';
+  if ((month===6 && day>=21) || (month===7 && day<=22)) return '게자리';
+  if ((month===7 && day>=23) || (month===8 && day<=22)) return '사자자리';
+  if ((month===8 && day>=23) || (month===9 && day<=22)) return '처녀자리';
+  if ((month===9 && day>=23) || (month===10 && day<=22)) return '천칭자리';
+  if ((month===10 && day>=23) || (month===11 && day<=21)) return '전갈자리';
+  if ((month===11 && day>=22) || (month===12 && day<=21)) return '사수자리';
+  if ((month===12 && day>=22) || (month===1 && day<=19)) return '염소자리';
+  if ((month===1 && day>=20) || (month===2 && day<=18)) return '물병자리';
+  return '물고기자리';
+}

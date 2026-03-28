@@ -534,17 +534,17 @@ export function drawMonthly(
   const today  = new Date();
 
   for (let row = 0; row < 6; row++) {
-    // 이 행의 수요일(col 3)로 ISO 주차 판단
-    const wedDayNum = row*7 + 3 - first + 1;
-    if (wedDayNum >= 1 && wedDayNum <= days) {
-      const wed     = new Date(opts.year, monthIdx, wedDayNum);
-      const isoWeek = getISOWeek(wed);
-      navLinks.push({
-        x: GX, y: CELL_Y + row*CELL_H,
-        w: CAL_W, h: CELL_H,
-        targetType: 'weekly', targetIdx: isoWeek,
-      });
-    }
+    // 이 행에서 현재 월에 속하는 아무 날짜로 ISO 주차 판단
+    let refDay = row*7 + 3 - first + 1; // 수요일 기준 시도
+    if (refDay < 1) refDay = 1;          // 행 앞쪽이 전달이면 1일 사용
+    if (refDay > days) continue;         // 행 전체가 다음달이면 건너뜀
+    const refDate = new Date(opts.year, monthIdx, refDay);
+    const isoWeek = getISOWeek(refDate);
+    navLinks.push({
+      x: GX, y: CELL_Y + row*CELL_H,
+      w: CAL_W, h: CELL_H,
+      targetType: 'weekly', targetIdx: isoWeek,
+    });
 
     for (let col = 0; col < 7; col++) {
       const dayNum = row*7 + col - first + 1;
@@ -713,8 +713,12 @@ export function drawWeekly(
   hg.addColorStop(0, T.weeklyA); hg.addColorStop(1, T.weeklyB);
   ctx.fillStyle = hg; ctx.fillRect(0, 0, W, BAR_H);
 
+  // 헤더: 주차 + 해당 월 표시
+  const headerMonth = mon.getMonth() === sun.getMonth()
+    ? `${mon.getMonth()+1}월`
+    : `${mon.getMonth()+1}월–${sun.getMonth()+1}월`;
   ctx.font = F(BAR_H*0.52, true, true); ctx.fillStyle = C.goldFaint;
-  ctx.fillText(`${opts.year}년 ${weekNum}주차`, PAGE_PAD, BAR_H*0.70);
+  ctx.fillText(`${opts.year}년 ${headerMonth} ${weekNum}주차`, PAGE_PAD, BAR_H*0.70);
   ctx.font = F(BAR_H*0.27, false, false); ctx.fillStyle = T.weeklyAccent;
   const rangeStr = `${fmtMD(mon)} ~ ${fmtMD(sun)}`;
   ctx.fillText(rangeStr, W - PAGE_PAD - ctx.measureText(rangeStr).width, BAR_H*0.68);
@@ -737,16 +741,18 @@ export function drawWeekly(
     CONTENT_Y += GOAL_H + PAD;
   }
 
-  // 요일 헤더 (월~일 순서, 실제 날짜 표시)
+  // 요일 헤더 (월~일 순서, 3단 구조: 요일 | 날짜 | 공휴일)
   const COLS      = 7;
   const COL_W     = (W - PAD*2) / COLS;
   const CONTENT_H = CH - CONTENT_Y - PAD;
-  const DAY_H     = isL ? CONTENT_H*0.14 : CONTENT_H*0.12;
-  const FONT_DY   = DAY_H * 0.36; // 요일명: 크게 (Task 4-3)
-  const FONT_DT   = DAY_H * 0.26; // 날짜 숫자: 작게 (Task 4-3)
+  // 공휴일 행 포함하여 헤더 높이 확보
+  const DAY_H     = isL ? CONTENT_H*0.17 : CONTENT_H*0.14;
+  const FONT_DY   = DAY_H * 0.30; // 요일명
+  const FONT_DT   = DAY_H * 0.22; // 날짜
+  const FONT_HOL  = DAY_H * 0.16; // 공휴일명
 
   for (let d = 0; d < 7; d++) {
-    const wdate  = weekDates[d]; // d=0 → Mon, d=5 → Sat, d=6 → Sun
+    const wdate  = weekDates[d];
     const isSat  = d === 5;
     const isSun  = d === 6;
     const hol    = getHoliday(wdate.getFullYear(), wdate.getMonth(), wdate.getDate());
@@ -762,41 +768,31 @@ export function drawWeekly(
     const dateFgColor = isRed ? C.holidayText : isMem ? C.memorialText
       : isSat ? T.saturdayText : C.textMid;
 
+    const cx = PAD + d*COL_W;
     ctx.fillStyle = bgColor;
-    ctx.fillRect(PAD + d*COL_W, CONTENT_Y, COL_W-1, DAY_H);
+    ctx.fillRect(cx, CONTENT_Y, COL_W-1, DAY_H);
 
-    const dayStr  = isL ? DAYS_WEEK_FULL[d] : DAYS_WEEK_SHORT[d];
-    // 날짜: 일(day)만 크게, 월은 위에 작게 (Task 4-3)
-    const dayOfMonth = String(wdate.getDate());
-    const monthStr   = `${wdate.getMonth()+1}월`;
-
-    // 요일명 (크게, 굵게) — 상단 절반
+    // 1행: 요일명 (상단 35%)
+    const dayStr = isL ? DAYS_WEEK_FULL[d] : DAYS_WEEK_SHORT[d];
     ctx.font = F(FONT_DY, true, false); ctx.fillStyle = fgColor;
     const dyw = ctx.measureText(dayStr).width;
-    ctx.fillText(dayStr, PAD + d*COL_W + (COL_W-dyw)/2, CONTENT_Y + DAY_H*0.44);
+    ctx.fillText(dayStr, cx + (COL_W-dyw)/2, CONTENT_Y + DAY_H*0.30);
 
-    // 날짜 (작게) — 하단 절반: "M월 D" 형식
-    const dateDisplayStr = isL
+    // 2행: 날짜 (중앙 35%)
+    const dateStr = isL
       ? `${wdate.getMonth()+1}/${wdate.getDate()}`
-      : dayOfMonth;
+      : `${wdate.getMonth()+1}.${wdate.getDate()}`;
     ctx.font = F(FONT_DT, false, false); ctx.fillStyle = dateFgColor;
-    const dtw = ctx.measureText(dateDisplayStr).width;
-    ctx.fillText(dateDisplayStr, PAD + d*COL_W + (COL_W-dtw)/2, CONTENT_Y + DAY_H*0.82);
+    const dtw = ctx.measureText(dateStr).width;
+    ctx.fillText(dateStr, cx + (COL_W-dtw)/2, CONTENT_Y + DAY_H*0.58);
 
-    // 세로형에서 월 표시 (작은 텍스트로 날짜 위에)
-    if (!isL) {
-      ctx.font = F(FONT_DT * 0.85, false, false); ctx.fillStyle = dateFgColor;
-      const mw2 = ctx.measureText(monthStr).width;
-      ctx.fillText(monthStr, PAD + d*COL_W + (COL_W-mw2)/2, CONTENT_Y + DAY_H*0.72);
-    }
-
-    // 공휴일명 (landscape에서만 표시)
-    if (isL && hol) {
-      ctx.font = F(FONT_DT * 0.80, false, false);
+    // 3행: 공휴일명 (하단 30%)
+    if (hol) {
+      ctx.font = F(FONT_HOL, false, false);
       ctx.fillStyle = isRed ? C.holidayText : C.memorialText;
-      const hn = hol.name.length > 5 ? hol.name.slice(0, 4) + '…' : hol.name;
+      const hn = hol.name.length > 6 ? hol.name.slice(0, 5) + '…' : hol.name;
       const hw = ctx.measureText(hn).width;
-      ctx.fillText(hn, PAD + d*COL_W + (COL_W-hw)/2, CONTENT_Y + DAY_H*0.95);
+      ctx.fillText(hn, cx + (COL_W-hw)/2, CONTENT_Y + DAY_H*0.82);
     }
   }
 

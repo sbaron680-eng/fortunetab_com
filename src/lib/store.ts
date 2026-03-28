@@ -82,6 +82,7 @@ interface AuthStore {
   setUser: (user: User | null) => void;
   setAuthReady: () => void;
   login: (email: string, password: string) => Promise<boolean | 'admin'>;
+  loginWithOAuth: (provider: 'google' | 'kakao') => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   clearError: () => void;
@@ -123,6 +124,21 @@ export const useAuthStore = create<AuthStore>()((set) => ({
       isLoading: false,
     });
     return isAdmin ? 'admin' : true;
+  },
+
+  loginWithOAuth: async (provider) => {
+    const { supabase } = await import('@/lib/supabase');
+    set({ isLoading: true, error: null });
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+    if (error) {
+      set({ error: error.message, isLoading: false });
+    }
+    // 성공 시 Supabase가 외부 OAuth 페이지로 리다이렉트 → /auth/callback으로 복귀
   },
 
   register: async (name, email, password) => {
