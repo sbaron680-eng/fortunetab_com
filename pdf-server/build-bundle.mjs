@@ -12,7 +12,7 @@ await build({
   globalName: 'FortunePDF',
   platform: 'browser',
   target: 'es2020',
-  external: ['jspdf'],
+  // jspdf를 번들에 포함 (CDN이 아닌 번들 내장)
   alias: {
     '@/lib': path.join(__dirname, '..', 'src', 'lib'),
   },
