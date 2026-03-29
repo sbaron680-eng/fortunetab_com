@@ -51,7 +51,7 @@ export default function RefundPage() {
                     <tr className="bg-gray-50/50">
                       <td className="border border-gray-200 px-4 py-2.5 font-medium text-gray-700">서비스 최대 제공 기간</td>
                       <td className="border border-gray-200 px-4 py-2.5 text-gray-600">
-                        PDF 발송일로부터 <strong>최대 1개월</strong><br />
+                        PDF 발송일로부터 <strong>30일</strong><br />
                         <span className="text-gray-400">(다운로드 링크 유효 기간 기준)</span>
                       </td>
                     </tr>

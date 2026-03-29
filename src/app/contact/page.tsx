@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, FormEvent } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
 import Link from 'next/link';
+import { useAuthStore } from '@/lib/store';
 
 type FormState = 'idle' | 'submitting' | 'success' | 'error';
 
@@ -14,8 +15,18 @@ const INQUIRY_TYPES = [
 ];
 
 export default function ContactPage() {
+  const { user } = useAuthStore();
   const [name, setName]       = useState('');
   const [email, setEmail]     = useState('');
+
+  // 로그인 사용자 정보 자동완성
+  useEffect(() => {
+    if (user) {
+      if (!name && user.name) setName(user.name);
+      if (!email && user.email) setEmail(user.email);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
   const [type, setType]       = useState(INQUIRY_TYPES[0].value);
   const [message, setMessage] = useState('');
   const [state, setState]     = useState<FormState>('idle');

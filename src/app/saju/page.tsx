@@ -508,13 +508,13 @@ export default function SajuPage() {
                   href="/products/saju-planner-basic"
                   className="px-6 py-3 rounded-xl font-bold text-ft-navy bg-ft-gold hover:bg-ft-gold-h transition-colors"
                 >
-                  베이직 플래너 ₩19,000
+                  사주 플래너 기본 ₩19,000
                 </Link>
                 <Link
                   href="/products/saju-planner-premium"
                   className="px-6 py-3 rounded-xl font-bold text-ft-gold border border-ft-gold hover:bg-ft-gold hover:text-ft-navy transition-colors"
                 >
-                  프리미엄 플래너 ₩29,000 ✨
+                  사주 플래너 + 리포트 ₩29,000
                 </Link>
               </div>
               <p className="text-xs text-indigo-400 mt-3">

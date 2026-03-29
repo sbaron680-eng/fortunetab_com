@@ -14,7 +14,7 @@ export default function PrivacyPage() {
           <div className="mb-8 pb-6 border-b border-gray-100">
             <Link href="/" className="text-lg font-black text-[#1e1b4b]">fortunetab</Link>
             <h1 className="mt-4 text-2xl font-black text-gray-900">개인정보처리방침</h1>
-            <p className="mt-1.5 text-sm text-gray-400">마지막 업데이트: 2026년 1월 1일</p>
+            <p className="mt-1.5 text-sm text-gray-400">마지막 업데이트: 2026년 3월 29일</p>
           </div>
 
           <div className="prose prose-gray max-w-none text-sm leading-relaxed space-y-8">

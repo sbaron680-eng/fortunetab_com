@@ -14,7 +14,7 @@ export default function TermsPage() {
           <div className="mb-8 pb-6 border-b border-gray-100">
             <Link href="/" className="text-lg font-black text-[#1e1b4b]">fortunetab</Link>
             <h1 className="mt-4 text-2xl font-black text-gray-900">이용약관</h1>
-            <p className="mt-1.5 text-sm text-gray-400">마지막 업데이트: 2026년 1월 1일</p>
+            <p className="mt-1.5 text-sm text-gray-400">마지막 업데이트: 2026년 3월 29일</p>
           </div>
 
           <div className="prose prose-gray max-w-none text-sm leading-relaxed space-y-8">
@@ -71,6 +71,7 @@ export default function TermsPage() {
               <p className="text-gray-600 mt-3">
                 단, 서비스 오류·결함으로 인해 정상적인 상품을 제공받지 못한 경우에는
                 결제일로부터 7일 이내에 sbaron680@gmail.com으로 문의하시면 검토 후 환불 처리합니다.
+                상세한 환불 조건은 <a href="/refund" className="text-amber-700 underline">환불정책</a>을 참조하세요.
               </p>
             </section>
 
