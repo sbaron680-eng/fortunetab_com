@@ -44,8 +44,8 @@ export default function RefundPage() {
                     <tr>
                       <td className="border border-gray-200 px-4 py-2.5 font-medium text-gray-700">PDF 배송 기간</td>
                       <td className="border border-gray-200 px-4 py-2.5 text-gray-600">
-                        결제 완료 후 <strong>영업일 기준 1~2일 이내</strong> 이메일 발송<br />
-                        <span className="text-gray-400">(주말·공휴일 제외, 사주 분석 소요 시간 포함)</span>
+                        결제 완료 후 <strong>자동 생성 후 수분 내</strong> 이메일 발송<br />
+                        <span className="text-gray-400">(24시간 자동 처리, 주말·공휴일 포함)</span>
                       </td>
                     </tr>
                     <tr className="bg-gray-50/50">

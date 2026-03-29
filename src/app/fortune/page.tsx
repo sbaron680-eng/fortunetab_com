@@ -197,7 +197,9 @@ export default function FortunePage() {
 
         {/* 면책 */}
         <p className="text-center text-xs text-ft-muted">
-          이 분석은 사주명리학의 학문적 관점에서 참고용으로 제공됩니다.
+          {tab === 'zodiac'
+            ? '이 분석은 서양 점성술의 관점에서 참고용으로 제공됩니다.'
+            : '이 분석은 사주명리학의 학문적 관점에서 참고용으로 제공됩니다.'}
         </p>
       </div>
     </div>
@@ -264,7 +266,7 @@ function CoupleForm({ form, setForm }: { form: any; setForm: (f: any) => void })
   return (
     <div className="grid grid-cols-2 gap-4">
       <div className="space-y-3">
-        <p className="text-xs font-medium text-rose-500 text-center">첫 번째</p>
+        <p className="text-xs font-medium text-rose-500 text-center">본인</p>
         <input placeholder="이름" value={form.name1} onChange={e => u('name1', e.target.value)}
           className="w-full px-3 py-2 border border-rose-200 rounded-xl text-sm" />
         <input type="date" value={form.birthDate1} onChange={e => u('birthDate1', e.target.value)}
@@ -276,7 +278,7 @@ function CoupleForm({ form, setForm }: { form: any; setForm: (f: any) => void })
         </select>
       </div>
       <div className="space-y-3">
-        <p className="text-xs font-medium text-blue-500 text-center">두 번째</p>
+        <p className="text-xs font-medium text-blue-500 text-center">상대</p>
         <input placeholder="이름" value={form.name2} onChange={e => u('name2', e.target.value)}
           className="w-full px-3 py-2 border border-blue-200 rounded-xl text-sm" />
         <input type="date" value={form.birthDate2} onChange={e => u('birthDate2', e.target.value)}

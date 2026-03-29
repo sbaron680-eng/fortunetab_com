@@ -114,23 +114,9 @@ export default function CartPage() {
                     </div>
 
                     <div className="mt-3 flex items-center justify-between">
-                      {/* 수량 조절 */}
+                      {/* 수량 (디지털 상품이므로 1개 고정) */}
                       {product.price > 0 ? (
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => updateQty(product.id, qty - 1)}
-                            className="w-7 h-7 flex items-center justify-center border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors text-sm font-medium"
-                          >
-                            −
-                          </button>
-                          <span className="text-sm font-medium w-6 text-center">{qty}</span>
-                          <button
-                            onClick={() => updateQty(product.id, qty + 1)}
-                            className="w-7 h-7 flex items-center justify-center border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors text-sm font-medium"
-                          >
-                            +
-                          </button>
-                        </div>
+                        <span className="text-sm text-ft-muted">수량: 1</span>
                       ) : (
                         <span className="inline-block px-2.5 py-1 text-xs font-medium bg-emerald-100 text-emerald-700 rounded-full">
                           무료
