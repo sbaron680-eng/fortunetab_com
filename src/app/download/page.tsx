@@ -134,9 +134,10 @@ export default function DownloadPage() {
         orientation,
         year,
         name: name.trim() || '나의 플래너',
-        pages: PAGE_OPTIONS
-          .filter((o) => selectedPages.has(o.type))
-          .map((o) => o.type),
+        pages: [
+          ...PAGE_OPTIONS.filter((o) => selectedPages.has(o.type)).map((o) => o.type),
+          ...EXTRA_PAGE_OPTIONS.filter((o) => selectedPages.has(o.type)).map((o) => o.type),
+        ],
         theme,
         mode,
         saju: mode === 'practice' ? undefined : (savedSaju ?? undefined),
@@ -188,12 +189,13 @@ export default function DownloadPage() {
         <section className="bg-white border border-ft-border rounded-2xl p-6">
           <h2 className="text-ft-ink font-semibold text-sm uppercase tracking-widest mb-4 flex items-center gap-2">
             <span className="w-1.5 h-4 bg-ft-gold rounded-full inline-block" />
-            플래너 종류
+            플래너 스타일
           </h2>
+          <p className="text-xs text-ft-muted -mt-2 mb-3">커버와 일간 플래너의 콘텐츠 스타일이 달라집니다</p>
           <div className="grid grid-cols-2 gap-3">
             {([
-              { value: 'fortune', icon: '🔮', label: '운세 플래너', desc: '사주·운세 흐름 기반' },
-              { value: 'practice', icon: '🎯', label: '실천 플래너', desc: '목표달성·습관형성' },
+              { value: 'fortune', icon: '🔮', label: '운세 스타일', desc: '사주·운세 철학 기반 플래너' },
+              { value: 'practice', icon: '🎯', label: '실천 스타일', desc: 'OKR·MIT 목표달성 플래너' },
             ] as const).map(({ value, icon, label, desc }) => {
               const isSel = mode === value;
               return (
@@ -478,8 +480,8 @@ export default function DownloadPage() {
                   <div className="grid grid-cols-2 gap-1.5">
                     {catPages.map(({ type, label, icon, free }) => {
                       const checked = selectedPages.has(type);
-                      const extraCount = EXTRA_PAGE_OPTIONS.filter(p => selectedPages.has(p.type)).length;
-                      const disabled = !checked && !free && extraCount >= FREE_EXTRA_LIMIT;
+                      // 유료 항목은 무료 다운로드에서 선택 불가 (올인원 구매 필요)
+                      const disabled = !free;
                       return (
                         <label
                           key={type}
