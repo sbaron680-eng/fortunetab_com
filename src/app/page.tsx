@@ -13,16 +13,16 @@ export const metadata: Metadata = {
 };
 
 const HOW_IT_WORKS = [
-  { step: '01', title: '생년월일시 입력', desc: '출생 정보를 입력하면 사주팔자를 분석합니다.' },
-  { step: '02', title: '운세 분석', desc: `${PLANNER_YEAR}년 월별 운세 흐름, 길일·주의일을 계산합니다.` },
-  { step: '03', title: '맞춤 플래너 제작', desc: '분석 결과를 반영한 개인 맞춤 PDF를 제작합니다.' },
-  { step: '04', title: '이메일 발송', desc: '완성된 플래너를 이메일로 바로 받아보세요.' },
+  { step: '01', title: '생년월일시 입력', desc: '결제 시 출생 정보를 입력합니다.', time: '1분' },
+  { step: '02', title: 'AI 사주 분석', desc: `${PLANNER_YEAR}년 월별 운세, 길일·주의일을 자동 계산합니다.`, time: '자동' },
+  { step: '03', title: '맞춤 플래너 제작', desc: '분석 결과가 반영된 개인 맞춤 PDF를 생성합니다.', time: '자동' },
+  { step: '04', title: '이메일 발송', desc: '완성된 플래너가 이메일로 자동 발송됩니다.', time: '수분 내' },
 ];
 
 const REVIEWS = [
-  { name: '김O연', title: '직장인', text: '운세가 플래너에 그대로 녹아 있어서 신기했어요. 길일에 중요한 약속을 잡게 됐는데 정말 잘 풀렸어요.' },
-  { name: '이O준', title: '프리랜서 디자이너', text: '사주 리포트가 정말 상세해서 놀랐습니다. 올해 조심해야 할 시기를 미리 알고 대비할 수 있었어요.' },
-  { name: '박O수', title: '자영업자', text: '무료 버전 먼저 써봤는데 너무 좋아서 유료 결제했습니다. 디자인도 예쁘고 내용도 알차요!' },
+  { name: '김O연', title: '직장인', product: '사주 플래너 기본', date: '2026.01', rating: 5, text: '운세가 플래너에 그대로 녹아 있어서 신기했어요. 길일에 중요한 약속을 잡게 됐는데 정말 잘 풀렸어요.' },
+  { name: '이O준', title: '프리랜서 디자이너', product: '사주 플래너 프리미엄', date: '2026.02', rating: 5, text: '사주 리포트가 정말 상세해서 놀랐습니다. 올해 조심해야 할 시기를 미리 알고 대비할 수 있었어요.' },
+  { name: '박O수', title: '자영업자', product: '무료 공통 플래너 → 기본 업그레이드', date: '2026.01', rating: 4, text: '무료 버전 먼저 써봤는데 너무 좋아서 유료 결제했습니다. 디자인도 예쁘고 내용도 알차요!' },
 ];
 
 const FAQS = [
@@ -36,11 +36,19 @@ const FAQS = [
   },
   {
     q: '결제 후 얼마나 걸리나요?',
-    a: '무료 플래너는 즉시 다운로드 가능합니다. 유료 사주 플래너는 기본 3~5 영업일, 프리미엄(리포트 포함)은 5~7 영업일 이내에 이메일로 발송됩니다.',
+    a: '무료 플래너는 브라우저에서 즉시 다운로드됩니다. 유료 사주 플래너는 결제 후 자동으로 PDF가 생성되어 수분 내 이메일로 발송됩니다.',
   },
   {
-    q: 'PDF를 인쇄해도 되나요?',
-    a: 'A4 규격 고화질 PDF로 제공되어 가정용 프린터에서도 선명하게 출력됩니다. GoodNotes, Noteshelf 등 태블릿 앱에서도 바로 사용 가능합니다.',
+    q: 'PDF를 인쇄하거나 태블릿에서 사용해도 되나요?',
+    a: 'A4 규격 고화질 PDF로 제공되어 가정용 프린터에서도 선명하게 출력됩니다. GoodNotes, Noteshelf, Apple PDF 앱 등 태블릿에서도 바로 사용 가능합니다.',
+  },
+  {
+    q: '환불이 가능한가요?',
+    a: '디지털 콘텐츠 특성상 PDF 발송 이후 환불은 불가합니다. 무료 플래너로 먼저 품질을 확인해 보시길 권장합니다.',
+  },
+  {
+    q: '유료 상품 결제 시 생년월일은 언제 입력하나요?',
+    a: '체크아웃 과정에서 사주 정보(생년월일, 시간, 성별)를 입력합니다. 입력한 정보로 AI가 사주를 분석하고 맞춤 플래너를 자동 생성합니다.',
   },
 ];
 
@@ -61,7 +69,7 @@ export default function HomePage() {
             {/* 얼리버드 배지 */}
             <span className="inline-flex items-center gap-2 px-4 py-1.5 text-xs font-semibold border border-ft-red/30 text-ft-red rounded-full mb-10 tracking-widest bg-ft-red/5">
               <span className="w-1.5 h-1.5 rounded-full bg-ft-red animate-pulse" />
-              {PLANNER_YEAR}년 얼리버드 특가 진행 중
+              {PLANNER_YEAR}년 얼리버드 특가 — 6월 30일 마감
             </span>
 
             {/* 메인 헤드라인 */}
@@ -81,8 +89,8 @@ export default function HomePage() {
             </div>
 
             <p className="text-ft-muted text-base sm:text-lg leading-loose mb-10">
-              운의 흐름을 알고, 노력으로 운명을 개척하는 나만의 플래너.<br />
-              단순한 일정표가 아닌, 의지와 실천이 담긴 도구.
+              좋은 기운이 강한 달에 중요한 결정을, 조심할 달엔 신중하게.<br />
+              12개월 운세 흐름이 반영된 나만의 맞춤 플래너입니다.
             </p>
 
             {/* CTA 버튼 */}
@@ -126,12 +134,15 @@ export default function HomePage() {
 
           {/* 4컬럼 단청 비례 그리드 */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-0 border border-ft-ink/10 divide-x divide-ft-ink/10">
-            {HOW_IT_WORKS.map(({ step, title, desc }, idx) => (
+            {HOW_IT_WORKS.map(({ step, title, desc, time }, idx) => (
               <div
                 key={step}
                 className={`p-8 flex flex-col gap-3 ${idx % 2 === 0 && idx < 2 ? 'border-b border-ft-ink/10 lg:border-b-0' : ''}`}
               >
-                <span className="font-serif font-black text-3xl text-ft-red/20 leading-none">{step}</span>
+                <div className="flex items-center justify-between">
+                  <span className="font-serif font-black text-3xl text-ft-red/20 leading-none">{step}</span>
+                  <span className="text-[10px] px-2 py-0.5 bg-ft-red/10 text-ft-red rounded-full">{time}</span>
+                </div>
                 <h3 className="font-serif font-semibold text-ft-ink text-base leading-snug">{title}</h3>
                 <p className="text-sm text-ft-muted leading-relaxed">{desc}</p>
               </div>
@@ -157,10 +168,21 @@ export default function HomePage() {
             <h2 className="text-2xl sm:text-3xl font-serif font-black text-ft-ink mb-2">
               나에게 맞는 플래너를 선택하세요
             </h2>
-            <p className="text-ft-muted text-sm">무료 체험판부터 사주 맞춤 플래너까지</p>
+            <p className="text-ft-muted text-sm">무료 체험 → 베이직 → 프리미엄 순서로 업그레이드할 수 있습니다</p>
           </div>
+
+          {/* 무료 상품 */}
+          <p className="text-xs font-semibold text-emerald-600 uppercase tracking-widest mb-3">무료 플래너</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+            {PRODUCTS.filter(p => p.price === 0).map((product) => (
+              <ProductCard key={product.id} product={product} priority={true} />
+            ))}
+          </div>
+
+          {/* 유료 상품 */}
+          <p className="text-xs font-semibold text-ft-red uppercase tracking-widest mb-3">프리미엄 플래너</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {PRODUCTS.map((product) => (
+            {PRODUCTS.filter(p => p.price > 0).map((product) => (
               <ProductCard key={product.id} product={product} priority={true} />
             ))}
           </div>
@@ -261,7 +283,7 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
-            {REVIEWS.map(({ name, title, text }) => (
+            {REVIEWS.map(({ name, title, product, date, rating, text }) => (
               <div key={name} className="relative">
                 {/* 빨강 큰 따옴표 */}
                 <span
@@ -272,9 +294,18 @@ export default function HomePage() {
                   &ldquo;
                 </span>
                 <div className="pt-10">
-                  <p className="font-serif text-ft-ink text-base leading-relaxed mb-6">{text}</p>
-                  <div className="flex items-center gap-3 pt-4 border-t border-ft-border">
-                    {/* 이니셜 원 */}
+                  {/* 별점 */}
+                  <div className="flex items-center gap-1 mb-2">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <svg key={i} className={`w-4 h-4 ${i < rating ? 'text-ft-red' : 'text-ft-border'}`} fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                    ))}
+                  </div>
+                  <p className="font-serif text-ft-ink text-base leading-relaxed mb-4">{text}</p>
+                  {/* 상품 + 날짜 */}
+                  <p className="text-xs text-ft-muted mb-3">{product} · {date} 구매</p>
+                  <div className="flex items-center gap-3 pt-3 border-t border-ft-border">
                     <span className="w-8 h-8 rounded-full bg-ft-ink text-white text-xs font-bold flex items-center justify-center flex-shrink-0">
                       {name[0]}
                     </span>
