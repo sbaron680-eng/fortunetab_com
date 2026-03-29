@@ -6,8 +6,9 @@ import { THEMES } from '@/lib/pdf-themes';
 import { useSajuStore, useAuthStore } from '@/lib/store';
 import PlannerPreviewCanvas from '@/components/planner/PlannerPreviewCanvas';
 import { getUserTier, verifyOrderForSaju, TIER_FEATURES, type Tier } from '@/lib/tier-gate';
+import { EXTRA_PAGES } from '@/lib/pdf-pages-extras';
 
-// ── 페이지 선택 옵션 ─────────────────────────────────────────────────────────
+// ── 기본 페이지 선택 옵션 ───────────────────────────────────────────────────
 const PAGE_OPTIONS: { type: PageType; label: string; sublabel: string; icon: string }[] = [
   { type: 'cover',      label: '커버',       sublabel: '1 페이지',    icon: '🌙' },
   { type: 'year-index', label: '연간 인덱스', sublabel: '1 페이지',    icon: '📅' },
@@ -15,6 +16,19 @@ const PAGE_OPTIONS: { type: PageType; label: string; sublabel: string; icon: str
   { type: 'weekly',     label: '주간',       sublabel: '52 페이지',   icon: '📋' },
   { type: 'daily',      label: '일간 (샘플)', sublabel: '1 페이지',    icon: '✏️' },
 ];
+
+// ── 부록 페이지 옵션 (28종) ─────────────────────────────────────────────────
+const EXTRA_PAGE_OPTIONS = EXTRA_PAGES.map(e => ({
+  type: e.type as PageType,
+  label: e.titleKo,
+  sublabel: '1 페이지',
+  icon: e.icon,
+  category: e.categoryKo,
+  free: e.free,
+}));
+
+const EXTRA_CATEGORIES = ['연간', '월간', '주간', '일간', '재무', '라이프', '노트'] as const;
+const FREE_EXTRA_LIMIT = 7;
 
 // ── 미리 정의된 묶음 프리셋 ──────────────────────────────────────────────────
 const PRESETS: { label: string; pages: PageType[] }[] = [
@@ -427,6 +441,54 @@ export default function DownloadPage() {
                     <span className="ml-2 text-xs text-ft-muted">{sublabel}</span>
                   </div>
                 </label>
+              );
+            })}
+          </div>
+
+          {/* ── 부록 페이지 (28종) ─────────────────────────────────── */}
+          <div className="mt-6 pt-5 border-t border-ft-border">
+            <h3 className="text-sm font-semibold text-ft-ink mb-1">부록 페이지</h3>
+            <p className="text-xs text-ft-muted mb-3">
+              무료: 7종까지 선택 가능 | 전체(28종): <a href="/products/extras-full" className="text-ft-ink underline">4,900원</a>
+            </p>
+            {EXTRA_CATEGORIES.map(cat => {
+              const catPages = EXTRA_PAGE_OPTIONS.filter(p => p.category === cat);
+              return (
+                <div key={cat} className="mb-3">
+                  <p className="text-xs font-medium text-ft-muted mb-1.5">{cat}</p>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {catPages.map(({ type, label, icon, free }) => {
+                      const checked = selectedPages.has(type);
+                      const extraCount = EXTRA_PAGE_OPTIONS.filter(p => selectedPages.has(p.type)).length;
+                      const disabled = !checked && !free && extraCount >= FREE_EXTRA_LIMIT;
+                      return (
+                        <label
+                          key={type}
+                          className={`flex items-center gap-2 px-2.5 py-2 rounded-lg border text-xs cursor-pointer transition-all ${
+                            checked
+                              ? 'border-ft-ink bg-ft-paper-alt'
+                              : disabled
+                              ? 'border-ft-border bg-gray-50 opacity-50 cursor-not-allowed'
+                              : 'border-ft-border bg-white hover:bg-ft-paper-alt'
+                          }`}
+                        >
+                          <input type="checkbox" className="sr-only" checked={checked}
+                            onChange={() => !disabled && togglePage(type)} disabled={disabled} />
+                          <span className={`w-4 h-4 rounded flex-shrink-0 flex items-center justify-center border transition-colors ${
+                            checked ? 'bg-ft-ink border-ft-ink' : 'border-ft-border'
+                          }`}>
+                            {checked && <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>}
+                          </span>
+                          <span>{icon}</span>
+                          <span className="flex-1 truncate">{label}</span>
+                          {free && <span className="text-emerald-600 text-[10px]">무료</span>}
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
               );
             })}
           </div>

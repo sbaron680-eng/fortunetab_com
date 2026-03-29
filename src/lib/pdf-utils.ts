@@ -7,7 +7,16 @@ import { getTheme, ColorTheme, DEFAULT_THEME } from './pdf-themes';
 
 // ── 타입 정의 (pdf-generator.ts에서 re-export됨) ─────────────────────────────
 export type Orientation = 'portrait' | 'landscape';
-export type PageType = 'cover' | 'year-index' | 'monthly' | 'weekly' | 'daily';
+export type PageType = 'cover' | 'year-index' | 'monthly' | 'weekly' | 'daily'
+  // 부록 28종
+  | 'year-glance' | 'important-dates' | 'birthday-cal'
+  | 'yearly-goals' | 'yearly-review' | 'vision-board'
+  | 'monthly-goals' | 'one-line-day'
+  | 'weekly-alt' | 'weekly-reflection' | 'meal-plan' | 'habit-tracker' | 'selfcare'
+  | 'daily-alt' | 'journal' | 'gratitude'
+  | 'savings' | 'budget' | 'household' | 'expense'
+  | 'inspiration' | 'bucket-list' | 'travel' | 'shopping' | 'contacts'
+  | 'todo' | 'notes-lined' | 'notes-grid';
 
 export interface NavLink {
   x: number; y: number; w: number; h: number;

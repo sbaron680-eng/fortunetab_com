@@ -23,6 +23,7 @@ import {
   type PageType, type NavLink, type PlannerOptions,
 } from './pdf-utils';
 import { drawCover, drawYearIndex, drawMonthly, drawWeekly, drawDaily } from './pdf-pages';
+import { drawExtraPage, EXTRA_PAGES, type ExtraPageType } from './pdf-pages-extras';
 
 // ════════════════════════════════════════════════════════════════════════════
 //  PUBLIC API
@@ -50,6 +51,7 @@ export function renderPreviewPage(
   else if (pageType === 'monthly')    drawMonthly(ctx, W, H, opts, pageIdx);
   else if (pageType === 'weekly')     drawWeekly(ctx, W, H, opts, pageIdx || 1);
   else if (pageType === 'daily')      drawDaily(ctx, W, H, opts);
+  else drawExtraPage(ctx, W, H, opts, pageType as ExtraPageType);
 }
 
 export async function generatePlannerPDF(opts: PlannerOptions): Promise<Blob | void> {
@@ -95,6 +97,12 @@ export async function generatePlannerPDF(opts: PlannerOptions): Promise<Blob | v
       expandedPages.push({ type: 'cover', label: '커버 페이지' });
     } else if (p === 'year-index') {
       expandedPages.push({ type: 'year-index', label: '연간 인덱스' });
+    } else {
+      // 부록 페이지 (28종)
+      const extra = EXTRA_PAGES.find(e => e.type === p);
+      if (extra) {
+        expandedPages.push({ type: p, label: extra.titleKo });
+      }
     }
   }
 
@@ -123,6 +131,9 @@ export async function generatePlannerPDF(opts: PlannerOptions): Promise<Blob | v
       drawWeekly(ctx, CW, CH, opts, page.idx!);
     } else if (page.type === 'daily') {
       drawDaily(ctx, CW, CH, opts);
+    } else {
+      // 부록 페이지
+      drawExtraPage(ctx, CW, CH, opts, page.type as ExtraPageType);
     }
 
     const imgData = canvas.toDataURL('image/jpeg', 0.90);

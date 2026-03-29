@@ -282,6 +282,85 @@ export const PRODUCTS: Product[] = [
       ],
     },
   },
+  {
+    id: 'extras-free',
+    slug: 'extras-free',
+    name: '부록 플래너 맛보기',
+    subtitle: '28종 부록 페이지 중 7종 무료 선택',
+    price: 0,
+    originalPrice: null,
+    badge: '무료',
+    badgeColor: 'green',
+    images: ['/products/planner-cover.png'],
+    thumbnailImage: '/products/planner-cover.png',
+    shortDescription: '감사 저널, 습관 트래커, 할일 목록 등 28종 부록 페이지 중 7종을 무료로 선택하여 나만의 플래너를 만드세요.',
+    description: `플래너에 부족했던 부록 페이지를 직접 골라서 PDF로 만드세요.
+
+감사 저널, 습관 트래커, 연간 목표, 할일 목록, 일간 계획표, 줄 노트 등 28종의 실용적인 플래너 페이지 중 7종을 무료로 선택하여 즉시 다운로드할 수 있습니다.
+
+더 많은 페이지가 필요하다면 라이프 플래너 올인원(4,900원)으로 업그레이드하세요.`,
+    features: [
+      { icon: '📋', title: '28종 부록 페이지', description: '연간·월간·주간·일간·재무·라이프·노트 7개 카테고리' },
+      { icon: '🎯', title: '7종 무료 선택', description: '원하는 페이지만 골라서 나만의 조합 생성' },
+      { icon: '🖨️', title: 'A4 고화질', description: '인쇄·태블릿 모두 최적화된 PDF' },
+      { icon: '⬆️', title: '업그레이드 가능', description: '4,900원으로 28종 전체 + 반복 페이지 이용' },
+    ],
+    specs: [
+      { label: '파일 형식', value: 'PDF' },
+      { label: '선택 가능', value: '28종 중 7종' },
+      { label: '크기', value: 'A4 (210×297mm)' },
+      { label: '가격', value: '무료' },
+    ],
+    downloadUrl: '/download',
+    previewTheme: 'navy',
+    category: 'free',
+    inStock: true,
+    seo: {
+      title: '무료 부록 플래너 - 감사저널, 습관트래커, 할일목록 PDF 다운로드',
+      description: '28종 플래너 부록 페이지 중 7종 무료 선택. 감사 저널, 습관 트래커, 연간 목표, 할일 목록 등. 즉시 PDF 다운로드.',
+      keywords: ['무료 플래너', '감사 저널', '습관 트래커', '할일 목록', 'PDF 부록', '플래너 템플릿'],
+    },
+  },
+  {
+    id: 'extras-full',
+    slug: 'extras-full',
+    name: '라이프 플래너 올인원',
+    subtitle: '28종 부록 페이지 전체 + 12개월 반복',
+    price: 4900,
+    originalPrice: 9900,
+    badge: '50% OFF',
+    badgeColor: 'red',
+    images: ['/products/planner-cover.png'],
+    thumbnailImage: '/products/planner-cover.png',
+    shortDescription: '감사 저널, 습관 트래커, 재무 관리, 식단 계획 등 28종 부록 페이지를 전부 포함한 올인원 라이프 플래너.',
+    description: `인생의 모든 영역을 관리하는 올인원 라이프 플래너입니다.
+
+28종의 부록 페이지를 전부 사용할 수 있으며, 월간 목표·하루 한 줄·습관 트래커 등은 12개월/52주 반복 페이지를 포함합니다.
+
+연간 목표부터 일간 저널, 재무 관리, 식단 계획, 여행 계획, 비전 보드까지 — 하나의 PDF에 모든 것이 담겨 있습니다.`,
+    features: [
+      { icon: '📦', title: '28종 전체 포함', description: '연간·월간·주간·일간·재무·라이프·노트 모든 페이지' },
+      { icon: '🔄', title: '12개월 반복', description: '월간 목표, 하루 한 줄 등 반복 페이지 자동 생성' },
+      { icon: '🎨', title: '7가지 테마', description: '네이비·로즈·블랙·블루·포레스트·오렌지·골드' },
+      { icon: '📐', title: '가로/세로 선택', description: '인쇄용 세로, 태블릿용 가로 모두 지원' },
+    ],
+    specs: [
+      { label: '파일 형식', value: 'PDF' },
+      { label: '페이지 수', value: '28종 + 반복 (약 50~100페이지)' },
+      { label: '크기', value: 'A4 (210×297mm)' },
+      { label: '배송', value: '이메일 발송 (결제 후 자동)' },
+      { label: '가격', value: '4,900원 (정가 9,900원)' },
+    ],
+    downloadUrl: null,
+    previewTheme: 'gold',
+    category: 'basic',
+    inStock: true,
+    seo: {
+      title: '라이프 플래너 올인원 - 28종 부록 페이지 전체 세트 | 4,900원',
+      description: '28종 플래너 부록 전체 세트. 감사 저널, 습관 트래커, 재무 관리, 식단 계획, 비전 보드 등. 12개월 반복 포함. 4,900원.',
+      keywords: ['라이프 플래너', '올인원 플래너', '부록 세트', '감사 저널', '습관 트래커', '재무 플래너', '비전 보드'],
+    },
+  },
 ];
 
 export const getProductBySlug = (slug: string): Product | undefined =>
