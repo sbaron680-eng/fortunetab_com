@@ -308,7 +308,7 @@ export const PRODUCTS: Product[] = [
     specs: [
       { label: '파일 형식', value: 'PDF' },
       { label: '선택 가능', value: '28종 중 7종' },
-      { label: '크기', value: 'A4 (210×297mm)' },
+      { label: '크기', value: 'A4 (210×297mm), 고화질' },
       { label: '가격', value: '무료' },
     ],
     downloadUrl: '/download',
@@ -347,7 +347,7 @@ export const PRODUCTS: Product[] = [
     specs: [
       { label: '파일 형식', value: 'PDF' },
       { label: '페이지 수', value: '28종 + 반복 (약 50~100페이지)' },
-      { label: '크기', value: 'A4 (210×297mm)' },
+      { label: '크기', value: 'A4 (210×297mm), 고화질' },
       { label: '배송', value: '이메일 발송 (결제 후 자동)' },
       { label: '가격', value: '4,900원 (정가 9,900원)' },
     ],

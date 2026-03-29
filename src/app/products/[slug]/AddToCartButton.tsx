@@ -12,7 +12,7 @@ interface Props {
 
 export default function AddToCartButton({ product }: Props) {
   const router = useRouter();
-  const { addItem } = useCartStore();
+  const { addItem, clearCart } = useCartStore();
   const [added, setAdded] = useState(false);
 
   const handleAdd = () => {
@@ -22,6 +22,7 @@ export default function AddToCartButton({ product }: Props) {
   };
 
   const handleBuyNow = () => {
+    clearCart();
     addItem(product);
     // Zustand persist가 localStorage에 저장할 시간 확보 후 이동
     setTimeout(() => router.push('/checkout'), 100);

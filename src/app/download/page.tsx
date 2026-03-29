@@ -505,7 +505,7 @@ export default function DownloadPage() {
                           {free ? (
                             <span className="text-emerald-600 text-[10px]">무료</span>
                           ) : (
-                            <span className="text-ft-muted text-[10px]">🔒</span>
+                            <span className="text-ft-muted text-[10px]" title="올인원(₩4,900) 구매 시 이용 가능">🔒유료</span>
                           )}
                         </label>
                       );

@@ -26,14 +26,9 @@ export const useCartStore = create<CartStore>()(
 
       addItem: (product) => {
         set((state) => {
+          // 디지털 상품: 이미 담겨 있으면 중복 추가하지 않음 (수량 항상 1)
           const existing = state.items.find((i) => i.product.id === product.id);
-          if (existing) {
-            return {
-              items: state.items.map((i) =>
-                i.product.id === product.id ? { ...i, qty: i.qty + 1 } : i
-              ),
-            };
-          }
+          if (existing) return state;
           return { items: [...state.items, { product, qty: 1 }] };
         });
       },
