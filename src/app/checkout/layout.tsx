@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: '결제 | FortuneTab',
+  title: '결제',
   description: 'FortuneTab 플래너 결제 페이지.',
 };
 

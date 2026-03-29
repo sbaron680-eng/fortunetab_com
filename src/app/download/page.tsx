@@ -483,7 +483,11 @@ export default function DownloadPage() {
                           </span>
                           <span>{icon}</span>
                           <span className="flex-1 truncate">{label}</span>
-                          {free && <span className="text-emerald-600 text-[10px]">무료</span>}
+                          {free ? (
+                            <span className="text-emerald-600 text-[10px]">무료</span>
+                          ) : (
+                            <span className="text-ft-muted text-[10px]">🔒</span>
+                          )}
                         </label>
                       );
                     })}
