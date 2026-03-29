@@ -5,9 +5,14 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store';
 import { fetchAllOrders, updateOrderStatus, setOrderFileUrl } from '@/lib/orders';
 import { fetchAllUsers, setAdminStatus } from '@/lib/users';
+import {
+  fetchAllPromotions, createPromotion, updatePromotion, deletePromotion, togglePromotion,
+  getDaysRemaining, type Promotion,
+} from '@/lib/promotions';
+import { PRODUCTS } from '@/lib/products';
 
 type OrderStatus = 'pending' | 'paid' | 'processing' | 'completed' | 'cancelled';
-type Tab = 'orders' | 'users';
+type Tab = 'orders' | 'users' | 'promotions';
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
   pending:    '대기중',
@@ -64,6 +69,16 @@ export default function AdminPage() {
   const [fetchingUsers, setFetchingUsers] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
+  // ── 프로모션 상태 ────────────────────────────────────────────────────────────
+  const [promos, setPromos] = useState<Promotion[]>([]);
+  const [fetchingPromos, setFetchingPromos] = useState(false);
+  const [promoForm, setPromoForm] = useState({
+    product_slug: '', discount_type: 'percent' as 'percent' | 'fixed',
+    discount_value: '', starts_at: '', ends_at: '',
+    max_uses: '', per_user_limit: '1', min_order_amount: '0',
+    badge_text: '', badge_color: 'red',
+  });
+
   // ── 인증 가드 ────────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!isAuthReady) return;  // 인증 초기화 완료 대기
@@ -84,6 +99,45 @@ export default function AdminPage() {
       setFetchingUsers(false);
     });
   }, [tab, users.length]);
+
+  useEffect(() => {
+    if (tab !== 'promotions') return;
+    setFetchingPromos(true);
+    fetchAllPromotions().then(data => { setPromos(data); setFetchingPromos(false); });
+  }, [tab]);
+
+  // ── 프로모션 핸들러 ──────────────────────────────────────────────────────────
+  const handleCreatePromo = async () => {
+    try {
+      const newPromo = await createPromotion({
+        product_slug: promoForm.product_slug || null,
+        discount_type: promoForm.discount_type,
+        discount_value: Number(promoForm.discount_value),
+        starts_at: promoForm.starts_at || new Date().toISOString(),
+        ends_at: promoForm.ends_at || null,
+        max_uses: promoForm.max_uses ? Number(promoForm.max_uses) : null,
+        per_user_limit: Number(promoForm.per_user_limit),
+        min_order_amount: Number(promoForm.min_order_amount),
+        badge_text: promoForm.badge_text || null,
+        badge_color: promoForm.badge_color,
+      });
+      setPromos(prev => [newPromo, ...prev]);
+      setPromoForm({ product_slug: '', discount_type: 'percent', discount_value: '', starts_at: '', ends_at: '', max_uses: '', per_user_limit: '1', min_order_amount: '0', badge_text: '', badge_color: 'red' });
+    } catch (err) {
+      alert('프로모션 생성 실패: ' + (err instanceof Error ? err.message : ''));
+    }
+  };
+
+  const handleTogglePromo = async (id: string, active: boolean) => {
+    await togglePromotion(id, active);
+    setPromos(prev => prev.map(p => p.id === id ? { ...p, is_active: active } : p));
+  };
+
+  const handleDeletePromo = async (id: string) => {
+    if (!confirm('이 프로모션을 삭제하시겠습니까?')) return;
+    await deletePromotion(id);
+    setPromos(prev => prev.filter(p => p.id !== id));
+  };
 
   // ── 핸들러 ───────────────────────────────────────────────────────────────────
   const handleStatusChange = async (orderId: string, status: OrderStatus) => {
@@ -173,7 +227,9 @@ export default function AdminPage() {
 
         {/* 탭 */}
         <div className="flex gap-1 mb-6 bg-gray-900 p-1 rounded-xl w-fit border border-gray-800">
-          {(['orders', 'users'] as Tab[]).map((t) => (
+          {(['orders', 'users', 'promotions'] as Tab[]).map((t) => {
+            const labels: Record<Tab, string> = { orders: '주문 관리', users: '사용자 관리', promotions: '프로모션' };
+            return (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -181,9 +237,9 @@ export default function AdminPage() {
                 tab === t ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-gray-200'
               }`}
             >
-              {t === 'orders' ? '주문 관리' : '사용자 관리'}
-            </button>
-          ))}
+              {labels[t]}
+            </button>);
+          })}
         </div>
 
         {/* ── 주문 관리 탭 ─────────────────────────────────────────────────────── */}
@@ -381,6 +437,124 @@ export default function AdminPage() {
                 </tbody>
               </table>
             )}
+          </div>
+        )}
+
+        {/* ── 프로모션 관리 탭 ──────────────────────────────────────────────── */}
+        {tab === 'promotions' && (
+          <div className="space-y-6">
+            {/* 생성 폼 */}
+            <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+              <h3 className="text-white font-bold mb-4">새 프로모션 생성</h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <select value={promoForm.product_slug} onChange={e => setPromoForm(p => ({...p, product_slug: e.target.value}))}
+                  className="bg-gray-800 text-white text-sm rounded-lg px-3 py-2 border border-gray-700">
+                  <option value="">전체 상품</option>
+                  {PRODUCTS.filter(p => p.price > 0).map(p => (
+                    <option key={p.slug} value={p.slug}>{p.name}</option>
+                  ))}
+                </select>
+                <select value={promoForm.discount_type} onChange={e => setPromoForm(p => ({...p, discount_type: e.target.value as 'percent'|'fixed'}))}
+                  className="bg-gray-800 text-white text-sm rounded-lg px-3 py-2 border border-gray-700">
+                  <option value="percent">% 할인</option>
+                  <option value="fixed">원 할인</option>
+                </select>
+                <input placeholder="할인값 (예: 34)" value={promoForm.discount_value}
+                  onChange={e => setPromoForm(p => ({...p, discount_value: e.target.value}))}
+                  className="bg-gray-800 text-white text-sm rounded-lg px-3 py-2 border border-gray-700" />
+                <input type="datetime-local" placeholder="시작일" value={promoForm.starts_at}
+                  onChange={e => setPromoForm(p => ({...p, starts_at: e.target.value}))}
+                  className="bg-gray-800 text-white text-sm rounded-lg px-3 py-2 border border-gray-700" />
+                <input type="datetime-local" placeholder="종료일 (빈칸=무기한)" value={promoForm.ends_at}
+                  onChange={e => setPromoForm(p => ({...p, ends_at: e.target.value}))}
+                  className="bg-gray-800 text-white text-sm rounded-lg px-3 py-2 border border-gray-700" />
+                <input placeholder="최대 사용 횟수 (빈칸=무제한)" value={promoForm.max_uses}
+                  onChange={e => setPromoForm(p => ({...p, max_uses: e.target.value}))}
+                  className="bg-gray-800 text-white text-sm rounded-lg px-3 py-2 border border-gray-700" />
+                <input placeholder="뱃지 텍스트 (예: 얼리버드 34% OFF)" value={promoForm.badge_text}
+                  onChange={e => setPromoForm(p => ({...p, badge_text: e.target.value}))}
+                  className="bg-gray-800 text-white text-sm rounded-lg px-3 py-2 border border-gray-700 col-span-2" />
+                <select value={promoForm.badge_color} onChange={e => setPromoForm(p => ({...p, badge_color: e.target.value}))}
+                  className="bg-gray-800 text-white text-sm rounded-lg px-3 py-2 border border-gray-700">
+                  <option value="red">빨강</option>
+                  <option value="green">초록</option>
+                  <option value="blue">파랑</option>
+                  <option value="gold">골드</option>
+                </select>
+              </div>
+              <button onClick={handleCreatePromo}
+                className="mt-4 px-6 py-2 bg-emerald-600 text-white text-sm font-bold rounded-lg hover:bg-emerald-500 transition-colors">
+                프로모션 생성
+              </button>
+            </div>
+
+            {/* 프로모션 목록 */}
+            <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+              {fetchingPromos ? (
+                <div className="p-8 text-center text-gray-500">로딩 중...</div>
+              ) : promos.length === 0 ? (
+                <div className="p-8 text-center text-gray-500">프로모션이 없습니다.</div>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-800 text-gray-400">
+                      <th className="text-left p-3">상품</th>
+                      <th className="text-left p-3">할인</th>
+                      <th className="text-left p-3">기간</th>
+                      <th className="text-left p-3">사용</th>
+                      <th className="text-left p-3">뱃지</th>
+                      <th className="text-left p-3">상태</th>
+                      <th className="text-left p-3">관리</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {promos.map(p => {
+                      const days = getDaysRemaining(p.ends_at);
+                      const expired = days !== null && days <= 0;
+                      return (
+                        <tr key={p.id} className={`border-b border-gray-800/50 ${expired ? 'opacity-50' : ''}`}>
+                          <td className="p-3 text-white">{p.product_slug || '전체'}</td>
+                          <td className="p-3 text-amber-300 font-mono">
+                            {p.discount_type === 'percent' ? `${p.discount_value}%` : `₩${p.discount_value.toLocaleString()}`}
+                          </td>
+                          <td className="p-3 text-gray-400 text-xs">
+                            {new Date(p.starts_at).toLocaleDateString('ko-KR')}
+                            {p.ends_at && ` ~ ${new Date(p.ends_at).toLocaleDateString('ko-KR')}`}
+                            {days !== null && days > 0 && (
+                              <span className="ml-1 text-amber-400">D-{days}</span>
+                            )}
+                            {expired && <span className="ml-1 text-red-400">만료</span>}
+                          </td>
+                          <td className="p-3 text-gray-400">{p.current_uses}/{p.max_uses ?? '∞'}</td>
+                          <td className="p-3">
+                            {p.badge_text && (
+                              <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                                p.badge_color === 'red' ? 'bg-red-900/40 text-red-300' :
+                                p.badge_color === 'green' ? 'bg-emerald-900/40 text-emerald-300' :
+                                p.badge_color === 'gold' ? 'bg-amber-900/40 text-amber-300' :
+                                'bg-blue-900/40 text-blue-300'
+                              }`}>{p.badge_text}</span>
+                            )}
+                          </td>
+                          <td className="p-3">
+                            <button onClick={() => handleTogglePromo(p.id, !p.is_active)}
+                              className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+                                p.is_active ? 'bg-emerald-900/40 text-emerald-300 hover:bg-emerald-800/40' : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
+                              }`}>
+                              {p.is_active ? '활성' : '비활성'}
+                            </button>
+                          </td>
+                          <td className="p-3">
+                            <button onClick={() => handleDeletePromo(p.id)}
+                              className="text-red-400 hover:text-red-300 text-xs">삭제</button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
           </div>
         )}
 
