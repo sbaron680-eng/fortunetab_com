@@ -10,8 +10,8 @@ type FilterId = 'all' | 'free' | 'basic' | 'premium';
 const CATEGORIES: { id: FilterId; label: string }[] = [
   { id: 'all', label: '전체' },
   { id: 'free', label: '무료' },
-  { id: 'basic', label: '기본' },
-  { id: 'premium', label: '프리미엄' },
+  { id: 'basic', label: '유료 기본' },
+  { id: 'premium', label: '유료 프리미엄' },
 ];
 
 export default function ProductFilterGrid() {

@@ -62,9 +62,14 @@ export default function DownloadPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const orderParam = params.get('orderId');
-    const modeParam  = params.get('mode') as PlannerOptions['mode'] | null;
+    const modeParam  = params.get('mode');
     if (orderParam) setOrderId(orderParam);
     if (modeParam === 'fortune' || modeParam === 'practice') setMode(modeParam);
+    // extras 모드: 부록 무료 7종 자동 선택
+    if (modeParam === 'extras') {
+      const freeExtras = EXTRA_PAGE_OPTIONS.filter(p => p.free).map(p => p.type);
+      setSelectedPages(new Set(freeExtras));
+    }
   }, []);
 
   // 로그인 유저의 티어 조회
@@ -92,6 +97,7 @@ export default function DownloadPage() {
   );
   const [name, setName]       = useState('');
   const [year, setYear]       = useState(() => getAvailableYears()[0]);
+  const [advancedMode, setAdvancedMode] = useState(false);
   const [theme, setTheme]     = useState('rose');
 
   const [isGenerating, setIsGenerating] = useState(false);
@@ -244,8 +250,21 @@ export default function DownloadPage() {
           </div>
         </section>
 
+        {/* ── 빠른/커스텀 토글 ─────────────────────────────────────────────── */}
+        <div className="flex items-center justify-between bg-white border border-ft-border rounded-2xl px-5 py-3">
+          <span className="text-sm text-ft-ink font-medium">
+            {advancedMode ? '커스텀 옵션 표시 중' : '기본 설정으로 빠르게 생성'}
+          </span>
+          <button
+            onClick={() => setAdvancedMode(!advancedMode)}
+            className="text-xs px-3 py-1.5 rounded-lg border border-ft-border text-ft-muted hover:text-ft-ink hover:border-ft-ink transition-colors"
+          >
+            {advancedMode ? '간소화' : '커스텀 옵션 열기'}
+          </button>
+        </div>
+
         {/* ── 카드: 컬러 테마 ──────────────────────────────────────────────────── */}
-        <section className="bg-white border border-ft-border rounded-2xl p-6">
+        <section className={`bg-white border border-ft-border rounded-2xl p-6 ${advancedMode ? '' : 'hidden'}`}>
           <h2 className="text-ft-ink font-semibold text-sm uppercase tracking-widest mb-4 flex items-center gap-2">
             <span className="w-1.5 h-4 bg-ft-gold rounded-full inline-block" />
             컬러 테마
@@ -277,8 +296,8 @@ export default function DownloadPage() {
           </div>
         </section>
 
-        {/* ── 카드: 방향 선택 ──────────────────────────────────────────────────── */}
-        <section className="bg-white border border-ft-border rounded-2xl p-6">
+        {/* ── 카드: 방향 선택 (커스텀) ──────────────────────────────────────────────────── */}
+        <section className={`bg-white border border-ft-border rounded-2xl p-6 ${advancedMode ? "" : "hidden"}`}>
           <h2 className="text-ft-ink font-semibold text-sm uppercase tracking-widest mb-4 flex items-center gap-2">
             <span className="w-1.5 h-4 bg-ft-gold rounded-full inline-block" />
             용지 방향

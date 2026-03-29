@@ -198,7 +198,15 @@ export default async function ProductDetailPage({ params }: Props) {
         <div className="mt-12">
           <h2 className="text-lg font-bold text-ft-ink mb-6">다른 플래너도 살펴보세요</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {PRODUCTS.filter((p) => p.id !== product.id).map((p) => (
+            {PRODUCTS.filter((p) => p.id !== product.id)
+              .sort((a, b) => {
+                // 현재 상품보다 비싼 상품(업그레이드)을 먼저 추천
+                const aUp = a.price > product.price ? -1 : 1;
+                const bUp = b.price > product.price ? -1 : 1;
+                return aUp - bUp;
+              })
+              .slice(0, 3)
+              .map((p) => (
               <a
                 key={p.id}
                 href={`/products/${p.slug}`}
