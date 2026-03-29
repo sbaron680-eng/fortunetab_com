@@ -146,7 +146,7 @@ export default async function ProductDetailPage({ params }: Props) {
               </svg>
               {product.price === 0
                 ? '이메일 주소 입력 후 즉시 다운로드 링크 발송'
-                : '결제 완료 후 이메일로 PDF 발송'}
+                : '결제 완료 후 이메일로 PDF 자동 발송 (수분 내)'}
             </div>
             {product.price > 0 && (
               <p className="mt-1.5 text-[11px] text-amber-600">

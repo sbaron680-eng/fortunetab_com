@@ -63,7 +63,7 @@ export const PRODUCTS: Product[] = [
     seo: {
       title: '무료 PDF 플래너 2026 - 운세 흐름 플래너 무료 다운로드',
       description:
-        '2026년 운세 흐름으로 설계한 PDF 플래너 무료 다운로드. 커버·연간·월간·주간·일간 5종 템플릿. 이메일 신청 시 즉시 발송.',
+        '2026년 운세 흐름으로 설계한 PDF 플래너 무료 다운로드. 커버·연간·월간·주간·일간 5종 템플릿. 브라우저에서 즉시 생성.',
       keywords: [
         'PDF 플래너 무료',
         '2026 플래너 다운로드',
@@ -121,7 +121,7 @@ export const PRODUCTS: Product[] = [
       { label: '페이지 수', value: '약 70~80페이지 (월간×12+주간×52+일간×30×12)' },
       { label: '크기', value: 'A4 (210×297mm), 고화질' },
       { label: '언어', value: '한국어' },
-      { label: '다운로드', value: '결제 즉시 브라우저에서 PDF 생성 (이메일 불필요)' },
+      { label: '배송 방법', value: '결제 후 이메일로 PDF 자동 발송 (수분 내)' },
       { label: '가격', value: '19,000원 (얼리버드 할인가)' },
     ],
     downloadUrl: '/download',
@@ -191,7 +191,7 @@ export const PRODUCTS: Product[] = [
       { label: '페이지 수', value: '플래너 80p + 리포트 20p+' },
       { label: '크기', value: 'A4 (210×297mm), 고화질' },
       { label: '언어', value: '한국어' },
-      { label: '다운로드', value: '결제 즉시 브라우저에서 PDF 생성 (이메일 불필요)' },
+      { label: '배송 방법', value: '결제 후 이메일로 PDF 자동 발송 (수분 내)' },
       { label: '가격', value: '29,000원 (얼리버드 특별가)' },
     ],
     downloadUrl: '/download',

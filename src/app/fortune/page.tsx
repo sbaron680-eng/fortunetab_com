@@ -212,11 +212,11 @@ function SajuForm({ form, setForm }: { form: any; setForm: (f: any) => void }) {
       <input placeholder="이름 (선택)" value={form.name} onChange={e => u('name', e.target.value)}
         className="w-full px-4 py-2.5 border border-ft-border rounded-xl text-sm focus:ring-2 focus:ring-ft-gold/50 outline-none" />
       <div className="grid grid-cols-3 gap-3">
-        <input type="number" placeholder="년" value={form.year} onChange={e => u('year', e.target.value)}
+        <input type="number" placeholder="년" onWheel={e => (e.target as HTMLInputElement).blur()} value={form.year} onChange={e => u('year', e.target.value)}
           className="px-3 py-2.5 border border-ft-border rounded-xl text-sm text-center" min="1920" max="2020" />
-        <input type="number" placeholder="월" value={form.month} onChange={e => u('month', e.target.value)}
+        <input type="number" placeholder="월" onWheel={e => (e.target as HTMLInputElement).blur()} value={form.month} onChange={e => u('month', e.target.value)}
           className="px-3 py-2.5 border border-ft-border rounded-xl text-sm text-center" min="1" max="12" />
-        <input type="number" placeholder="일" value={form.day} onChange={e => u('day', e.target.value)}
+        <input type="number" placeholder="일" onWheel={e => (e.target as HTMLInputElement).blur()} value={form.day} onChange={e => u('day', e.target.value)}
           className="px-3 py-2.5 border border-ft-border rounded-xl text-sm text-center" min="1" max="31" />
       </div>
       <div className="grid grid-cols-2 gap-3">

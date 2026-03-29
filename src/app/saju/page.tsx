@@ -338,6 +338,7 @@ export default function SajuPage() {
                 type="number"
                 value={form.year}
                 onChange={e => handleChange('year', e.target.value)}
+                onWheel={e => (e.target as HTMLInputElement).blur()}
                 placeholder="1990"
                 min={1900}
                 max={2100}
