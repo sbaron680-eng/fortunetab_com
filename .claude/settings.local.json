@@ -22,7 +22,21 @@
       "Bash(node -e \"const l = require\\(''./package-lock.json''\\); const p = l.packages[''node_modules/typescript'']; console.log\\(JSON.stringify\\(p, null, 2\\)\\)\")",
       "Bash(npm ci:*)",
       "Bash(node -e \":*)",
-      "Bash(gh pr:*)"
+      "Bash(gh pr:*)",
+      "Bash(powershell -Command \"Set-Location ''C:\\\\Users\\\\박성준\\\\Desktop\\\\Project\\\\fortunetab_com''; node_modules\\\\.bin\\\\wrangler pages project list 2>&1\")",
+      "Bash(powershell -Command \"Set-Location ''C:\\\\Users\\\\박성준\\\\Desktop\\\\Project\\\\fortunetab_com''; node_modules\\\\.bin\\\\wrangler pages secret put NEXT_PUBLIC_SUPABASE_URL --project-name fortunetab-com 2>&1\")",
+      "Bash(powershell -Command \":*)",
+      "mcp__plugin_playwright_playwright__browser_navigate",
+      "mcp__plugin_playwright_playwright__browser_network_requests",
+      "mcp__plugin_playwright_playwright__browser_snapshot",
+      "Bash(cmd /c \"node_modules\\\\.bin\\\\tsc --noEmit 2>&1\")",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(npx tsc:*)",
+      "Bash(grep -v \"//.*2026\")",
+      "Bash(npx next:*)"
     ]
   }
 }

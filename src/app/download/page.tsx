@@ -268,7 +268,7 @@ export default function DownloadPage() {
             onClick={() => setAdvancedMode(!advancedMode)}
             className="text-xs px-3 py-1.5 rounded-lg border border-ft-border text-ft-muted hover:text-ft-ink hover:border-ft-ink transition-colors"
           >
-            {advancedMode ? '간소화' : '커스텀 옵션 열기'}
+            {advancedMode ? '간소화' : '7가지 테마 · 가로/세로 선택 →'}
           </button>
         </div>
 

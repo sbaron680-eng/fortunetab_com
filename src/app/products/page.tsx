@@ -46,7 +46,7 @@ export default function ProductsPage() {
                   { f: '세로/가로 선택', v: [true, true, true] },
                   { f: '사주 기반 맞춤 제작', v: [false, true, true] },
                   { f: '월별 운세 가이드 노트', v: [false, true, true] },
-                  { f: '부록 28종 포함', v: [false, true, true] },
+                  { f: '부록 페이지', v: ['무료 7종', '28종 전체', '28종 전체'] },
                   { f: '사주 심층 리포트 (20p)', v: [false, false, true] },
                   { f: '10년 대운 흐름 분석', v: [false, false, true] },
                   { f: '이메일 PDF 자동 발송', v: [false, true, true] },

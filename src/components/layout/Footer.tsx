@@ -40,8 +40,8 @@ export default function Footer() {
 
             {/* 하단: 사업자 정보 (브랜드와 같은 컬럼에 자연스럽게 배치) */}
             <div className="text-xs space-y-1.5 text-white/35">
-              <p>상호: 비포에이 &nbsp;|&nbsp; 서비스명: FortuneTab &nbsp;|&nbsp; 사업자등록번호: 238-18-00745</p>
-              <p>통신판매업신고: 제 2019-울산울주-0053호</p>
+              <p>상호: 비포에이 &nbsp;|&nbsp; 대표: 박성준 &nbsp;|&nbsp; 서비스명: FortuneTab</p>
+              <p>사업자등록번호: 238-18-00745 &nbsp;|&nbsp; 통신판매업신고: 제 2019-울산울주-0053호</p>
               <p>
                 고객센터:{' '}
                 <a href="mailto:sbaron680@gmail.com" className="hover:text-white/60 transition-colors">
@@ -58,8 +58,11 @@ export default function Footer() {
             <ul className="space-y-3 text-sm">
               <li><Link href="/products" className="hover:text-white transition-colors">전체 상품</Link></li>
               <li><Link href="/products/common-planner" className="hover:text-white transition-colors">무료 공통 플래너</Link></li>
+              <li><Link href="/products/practice-planner" className="hover:text-white transition-colors">실천 플래너</Link></li>
+              <li><Link href="/products/extras-free" className="hover:text-white transition-colors">부록 플래너 맛보기</Link></li>
               <li><Link href="/products/saju-planner-basic" className="hover:text-white transition-colors">사주 플래너 기본</Link></li>
               <li><Link href="/products/saju-planner-premium" className="hover:text-white transition-colors">사주 플래너 + 리포트</Link></li>
+              <li><Link href="/products/extras-full" className="hover:text-white transition-colors">라이프 플래너 올인원</Link></li>
               <li><Link href="/cart" className="hover:text-white transition-colors">장바구니</Link></li>
             </ul>
           </div>

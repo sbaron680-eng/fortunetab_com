@@ -146,7 +146,7 @@ export default async function ProductDetailPage({ params }: Props) {
               </svg>
               {product.price === 0
                 ? '브라우저에서 즉시 PDF 생성 — 이메일 불필요'
-                : '결제 완료 후 이메일로 PDF 자동 발송 (수분 내)'}
+                : '결제 완료 후 이메일로 PDF 자동 발송 (평균 5분 이내)'}
             </div>
             {product.price > 0 && (
               <p className="mt-1.5 text-[11px] text-amber-600">
@@ -205,7 +205,7 @@ export default async function ProductDetailPage({ params }: Props) {
                 const bUp = b.price > product.price ? -1 : 1;
                 return aUp - bUp;
               })
-              .slice(0, 3)
+              .slice(0, 4)
               .map((p) => (
               <a
                 key={p.id}

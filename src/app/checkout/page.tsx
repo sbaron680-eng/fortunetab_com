@@ -642,7 +642,7 @@ export default function CheckoutPage() {
                 {hasSajuProduct ? (
                   <p className="flex items-start gap-1.5">
                     <span className="text-indigo-400">🔮</span>
-                    사주 맞춤 플래너: 결제 후 자동 생성 (수분 내 이메일 발송)
+                    사주 맞춤 플래너: 결제 후 자동 생성 (평균 5분 이내 이메일 발송)
                   </p>
                 ) : (
                   <p className="flex items-start gap-1.5">
