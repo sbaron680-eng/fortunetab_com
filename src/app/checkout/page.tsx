@@ -80,9 +80,10 @@ export default function CheckoutPage() {
     setMounted(true);
   }, []);
 
-  // 사주 플래너 포함 여부 확인
+  // 사주 플래너 포함 여부 확인 (사주 입력이 필요한 상품만)
+  const SAJU_SLUGS = ['saju-planner-basic', 'saju-planner-premium'];
   const hasSajuProduct = items.some(
-    (i) => i.product.slug !== 'common-planner'
+    (i) => SAJU_SLUGS.includes(i.product.slug)
   );
   const total = totalPrice();
   const hasPaidItem = items.some((i) => i.product.price > 0);
@@ -549,6 +550,7 @@ export default function CheckoutPage() {
                       </Link>
                       에 동의합니다.
                       디지털 콘텐츠 특성상 PDF 발송 이후 환불이 불가하며, PDF는 발송일로부터 30일간 보관됨을 확인합니다.
+                      사주 분석은 명리학의 학문적 관점에서 참고용으로 제공됩니다.
                     </span>
                   </label>
                   {agreeError && (
@@ -640,7 +642,7 @@ export default function CheckoutPage() {
                 {hasSajuProduct ? (
                   <p className="flex items-start gap-1.5">
                     <span className="text-indigo-400">🔮</span>
-                    사주 맞춤 제작: 영업일 기준 1~2일
+                    사주 맞춤 플래너: 결제 후 자동 생성 (수분 내 이메일 발송)
                   </p>
                 ) : (
                   <p className="flex items-start gap-1.5">

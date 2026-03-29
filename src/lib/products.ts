@@ -118,7 +118,7 @@ export const PRODUCTS: Product[] = [
     ],
     specs: [
       { label: '파일 형식', value: 'PDF (개인 정보 포함)' },
-      { label: '페이지 수', value: '약 70~80페이지 (월간×12+주간×52+일간×30×12)' },
+      { label: '페이지 수', value: '약 67페이지 (커버1+연간1+월간12+주간52+일간1)' },
       { label: '크기', value: 'A4 (210×297mm), 고화질' },
       { label: '언어', value: '한국어' },
       { label: '배송 방법', value: '결제 후 이메일로 PDF 자동 발송 (수분 내)' },
@@ -188,7 +188,7 @@ export const PRODUCTS: Product[] = [
     ],
     specs: [
       { label: '파일 형식', value: '플래너 PDF + 리포트 PDF (별도 파일)' },
-      { label: '페이지 수', value: '플래너 80p + 리포트 20p+' },
+      { label: '페이지 수', value: '플래너 약 67p + 사주 리포트 20p' },
       { label: '크기', value: 'A4 (210×297mm), 고화질' },
       { label: '언어', value: '한국어' },
       { label: '배송 방법', value: '결제 후 이메일로 PDF 자동 발송 (수분 내)' },
