@@ -148,7 +148,14 @@ export default function DownloadPage() {
       setDone(true);
     } catch (e) {
       console.error(e);
-      setError('PDF 생성 중 오류가 발생했습니다. 다시 시도해 주세요.');
+      const msg = e instanceof Error ? e.message : '';
+      if (msg.includes('Canvas') || msg.includes('memory')) {
+        setError('메모리 부족 — 선택한 페이지 수를 줄이거나 브라우저를 새로고침해 주세요.');
+      } else if (msg.includes('font') || msg.includes('Font')) {
+        setError('폰트 로딩 실패 — 새로고침 후 다시 시도해 주세요.');
+      } else {
+        setError('PDF 생성 중 오류가 발생했습니다. 선택한 옵션을 확인하고 다시 시도해 주세요.');
+      }
     } finally {
       setIsGenerating(false);
       setProgress(null);

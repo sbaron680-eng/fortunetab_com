@@ -366,8 +366,6 @@ export const PRODUCTS: Product[] = [
 export const getProductBySlug = (slug: string): Product | undefined =>
   PRODUCTS.find((p) => p.slug === slug);
 
-export const getFeaturedProducts = (): Product[] =>
-  PRODUCTS.filter((p) => p.category !== 'free');
 
 export const formatPrice = (price: number): string =>
   price === 0 ? '무료' : `₩${price.toLocaleString('ko-KR')}`;

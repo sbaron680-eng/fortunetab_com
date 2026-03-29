@@ -23,9 +23,6 @@ export async function setAdminStatus(userId: string, isAdmin: boolean): Promise<
     p_is_admin: isAdmin,
   });
   if (error) {
-    if (error.message.includes('SELF_DEMOTION')) {
-      alert('자기 자신의 관리자 권한은 해제할 수 없습니다.');
-    }
     console.error('[setAdminStatus]', error);
     return false;
   }

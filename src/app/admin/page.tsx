@@ -124,7 +124,7 @@ export default function AdminPage() {
       setPromos(prev => [newPromo, ...prev]);
       setPromoForm({ product_slug: '', discount_type: 'percent', discount_value: '', starts_at: '', ends_at: '', max_uses: '', per_user_limit: '1', min_order_amount: '0', badge_text: '', badge_color: 'red' });
     } catch (err) {
-      alert('프로모션 생성 실패: ' + (err instanceof Error ? err.message : ''));
+      console.error('프로모션 생성 실패:', err);
     }
   };
 

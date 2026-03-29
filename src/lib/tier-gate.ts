@@ -76,7 +76,7 @@ export async function verifyOrderForSaju(
     .select('id, status')
     .eq('user_id', userId)
     .eq('order_number', orderNumber)
-    .in('status', ['paid', 'pending', 'completed'])
+    .in('status', ['paid', 'completed'])
     .single();
 
   if (error || !order) return false;

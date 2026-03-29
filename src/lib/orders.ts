@@ -14,7 +14,7 @@ export async function createOrder(
   userId: string,
   items: CartItem[],
   total: number,
-  sajuData?: Record<string, string>
+  sajuData?: Record<string, string | undefined>
 ): Promise<{ orderNumber: string; orderId: string } | null> {
   const orderNumber = generateOrderNumber();
 

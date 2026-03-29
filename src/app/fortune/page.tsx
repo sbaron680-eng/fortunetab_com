@@ -36,7 +36,7 @@ interface FortuneResult {
   monthly_fortunes: Array<{ month: number; fortune: string; score: number; keywords: string[] }>;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_FORTUNE_API_URL || 'http://localhost:4001';
+const API_URL = process.env.NEXT_PUBLIC_FORTUNE_API_URL ?? '';
 const TIME_OPTIONS = Object.keys(TIME_TO_BRANCH);
 
 // ── 메인 페이지 ───────────────────────────────────────────────

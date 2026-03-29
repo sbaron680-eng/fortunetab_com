@@ -46,7 +46,7 @@ function SuccessContent() {
     (async () => {
       try {
         // 토스페이먼츠 결제 최종 승인 (서버 → 토스 API)
-        const confirmUrl = process.env.NEXT_PUBLIC_FORTUNE_API_URL || 'http://localhost:4001';
+        const confirmUrl = process.env.NEXT_PUBLIC_FORTUNE_API_URL!;
         const confirmRes = await fetch(`${confirmUrl}/payments/confirm`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
