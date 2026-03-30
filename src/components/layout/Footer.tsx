@@ -40,15 +40,16 @@ export default function Footer() {
 
             {/* 하단: 사업자 정보 (브랜드와 같은 컬럼에 자연스럽게 배치) */}
             <div className="text-xs space-y-1.5 text-white/35">
-              <p>상호: 비포에이 &nbsp;|&nbsp; 대표: 박성준 &nbsp;|&nbsp; 서비스명: FortuneTab</p>
-              <p>사업자등록번호: 238-18-00745 &nbsp;|&nbsp; 통신판매업신고: 제 2019-울산울주-0053호</p>
+              <p>상호: 비포에이 &nbsp;|&nbsp; 대표: 박성준 &nbsp;|&nbsp; 사업자등록번호: 238-18-00745</p>
+              <p>통신판매업신고: 제 2019-울산울주-0053호</p>
+              <p>사업장 주소: 울산광역시 울주군 범서읍 대리로 43, 108동 1406호(구영1주공아파트)</p>
               <p>
-                고객센터:{' '}
+                전화: 010-4169-6030 &nbsp;|&nbsp; 이메일:{' '}
                 <a href="mailto:sbaron680@gmail.com" className="hover:text-white/60 transition-colors">
                   sbaron680@gmail.com
                 </a>
-                &nbsp;|&nbsp; 운영시간: 평일 10:00 – 18:00
               </p>
+              <p>운영시간: 평일 10:00 – 18:00</p>
             </div>
           </div>
 
