@@ -135,3 +135,34 @@ export async function updateOrderStatus(
   }
   return true;
 }
+
+// ── 주문 아이템 조회 (관리자 — 주문 상세) ────────────────────────────────────
+export async function fetchOrderItems(orderId: string) {
+  const { data, error } = await supabase
+    .from('order_items')
+    .select('*')
+    .eq('order_id', orderId);
+
+  if (error) {
+    console.error('[fetchOrderItems] 실패:', error);
+    return [];
+  }
+  return data ?? [];
+}
+
+// ── 주문 메모 저장 (관리자) ──────────────────────────────────────────────────
+export async function updateOrderMemo(
+  orderId: string,
+  memo: string
+): Promise<boolean> {
+  const { error } = await supabase
+    .from('orders')
+    .update({ admin_memo: memo })
+    .eq('id', orderId);
+
+  if (error) {
+    console.error('[updateOrderMemo] 실패:', error);
+    return false;
+  }
+  return true;
+}
