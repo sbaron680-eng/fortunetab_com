@@ -36,7 +36,9 @@
       "Bash(git push:*)",
       "Bash(npx tsc:*)",
       "Bash(grep -v \"//.*2026\")",
-      "Bash(npx next:*)"
+      "Bash(npx next:*)",
+      "WebFetch(domain:tosspublic.notion.site)",
+      "mcp__plugin_playwright_playwright__browser_take_screenshot"
     ]
   }
 }

@@ -15,13 +15,13 @@ export const PRODUCTS: Product[] = [
     badge: '무료',
     badgeColor: 'green',
     images: [
-      '/products/planner-cover.png',
+      '/products/cover-common.png',
       '/products/planner-year.png',
       '/products/planner-monthly.png',
       '/products/planner-weekly.png',
       '/products/planner-daily.png',
     ],
-    thumbnailImage: '/products/planner-cover.png',
+    thumbnailImage: '/products/cover-common.png',
     shortDescription: '브라우저에서 즉시 PDF 생성 — 이메일 없이 바로 다운로드.',
     description: `운세의 흐름을 담아 설계한 2026년 공통 플래너입니다. 커버 페이지부터 연간 인덱스, 월간·주간·일간 플래너까지 5종 템플릿이 하나의 PDF에 담겨 있습니다.
 
@@ -58,6 +58,7 @@ export const PRODUCTS: Product[] = [
     ],
     downloadUrl: '/download',
     previewTheme: 'rose',
+    coverStyle: 'fortune',
     category: 'free',
     inStock: true,
     seo: {
@@ -78,18 +79,18 @@ export const PRODUCTS: Product[] = [
     slug: 'saju-planner-basic',
     name: '사주 플래너 기본',
     subtitle: '나의 사주로 맞춤 설계된 2026년 플래너',
-    price: 19000,
-    originalPrice: 29000,
+    price: 29000,
+    originalPrice: null,
     badge: '인기',
     badgeColor: 'gold',
     images: [
-      '/products/planner-cover.png',
+      '/products/cover-saju-basic.png',
       '/products/planner-year.png',
       '/products/planner-monthly.png',
       '/products/planner-weekly.png',
       '/products/planner-daily.png',
     ],
-    thumbnailImage: '/products/planner-cover.png',
+    thumbnailImage: '/products/cover-saju-basic.png',
     shortDescription: '사주팔자 분석을 바탕으로 맞춤 제작되는 1년치 PDF 플래너.',
     description: `내 사주를 바탕으로 2026년 한 해의 운세 흐름을 분석하고, 그에 맞게 맞춤 제작되는 PDF 플래너입니다.
 
@@ -122,16 +123,17 @@ export const PRODUCTS: Product[] = [
       { label: '크기', value: 'A4 (210×297mm), 고화질' },
       { label: '언어', value: '한국어' },
       { label: '배송 방법', value: '결제 후 이메일로 PDF 자동 발송 (평균 5분 이내)' },
-      { label: '가격', value: '19,000원 (얼리버드 할인가)' },
+      { label: '가격', value: '29,000원' },
     ],
     downloadUrl: '/download',
     previewTheme: 'navy',
+    coverStyle: 'fortune',
     category: 'basic',
     inStock: true,
     seo: {
       title: '사주 플래너 기본 - 내 사주로 설계한 2026년 맞춤 플래너',
       description:
-        '사주팔자 분석으로 맞춤 제작되는 2026년 PDF 플래너. 운세 흐름 캘린더·월간·주간·일간 플래너 포함. 얼리버드 19,000원.',
+        '사주팔자 분석으로 맞춤 제작되는 2026년 PDF 플래너. 운세 흐름 캘린더·월간·주간·일간 플래너 포함.',
       keywords: [
         '사주 플래너',
         '사주 다이어리',
@@ -148,18 +150,18 @@ export const PRODUCTS: Product[] = [
     slug: 'saju-planner-premium',
     name: '사주 플래너 + 개인 리포트',
     subtitle: '플래너 + 20페이지 심층 사주 분석 리포트',
-    price: 29000,
-    originalPrice: 49000,
+    price: 49000,
+    originalPrice: null,
     badge: 'BEST',
     badgeColor: 'red',
     images: [
-      '/products/planner-cover.png',
+      '/products/cover-saju-premium.png',
       '/products/planner-year.png',
       '/products/planner-monthly.png',
       '/products/planner-weekly.png',
       '/products/planner-daily.png',
     ],
-    thumbnailImage: '/products/planner-cover.png',
+    thumbnailImage: '/products/cover-saju-premium.png',
     shortDescription: '맞춤 플래너 + 20페이지 사주 심층 리포트. 가장 완전한 패키지.',
     description: `사주 플래너 기본의 모든 것에 더해, 20페이지 이상의 개인 사주 심층 리포트를 함께 받아보실 수 있습니다.
 
@@ -192,16 +194,17 @@ export const PRODUCTS: Product[] = [
       { label: '크기', value: 'A4 (210×297mm), 고화질' },
       { label: '언어', value: '한국어' },
       { label: '배송 방법', value: '결제 후 이메일로 PDF 자동 발송 (평균 5분 이내)' },
-      { label: '가격', value: '29,000원 (얼리버드 특별가)' },
+      { label: '가격', value: '49,000원' },
     ],
     downloadUrl: '/download',
     previewTheme: 'gold',
+    coverStyle: 'premium',
     category: 'premium',
     inStock: true,
     seo: {
       title: '사주 플래너 프리미엄 - 플래너+개인 사주 리포트 패키지',
       description:
-        '사주 맞춤 플래너 + 20페이지 개인 사주 심층 리포트. 2026 월별 운세, 대운 분석 포함. 얼리버드 29,000원.',
+        '사주 맞춤 플래너 + 20페이지 개인 사주 심층 리포트. 2026 월별 운세, 대운 분석 포함.',
       keywords: [
         '사주 리포트',
         '개인 사주 분석',
@@ -223,13 +226,13 @@ export const PRODUCTS: Product[] = [
     badge: 'NEW',
     badgeColor: 'blue',
     images: [
-      '/products/planner-cover.png',
+      '/products/cover-practice.png',
       '/products/planner-year.png',
       '/products/planner-monthly.png',
       '/products/planner-weekly.png',
       '/products/planner-daily.png',
     ],
-    thumbnailImage: '/products/planner-cover.png',
+    thumbnailImage: '/products/cover-practice.png',
     shortDescription: '사주 없이도 누구나. 4가지 실천 철학으로 설계한 목표달성 플래너.',
     description: `생각하는대로 사는 사람들을 위한 플래너입니다.
 
@@ -266,6 +269,7 @@ export const PRODUCTS: Product[] = [
     ],
     downloadUrl: '/download',
     previewTheme: 'forest',
+    coverStyle: 'practice',
     category: 'free',
     inStock: true,
     seo: {
@@ -313,6 +317,7 @@ export const PRODUCTS: Product[] = [
     ],
     downloadUrl: '/download',
     previewTheme: 'navy',
+    coverStyle: 'extras',
     category: 'free',
     inStock: true,
     seo: {
@@ -326,9 +331,9 @@ export const PRODUCTS: Product[] = [
     slug: 'extras-full',
     name: '라이프 플래너 올인원',
     subtitle: '28종 부록 페이지 전체 + 12개월 반복',
-    price: 4900,
-    originalPrice: 9900,
-    badge: '50% OFF',
+    price: 9900,
+    originalPrice: null,
+    badge: '인기',
     badgeColor: 'red',
     images: ['/products/planner-cover.png'],
     thumbnailImage: '/products/planner-cover.png',
@@ -349,10 +354,11 @@ export const PRODUCTS: Product[] = [
       { label: '페이지 수', value: '28종 + 반복 (약 50~100페이지)' },
       { label: '크기', value: 'A4 (210×297mm), 고화질' },
       { label: '배송', value: '이메일 발송 (결제 후 자동)' },
-      { label: '가격', value: '4,900원 (정가 9,900원)' },
+      { label: '가격', value: '9,900원' },
     ],
     downloadUrl: null,
     previewTheme: 'gold',
+    coverStyle: 'allinone',
     category: 'basic',
     inStock: true,
     seo: {

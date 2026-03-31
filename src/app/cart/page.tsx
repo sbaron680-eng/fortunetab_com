@@ -5,9 +5,15 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useCartStore } from '@/lib/store';
 import { formatPrice } from '@/lib/products';
+import { usePromotions } from '@/lib/usePromotions';
 
 export default function CartPage() {
-  const { items, removeItem, updateQty, clearCart, totalItems, totalPrice } = useCartStore();
+  const { items, removeItem, updateQty, clearCart, totalItems } = useCartStore();
+  const { getPromo } = usePromotions();
+  const getItemPrice = (slug: string, basePrice: number) => {
+    const promo = getPromo(slug, basePrice);
+    return promo.hasPromo ? promo.finalPrice : basePrice;
+  };
   const [mounted, setMounted] = useState(false);
 
   // zustand persist hydration 대기
@@ -40,8 +46,8 @@ export default function CartPage() {
   }
 
   const shipping = 0; // 디지털 상품: 배송비 없음
-  const total = totalPrice();
-  const hasPaidItem = items.some((i) => i.product.price > 0);
+  const total = items.reduce((sum, i) => sum + getItemPrice(i.product.slug, i.product.price) * i.qty, 0);
+  const hasPaidItem = items.some((i) => getItemPrice(i.product.slug, i.product.price) > 0);
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-gray-50 py-10 px-4">
@@ -66,7 +72,7 @@ export default function CartPage() {
             </div>
 
             {items.map(({ product, qty }) => {
-              const lineTotal = product.price * qty;
+              const lineTotal = getItemPrice(product.slug, product.price) * qty;
               return (
                 <div
                   key={product.id}
@@ -115,7 +121,7 @@ export default function CartPage() {
 
                     <div className="mt-3 flex items-center justify-between">
                       {/* 수량 (디지털 상품이므로 1개 고정) */}
-                      {product.price > 0 ? (
+                      {getItemPrice(product.slug, product.price) > 0 ? (
                         <span className="text-sm text-ft-muted">수량: 1</span>
                       ) : (
                         <span className="inline-block px-2.5 py-1 text-xs font-medium bg-emerald-100 text-emerald-700 rounded-full">
@@ -125,13 +131,13 @@ export default function CartPage() {
 
                       {/* 금액 */}
                       <div className="text-right">
-                        {product.price > 0 ? (
+                        {getItemPrice(product.slug, product.price) > 0 ? (
                           <>
                             <p className="text-base font-bold text-[#1e1b4b]">
                               {formatPrice(lineTotal)}
                             </p>
                             {qty > 1 && (
-                              <p className="text-xs text-gray-400">{formatPrice(product.price)} × {qty}</p>
+                              <p className="text-xs text-gray-400">{formatPrice(getItemPrice(product.slug, product.price))} × {qty}</p>
                             )}
                           </>
                         ) : (
@@ -165,7 +171,7 @@ export default function CartPage() {
                   <div key={product.id} className="flex justify-between text-gray-600">
                     <span className="truncate mr-2 flex-1">{product.name}</span>
                     <span className="flex-shrink-0 font-medium">
-                      {product.price > 0 ? formatPrice(product.price * qty) : '무료'}
+                      {getItemPrice(product.slug, product.price) > 0 ? formatPrice(getItemPrice(product.slug, product.price) * qty) : '무료'}
                     </span>
                   </div>
                 ))}

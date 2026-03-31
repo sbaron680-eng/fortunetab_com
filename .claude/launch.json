@@ -3,8 +3,9 @@
   "configurations": [
     {
       "name": "fortunetab-dev",
-      "runtimeExecutable": "node",
-      "runtimeArgs": ["node_modules/next/dist/bin/next", "dev"],
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["next", "dev"],
+      "cwd": "C:\\Users\\박성준\\Desktop\\Project\\fortunetab_com",
       "port": 3000,
       "autoPort": true
     }

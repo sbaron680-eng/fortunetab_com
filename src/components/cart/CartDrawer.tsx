@@ -5,10 +5,17 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useCartStore } from '@/lib/store';
 import { formatPrice } from '@/lib/products';
+import { usePromotions } from '@/lib/usePromotions';
 
 export default function CartDrawer() {
-  const { items, isOpen, closeCart, removeItem, updateQty, totalPrice, totalItems } =
+  const { items, isOpen, closeCart, removeItem, updateQty, totalItems } =
     useCartStore();
+  const { getPromo } = usePromotions();
+  const getItemPrice = (slug: string, basePrice: number) => {
+    const promo = getPromo(slug, basePrice);
+    return promo.hasPromo ? promo.finalPrice : basePrice;
+  };
+  const promoTotal = items.reduce((sum, i) => sum + getItemPrice(i.product.slug, i.product.price) * i.qty, 0);
 
   // ESC 키로 닫기
   useEffect(() => {
@@ -89,7 +96,7 @@ export default function CartDrawer() {
                 {/* 정보 */}
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 truncate">{product.name}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">{formatPrice(product.price)}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">{formatPrice(getItemPrice(product.slug, product.price))}</p>
 
                   {/* 수량 조절 */}
                   {product.price > 0 && (
@@ -132,7 +139,7 @@ export default function CartDrawer() {
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600">합계</span>
               <span className="text-xl font-bold text-[#1e1b4b]">
-                {formatPrice(totalPrice())}
+                {formatPrice(promoTotal)}
               </span>
             </div>
             <Link

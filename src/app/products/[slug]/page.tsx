@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { PRODUCTS, getProductBySlug, formatPrice, PLANNER_YEAR } from '@/lib/products';
 import PlannerProductPreview from '@/components/product/PlannerProductPreview';
 import AddToCartButton from './AddToCartButton';
+import ProductPrice from './ProductPrice';
 
 // 정적 사이트 내보내기: 빌드 시 모든 slug를 사전 렌더링
 export function generateStaticParams() {
@@ -37,11 +38,6 @@ export default async function ProductDetailPage({ params }: Props) {
   const product = getProductBySlug(slug);
 
   if (!product) notFound();
-
-  const discountRate =
-    product.originalPrice && product.originalPrice > 0
-      ? Math.round((1 - product.price / product.originalPrice) * 100)
-      : null;
 
   return (
     <div className="min-h-screen bg-ft-paper py-8 px-4">
@@ -98,26 +94,8 @@ export default async function ProductDetailPage({ params }: Props) {
             </h1>
             <p className="mt-2 text-ft-body">{product.subtitle}</p>
 
-            {/* 가격 */}
-            <div className="mt-6 bg-ft-paper-alt border border-ft-border rounded-xl p-6">
-              <div className="flex items-baseline gap-3">
-                <span className="text-3xl font-bold text-ft-ink">
-                  {formatPrice(product.price)}
-                </span>
-                {product.originalPrice && product.originalPrice > 0 && (
-                  <>
-                    <span className="text-base text-ft-muted line-through">
-                      {formatPrice(product.originalPrice)}
-                    </span>
-                    {discountRate && (
-                      <span className="text-sm font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded">
-                        {discountRate}% OFF
-                      </span>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
+            {/* 가격 (DB 프로모션 동적 적용) */}
+            <ProductPrice slug={product.slug} basePrice={product.price} />
 
             {/* 짧은 설명 */}
             <p className="mt-4 text-sm text-ft-body leading-relaxed border-l-2 border-ft-border pl-4">

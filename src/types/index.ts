@@ -16,6 +16,7 @@ export interface Product {
   specs: ProductSpec[];
   downloadUrl: string | null; // Google Drive link — 추후 연결
   previewTheme?: string;       // 상품 카드 미리보기 테마 (기본: 'rose')
+  coverStyle?: 'fortune' | 'practice' | 'premium' | 'extras' | 'allinone'; // 커버 시각 스타일
   category: 'free' | 'basic' | 'premium';
   inStock: boolean;
   seo: {
@@ -49,6 +50,9 @@ export interface User {
   email: string;
   isAdmin: boolean;
   createdAt: string;
+  birthDate?: string | null;
+  birthHour?: string | null;
+  gender?: string | null;
 }
 
 export interface AuthError {

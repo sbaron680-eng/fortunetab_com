@@ -12,6 +12,10 @@ export interface ProfileRow {
   name: string;
   is_admin: boolean;
   created_at: string;
+  birth_date: string | null;              // 'YYYY-MM-DD'
+  birth_hour: string | null;              // '자시'~'해시' 또는 '모름'
+  gender: string | null;                  // 'male' | 'female'
+  birth_data_expires_at: string | null;   // 만료 시각 (입력일 + 1년)
 }
 
 export interface OrderRow {

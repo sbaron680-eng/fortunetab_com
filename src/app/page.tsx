@@ -20,9 +20,9 @@ const HOW_IT_WORKS = [
 ];
 
 const REVIEWS = [
-  { name: '김O연', title: '직장인', product: '사주 플래너 기본', date: '2026.01', rating: 5, text: '운세가 플래너에 그대로 녹아 있어서 신기했어요. 길일에 중요한 약속을 잡게 됐는데 정말 잘 풀렸어요.' },
-  { name: '이O준', title: '프리랜서 디자이너', product: '사주 플래너 프리미엄', date: '2026.02', rating: 5, text: '사주 리포트가 정말 상세해서 놀랐습니다. 올해 조심해야 할 시기를 미리 알고 대비할 수 있었어요.' },
-  { name: '박O수', title: '자영업자', product: '무료 공통 플래너 → 기본 업그레이드', date: '2026.01', rating: 4, text: '무료 버전 먼저 써봤는데 너무 좋아서 유료 결제했습니다. 디자인도 예쁘고 내용도 알차요!' },
+  { name: '김O연', title: '베타 테스터 · 직장인', product: '사주 플래너 기본', date: '2026.01', rating: 5, text: '운세가 플래너에 그대로 녹아 있어서 신기했어요. 길일에 중요한 약속을 잡게 됐는데 정말 잘 풀렸어요.' },
+  { name: '이O준', title: '베타 테스터 · 프리랜서 디자이너', product: '사주 플래너 프리미엄', date: '2026.02', rating: 5, text: '사주 리포트가 정말 상세해서 놀랐습니다. 올해 조심해야 할 시기를 미리 알고 대비할 수 있었어요.' },
+  { name: '박O수', title: '베타 테스터 · 자영업자', product: '무료 공통 플래너 → 기본 업그레이드', date: '2026.01', rating: 4, text: '무료 버전 먼저 써봤는데 너무 좋아서 유료 결제했습니다. 디자인도 예쁘고 내용도 알차요!' },
 ];
 
 const FAQS = [
@@ -278,8 +278,9 @@ export default function HomePage() {
       <section className="py-20 px-6 bg-ft-paper">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-14">
-            <p className="text-xs font-semibold text-ft-red uppercase tracking-[0.2em] mb-3">실제 후기</p>
+            <p className="text-xs font-semibold text-ft-red uppercase tracking-[0.2em] mb-3">베타 테스터 후기</p>
             <h2 className="text-2xl sm:text-3xl font-serif font-black text-ft-ink">사용 후기</h2>
+            <p className="text-sm text-ft-muted mt-2">서비스 출시 전 베타 테스터분들의 솔직한 후기입니다</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">

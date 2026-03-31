@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useCartStore, useAuthStore } from '@/lib/store';
 import { formatPrice } from '@/lib/products';
+import { usePromotions } from '@/lib/usePromotions';
 import { createOrder } from '@/lib/orders';
 import dynamic from 'next/dynamic';
 import type { PaymentWidgetHandle } from '@/components/checkout/PaymentWidget';
@@ -52,8 +53,9 @@ const BIRTH_TIMES = [
 ];
 
 export default function CheckoutPage() {
-  const { items, totalPrice, clearCart } = useCartStore();
+  const { items, totalPrice: cartTotalPrice, clearCart } = useCartStore();
   const { user } = useAuthStore();
+  const { getPromo } = usePromotions();
 
   const paymentWidgetRef = useRef<PaymentWidgetHandle>(null);
 
@@ -85,8 +87,12 @@ export default function CheckoutPage() {
   const hasSajuProduct = items.some(
     (i) => SAJU_SLUGS.includes(i.product.slug)
   );
-  const total = totalPrice();
-  const hasPaidItem = items.some((i) => i.product.price > 0);
+  const getItemPrice = (slug: string, basePrice: number) => {
+    const promo = getPromo(slug, basePrice);
+    return promo.hasPromo ? promo.finalPrice : basePrice;
+  };
+  const total = items.reduce((sum, i) => sum + getItemPrice(i.product.slug, i.product.price) * i.qty, 0);
+  const hasPaidItem = items.some((i) => getItemPrice(i.product.slug, i.product.price) > 0);
 
   const handleFormChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -607,7 +613,7 @@ export default function CheckoutPage() {
                       {qty > 1 && <p className="text-xs text-gray-400">× {qty}</p>}
                     </div>
                     <p className="text-xs font-bold text-gray-900 flex-shrink-0">
-                      {product.price > 0 ? formatPrice(product.price * qty) : '무료'}
+                      {getItemPrice(product.slug, product.price) > 0 ? formatPrice(getItemPrice(product.slug, product.price) * qty) : '무료'}
                     </p>
                   </div>
                 ))}

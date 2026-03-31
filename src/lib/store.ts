@@ -80,6 +80,7 @@ interface AuthStore {
   loginWithOAuth: (provider: 'google' | 'kakao') => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
+  updateBirthData: (birthDate: string, birthHour: string, gender: string) => Promise<boolean>;
   clearError: () => void;
 }
 
@@ -101,10 +102,10 @@ export const useAuthStore = create<AuthStore>()((set) => ({
       set({ error: '이메일 또는 비밀번호가 올바르지 않습니다.', isLoading: false });
       return false;
     }
-    // profiles 테이블에서 name, is_admin 가져오기
+    // profiles 테이블에서 name, is_admin, 생년월일 가져오기
     const { data: profile } = await supabase
       .from('profiles')
-      .select('name, is_admin, created_at')
+      .select('name, is_admin, created_at, birth_date, birth_hour, gender')
       .eq('id', data.user.id)
       .single();
     const isAdmin = profile?.is_admin ?? false;
@@ -115,6 +116,9 @@ export const useAuthStore = create<AuthStore>()((set) => ({
         name: profile?.name ?? email.split('@')[0],
         isAdmin,
         createdAt: profile?.created_at ?? data.user.created_at,
+        birthDate: profile?.birth_date ?? null,
+        birthHour: profile?.birth_hour ?? null,
+        gender: profile?.gender ?? null,
       },
       isLoading: false,
     });
@@ -165,6 +169,21 @@ export const useAuthStore = create<AuthStore>()((set) => ({
     const { supabase } = await import('@/lib/supabase');
     await supabase.auth.signOut();
     set({ user: null, error: null });
+  },
+
+  updateBirthData: async (birthDate, birthHour, gender) => {
+    const state = useAuthStore.getState();
+    if (!state.user) return false;
+    const { supabase } = await import('@/lib/supabase');
+    const { error } = await supabase
+      .from('profiles')
+      .update({ birth_date: birthDate, birth_hour: birthHour, gender })
+      .eq('id', state.user.id);
+    if (error) return false;
+    set({
+      user: { ...state.user, birthDate, birthHour, gender },
+    });
+    return true;
   },
 
   clearError: () => set({ error: null }),

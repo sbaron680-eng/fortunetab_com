@@ -326,6 +326,9 @@ export default function SajuPage() {
           <p className="text-indigo-300 mt-2">
             생년월일을 입력하면 사주팔자와 {PLANNER_YEAR}년 월별 운세를 즉시 확인하세요
           </p>
+          <p className="text-indigo-400/70 text-xs mt-2">
+            AI 심층 분석을 원하시면 <a href="/fortune" className="text-white underline hover:text-ft-gold transition-colors">AI 운세 분석</a>을 이용해 보세요
+          </p>
         </div>
 
         {/* 입력 카드 */}

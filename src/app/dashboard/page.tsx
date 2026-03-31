@@ -80,6 +80,12 @@ export default function DashboardPage() {
             <p className="text-sm text-ft-muted">{user?.email}</p>
           </div>
           <div className="flex items-center gap-3">
+            <Link
+              href="/settings"
+              className="text-xs px-3 py-1.5 bg-ft-paper-alt border border-ft-border text-ft-body rounded-lg hover:bg-ft-border transition-colors"
+            >
+              프로필 설정
+            </Link>
             {user?.isAdmin && (
               <Link
                 href="/admin"

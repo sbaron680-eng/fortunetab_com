@@ -4,6 +4,7 @@
  */
 
 import { getTheme, ColorTheme, DEFAULT_THEME } from './pdf-themes';
+import type { PlannerFortuneData } from './fortune-text';
 
 // ── 타입 정의 (pdf-generator.ts에서 re-export됨) ─────────────────────────────
 export type Orientation = 'portrait' | 'landscape';
@@ -35,6 +36,8 @@ export interface SajuData {
   elemSummary: string;
 }
 
+export type CoverStyle = 'fortune' | 'practice' | 'premium' | 'extras' | 'allinone';
+
 export interface PlannerOptions {
   orientation: Orientation;
   year: number;
@@ -42,7 +45,9 @@ export interface PlannerOptions {
   pages: PageType[];
   theme?: string;
   mode?: 'fortune' | 'practice'; // 'fortune'(기본): 사주·운세 플래너 | 'practice': 목표달성·실천 플래너
+  coverStyle?: CoverStyle;       // 커버 시각 스타일 (상품별 차별화)
   saju?: SajuData;
+  fortuneData?: PlannerFortuneData;  // 운세 텍스트 (맞춤/띠/없음)
   onProgress?: (current: number, total: number, label: string) => void;
   returnBlob?: boolean;  // true면 다운로드 대신 Blob 반환 (서버 사이드용)
 }

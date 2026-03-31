@@ -1,12 +1,15 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { generatePlannerPDF, PageType, Orientation, PlannerOptions } from '@/lib/pdf-generator';
 import { THEMES } from '@/lib/pdf-themes';
-import { useSajuStore, useAuthStore } from '@/lib/store';
+import { useSajuStore, useAuthStore, useToastStore } from '@/lib/store';
 import PlannerPreviewCanvas from '@/components/planner/PlannerPreviewCanvas';
 import { getUserTier, verifyOrderForSaju, TIER_FEATURES, type Tier } from '@/lib/tier-gate';
 import { EXTRA_PAGES } from '@/lib/pdf-pages-extras';
+import { generatePlannerFortune, type PlannerFortuneData } from '@/lib/fortune-text';
+import { calculateSajuFromBirthData } from '@/lib/saju';
+import { generateZodiacFortune, generateYearFortune } from '@/lib/zodiac-fortune';
 
 // ── 기본 페이지 선택 옵션 ───────────────────────────────────────────────────
 const PAGE_OPTIONS: { type: PageType; label: string; sublabel: string; icon: string }[] = [
@@ -25,7 +28,7 @@ const EXTRA_PAGE_OPTIONS = EXTRA_PAGES.map(e => ({
   icon: e.icon,
   category: e.categoryKo,
   free: e.free,
-}));
+})).sort((a, b) => (a.free === b.free ? 0 : a.free ? -1 : 1));
 
 const EXTRA_CATEGORIES = ['연간', '월간', '주간', '일간', '재무', '라이프', '노트'] as const;
 const FREE_EXTRA_LIMIT = 7;
@@ -50,6 +53,7 @@ function getAvailableYears(): number[] {
 export default function DownloadPage() {
   const savedSaju = useSajuStore((s) => s.savedSaju);
   const { user }  = useAuthStore();
+  const { show: showToast } = useToastStore();
 
   const YEARS = getAvailableYears();
 
@@ -99,6 +103,28 @@ export default function DownloadPage() {
   const [year, setYear]       = useState(() => getAvailableYears()[0]);
   const [advancedMode, setAdvancedMode] = useState(false);
   const [theme, setTheme]     = useState('rose');
+  const [zodiacBirthYear, setZodiacBirthYear] = useState<number | ''>('');
+
+  // 띠 운세 필요 여부: 운세 모드 + 생년월일 미입력 사용자
+  const needsZodiacInput = mode === 'fortune' && !user?.birthDate;
+
+  // ── 운세 데이터 (미리보기 + PDF 공통) ─────────────────────────────────────────
+  const fortuneData = useMemo<PlannerFortuneData | undefined>(() => {
+    if (mode !== 'fortune') return undefined;
+    // 1순위: 로그인 + 생년월일 → 맞춤 사주 운세
+    if (user?.birthDate) {
+      try {
+        const sajuResult = calculateSajuFromBirthData(user.birthDate, user.birthHour ?? null);
+        return generatePlannerFortune(sajuResult, year);
+      } catch { /* 계산 실패 시 다음 단계로 */ }
+    }
+    // 2순위: 출생 연도 → 띠 운세
+    if (zodiacBirthYear) {
+      return generateZodiacFortune(zodiacBirthYear as number, year);
+    }
+    // 3순위: 보편 운세
+    return generateYearFortune(year);
+  }, [mode, year, zodiacBirthYear, user?.birthDate, user?.birthHour]);
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [progress, setProgress] = useState<{ current: number; total: number; label: string } | null>(null);
@@ -141,6 +167,7 @@ export default function DownloadPage() {
         theme,
         mode,
         saju: mode === 'practice' ? undefined : (savedSaju ?? undefined),
+        fortuneData,
         onProgress: (current, total, label) => {
           setProgress({ current, total, label });
         },
@@ -160,7 +187,7 @@ export default function DownloadPage() {
       setIsGenerating(false);
       setProgress(null);
     }
-  }, [orientation, selectedPages, name, year, theme, mode, savedSaju]);
+  }, [orientation, selectedPages, name, year, theme, mode, savedSaju, fortuneData]);
 
   // ── 예상 페이지 수 계산 ──────────────────────────────────────────────────────
   const estimatedPages = [...selectedPages].reduce((acc, t) => {
@@ -232,6 +259,34 @@ export default function DownloadPage() {
             })}
           </div>
         </section>
+
+        {/* ── 카드: 출생 연도 (운세 모드 + 생년월일 미설정 시) ─────────────────── */}
+        {needsZodiacInput && (
+          <section className="bg-white border border-ft-border rounded-2xl p-6">
+            <h2 className="text-ft-ink font-semibold text-sm uppercase tracking-widest mb-4 flex items-center gap-2">
+              <span className="w-1.5 h-4 bg-ft-red rounded-full inline-block" />
+              출생 연도 (띠 운세용)
+            </h2>
+            <p className="text-xs text-ft-muted -mt-2 mb-3">
+              출생 연도를 선택하면 띠별 운세가 플래너에 삽입됩니다.
+              {user ? (
+                <> <a href="/settings" className="text-ft-ink underline">프로필 설정</a>에서 생년월일을 입력하면 맞춤 운세를 받을 수 있습니다.</>
+              ) : (
+                <> 로그인 후 생년월일을 입력하면 더 정확한 맞춤 운세를 받을 수 있습니다.</>
+              )}
+            </p>
+            <select
+              value={zodiacBirthYear}
+              onChange={(e) => { setZodiacBirthYear(e.target.value ? Number(e.target.value) : ''); setDone(false); }}
+              className="w-full bg-ft-paper-alt border border-ft-border rounded-xl px-3 py-2.5 text-sm text-ft-body focus:outline-none focus:ring-2 focus:ring-ft-ink"
+            >
+              <option value="">선택 안 함 (운세 없이 생성)</option>
+              {Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i).map((y) => (
+                <option key={y} value={y}>{y}년</option>
+              ))}
+            </select>
+          </section>
+        )}
 
         {/* ── 카드: 연도 선택 ───────────────────────────────────────────────────── */}
         <section className="bg-white border border-ft-border rounded-2xl p-6">
@@ -487,21 +542,24 @@ export default function DownloadPage() {
                   <div className="grid grid-cols-2 gap-1.5">
                     {catPages.map(({ type, label, icon, free }) => {
                       const checked = selectedPages.has(type);
-                      // 유료 항목은 무료 다운로드에서 선택 불가 (올인원 구매 필요)
                       const disabled = !free;
+                      const Tag = disabled ? 'div' : 'label';
                       return (
-                        <label
+                        <Tag
                           key={type}
-                          className={`flex items-center gap-2 px-2.5 py-2 rounded-lg border text-xs cursor-pointer transition-all ${
+                          onClick={() => { if (disabled) showToast('이 항목은 라이프 플래너 올인원(₩4,900) 구매 시 포함됩니다'); }}
+                          className={`flex items-center gap-2 px-2.5 py-2 rounded-lg border text-xs transition-all ${
                             checked
-                              ? 'border-ft-ink bg-ft-paper-alt'
+                              ? 'border-ft-ink bg-ft-paper-alt cursor-pointer'
                               : disabled
-                              ? 'border-ft-border bg-gray-50 opacity-50 cursor-not-allowed'
-                              : 'border-ft-border bg-white hover:bg-ft-paper-alt'
+                              ? 'border-ft-border bg-gray-50 opacity-50 cursor-pointer'
+                              : 'border-ft-border bg-white hover:bg-ft-paper-alt cursor-pointer'
                           }`}
                         >
-                          <input type="checkbox" className="sr-only" checked={checked}
-                            onChange={() => !disabled && togglePage(type)} disabled={disabled} />
+                          {!disabled && (
+                            <input type="checkbox" className="sr-only" checked={checked}
+                              onChange={() => togglePage(type)} />
+                          )}
                           <span className={`w-4 h-4 rounded flex-shrink-0 flex items-center justify-center border transition-colors ${
                             checked ? 'bg-ft-ink border-ft-ink' : 'border-ft-border'
                           }`}>
@@ -516,7 +574,7 @@ export default function DownloadPage() {
                           ) : (
                             <span className="text-ft-muted text-[10px]" title="올인원(₩4,900) 구매 시 이용 가능">🔒유료</span>
                           )}
-                        </label>
+                        </Tag>
                       );
                     })}
                   </div>
@@ -554,7 +612,7 @@ export default function DownloadPage() {
                   <PlannerPreviewCanvas
                     pageType={type}
                     pageIdx={idx}
-                    opts={{ orientation, year, name: name.trim() || '나의 플래너', theme, mode }}
+                    opts={{ orientation, year, name: name.trim() || '나의 플래너', theme, mode, fortuneData }}
                     displayWidth={140}
                   />
                   <span className="text-xs text-ft-muted">{label}</span>

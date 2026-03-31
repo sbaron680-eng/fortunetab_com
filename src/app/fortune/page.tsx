@@ -135,7 +135,8 @@ export default function FortunePage() {
         {/* 헤더 */}
         <div className="text-center">
           <h1 className="text-2xl font-bold font-serif text-ft-ink">AI 운세 분석</h1>
-          <p className="text-sm text-ft-muted mt-1">사주명리학 + Claude AI 심층 분석</p>
+          <p className="text-sm text-ft-muted mt-1">Claude AI가 사주·별자리를 심층 분석합니다 (10~15초 소요)</p>
+          <p className="text-xs text-ft-muted mt-1">즉시 무료 계산만 원하시면 <a href="/saju" className="text-ft-ink underline hover:text-ft-red transition-colors">사주 계산기</a>를 이용해 보세요</p>
         </div>
 
         {/* 탭 */}
@@ -187,6 +188,43 @@ export default function FortunePage() {
         {/* 에러 */}
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-700">{error}</div>
+        )}
+
+        {/* 분석 결과 안내 (결과 없을 때만 표시) */}
+        {!result && !localSaju && !loading && (
+          <div className="bg-white border border-ft-border rounded-2xl p-5">
+            <h3 className="text-sm font-semibold text-ft-ink mb-3">
+              {tab === 'saju' && '사주 분석에서 확인할 수 있는 내용'}
+              {tab === 'zodiac' && '별자리 운세에서 확인할 수 있는 내용'}
+              {tab === 'couple' && '궁합 분석에서 확인할 수 있는 내용'}
+            </h3>
+            <ul className="space-y-2 text-xs text-ft-muted">
+              {tab === 'saju' && (
+                <>
+                  <li className="flex items-start gap-2"><span>🔮</span><span>사주 원국 (4주 8자) 즉시 계산 + 오행 분포</span></li>
+                  <li className="flex items-start gap-2"><span>📊</span><span>올해 월별 운세 흐름 그래프</span></li>
+                  <li className="flex items-start gap-2"><span>💼</span><span>AI 심층 분석: 직업운, 재물운, 건강운, 대인관계</span></li>
+                  <li className="flex items-start gap-2"><span>🍀</span><span>행운의 색상, 숫자, 방위</span></li>
+                </>
+              )}
+              {tab === 'zodiac' && (
+                <>
+                  <li className="flex items-start gap-2"><span>⭐</span><span>별자리별 올해 총운 분석</span></li>
+                  <li className="flex items-start gap-2"><span>💕</span><span>연애운 & 궁합 좋은 별자리</span></li>
+                  <li className="flex items-start gap-2"><span>💰</span><span>재물운 & 투자 시기 조언</span></li>
+                  <li className="flex items-start gap-2"><span>🎯</span><span>월별 행운 포인트 & 주의 사항</span></li>
+                </>
+              )}
+              {tab === 'couple' && (
+                <>
+                  <li className="flex items-start gap-2"><span>💑</span><span>두 사람의 사주 오행 궁합 점수</span></li>
+                  <li className="flex items-start gap-2"><span>🔥</span><span>성격 궁합 & 갈등 포인트 분석</span></li>
+                  <li className="flex items-start gap-2"><span>📅</span><span>함께하기 좋은 시기 & 주의할 시기</span></li>
+                  <li className="flex items-start gap-2"><span>💡</span><span>관계 발전을 위한 AI 맞춤 조언</span></li>
+                </>
+              )}
+            </ul>
+          </div>
         )}
 
         {/* 로컬 사주 결과 (사주 탭에서 즉시 표시) */}

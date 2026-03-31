@@ -18,7 +18,7 @@
 
 | 항목 | 내용 |
 |------|------|
-| Framework | Next.js 15 (App Router, SSG/Static Export) |
+| Framework | Next.js 16 (App Router, SSG/Static Export) |
 | Language | TypeScript |
 | CSS | Tailwind CSS v4 |
 | PDF | jsPDF + HTML5 Canvas 2D API (브라우저 전용) |

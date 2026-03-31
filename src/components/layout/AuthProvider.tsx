@@ -2,7 +2,8 @@
 
 import { useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { useAuthStore } from '@/lib/store';
+import { useAuthStore, useSajuStore } from '@/lib/store';
+import { calculateSajuFromBirthData, sajuResultToSajuData } from '@/lib/saju';
 
 /**
  * 앱 최상단에 마운트하여 Supabase 세션을 Zustand 스토어와 동기화합니다.
@@ -14,27 +15,41 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   const setAuthReady = useAuthStore((s) => s.setAuthReady);
 
   useEffect(() => {
+    /** 프로필 조회 → User 세팅 + 생년월일 있으면 사주 자동 계산 */
+    async function syncProfile(userId: string, email: string) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('name, is_admin, created_at, birth_date, birth_hour, gender')
+        .eq('id', userId)
+        .single();
+      setUser({
+        id: userId,
+        email,
+        name: profile?.name ?? email.split('@')[0],
+        isAdmin: profile?.is_admin ?? false,
+        createdAt: profile?.created_at ?? new Date().toISOString(),
+        birthDate: profile?.birth_date ?? null,
+        birthHour: profile?.birth_hour ?? null,
+        gender: profile?.gender ?? null,
+      });
+      // 생년월일이 있으면 사주 자동 계산 → useSajuStore 동기화
+      if (profile?.birth_date) {
+        try {
+          const result = calculateSajuFromBirthData(profile.birth_date, profile.birth_hour);
+          useSajuStore.getState().setSaju(sajuResultToSajuData(result));
+        } catch { /* 계산 실패 시 무시 */ }
+      }
+    }
+
     // 1) 앱 마운트 시 기존 세션 복원
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session?.user) {
         setUser(null);
-        setAuthReady();  // 세션 없어도 초기화 완료
+        setAuthReady();
         return;
       }
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('name, is_admin, created_at')
-        .eq('id', session.user.id)
-        .single();
-      const email = session.user.email ?? '';
-      setUser({
-        id: session.user.id,
-        email,
-        name: profile?.name ?? email.split('@')[0],
-        isAdmin: profile?.is_admin ?? false,
-        createdAt: profile?.created_at ?? session.user.created_at,
-      });
-      setAuthReady();  // 세션 복원 완료
+      await syncProfile(session.user.id, session.user.email ?? '');
+      setAuthReady();
     });
 
     // 2) 로그인/로그아웃 이벤트 구독 (탭 간 동기화 포함)
@@ -48,21 +63,8 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
           return;
         }
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'PASSWORD_RECOVERY' || event === 'USER_UPDATED') {
-          // setTimeout으로 lock 해제 후 비동기 실행 (데드락 방지)
-          setTimeout(async () => {
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('name, is_admin, created_at')
-              .eq('id', session.user.id)
-              .single();
-            const email = session.user.email ?? '';
-            setUser({
-              id: session.user.id,
-              email,
-              name: profile?.name ?? email.split('@')[0],
-              isAdmin: profile?.is_admin ?? false,
-              createdAt: profile?.created_at ?? session.user.created_at,
-            });
+          setTimeout(() => {
+            syncProfile(session.user.id, session.user.email ?? '');
           }, 0);
         }
       }

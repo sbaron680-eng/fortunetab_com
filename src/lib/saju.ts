@@ -738,3 +738,36 @@ export function detectZodiac(month: number, day: number): ZodiacSign {
   if ((month===1 && day>=20) || (month===2 && day<=18)) return '물병자리';
   return '물고기자리';
 }
+
+// ─── SajuResult → SajuData 변환 (PDF 렌더링용) ──────────────────────
+import type { SajuData } from '@/lib/pdf-utils';
+
+export function sajuResultToSajuData(r: SajuResult): SajuData {
+  const fmt = (p: Pillar) => `${p.stemKo}${p.branchKo}(${p.stemHj}${p.branchHj})`;
+  const top3 = ELEM_KO
+    .map((e) => ({ e, n: r.elemCount[e] }))
+    .sort((a, b) => b.n - a.n)
+    .filter((x) => x.n > 0)
+    .slice(0, 3)
+    .map((x) => `${x.e} ${x.n}`)
+    .join(' · ');
+  return {
+    ganzhi: fmt(r.year),
+    dayElem: r.dayElem,
+    yongsin: r.yongsin,
+    yearPillar: fmt(r.year),
+    monthPillar: fmt(r.month),
+    dayPillar: fmt(r.day),
+    hourPillar: r.hasHour ? fmt(r.hour) : '시간미상',
+    elemSummary: top3,
+  };
+}
+
+/** 프로필 생년월일 → SajuResult 계산 (로그인 시 자동 호출용) */
+export function calculateSajuFromBirthData(
+  birthDate: string,      // 'YYYY-MM-DD'
+  birthHour: string | null, // '자시'~'해시' 또는 '모름' 또는 null
+): SajuResult {
+  const [y, m, d] = birthDate.split('-').map(Number);
+  return calculateSaju(y, m, d, birthHour ?? '모름');
+}

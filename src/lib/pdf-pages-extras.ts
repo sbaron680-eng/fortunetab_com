@@ -12,18 +12,30 @@
 
 import {
   F, SERIF, SANS, PAGE_PAD, NAV_H_RATIO,
+  C as BaseC, themeHolder, roundRect,
   type PlannerOptions,
 } from './pdf-utils';
 
-// ── 테마/색상 접근 ─────────────────────────────────────────────
-import { themeHolder } from './pdf-utils';
+// ── 테마 연동 색상 ─────────────────────────────────────────────
+// themeHolder.T 를 통해 선택된 테마 색상을 사용합니다.
 
-function C() {
+function TC() {
+  const T = themeHolder.T;
   return {
-    bgPage: '#faf9f7', bgCard: '#ffffff',
-    textDark: '#111111', textMid: '#444444', textLight: '#888888',
-    ruleColor: '#e0dbd4', ruleFaint: '#eeebe6',
-    headerBg: '#f0eeeb',
+    bgPage:    BaseC.bgPage,
+    bgCard:    BaseC.bgCard,
+    textDark:  BaseC.textDark,
+    textMid:   BaseC.textMid,
+    textLight: BaseC.textLight,
+    ruleColor: BaseC.ruleColor,
+    ruleFaint: BaseC.ruleFaint,
+    // 테마 연동 색상
+    headerA:   T.headerA,
+    headerB:   T.headerB,
+    headerFg:  BaseC.goldFaint,
+    sectionBg: T.dayBgMid,       // 섹션 헤더 배경 → 테마 평일 배경
+    accentText: T.weeklyAccent,   // 서브 텍스트 악센트
+    headerBg:  T.dayBgMid,        // 테이블 헤더/교대 줄 배경
   };
 }
 
@@ -90,62 +102,67 @@ export const EXTRA_PAGES: ExtraPageConfig[] = [
 function drawPageHeader(
   ctx: CanvasRenderingContext2D, W: number, H: number,
   title: string, subtitle?: string,
+  useSerif = true,
 ) {
-  const c = C();
+  const c = TC();
   const NAV_H = Math.round(H * NAV_H_RATIO);
   const CH = H - NAV_H;
   const PAD = PAGE_PAD;
 
+  // 페이지 배경
   ctx.fillStyle = c.bgPage;
   ctx.fillRect(0, 0, W, CH);
 
-  // 제목
-  ctx.font = F(28, true, true);
-  ctx.fillStyle = c.textDark;
-  const tw = ctx.measureText(title).width;
-  ctx.fillText(title, (W - tw) / 2, PAD + 30);
+  // 테마 그라디언트 헤더 바 (기본 플래너와 동일)
+  const BAR_H = Math.round(CH * 0.045);
+  const hg = ctx.createLinearGradient(0, 0, W, 0);
+  hg.addColorStop(0, c.headerA);
+  hg.addColorStop(1, c.headerB);
+  ctx.fillStyle = hg;
+  ctx.fillRect(0, 0, W, BAR_H);
 
-  // 구분선
-  ctx.strokeStyle = c.textDark;
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  ctx.moveTo(PAD, PAD + 42);
-  ctx.lineTo(W - PAD, PAD + 42);
-  ctx.stroke();
+  // 제목 (헤더 바 위)
+  ctx.font = F(BAR_H * 0.52, true, useSerif);
+  ctx.fillStyle = c.headerFg;
+  ctx.fillText(title, PAD, BAR_H * 0.70);
 
-  // 부제
+  // 부제 (헤더 바 우측)
   if (subtitle) {
-    ctx.font = F(14, false, false);
-    ctx.fillStyle = c.textLight;
+    ctx.font = F(BAR_H * 0.28, false, false);
+    ctx.fillStyle = 'rgba(255,225,235,0.75)';
     const sw = ctx.measureText(subtitle).width;
-    ctx.fillText(subtitle, W - PAD - sw, PAD + 68);
+    ctx.fillText(subtitle, W - PAD - sw, BAR_H * 0.68);
   }
 
-  return { CH, PAD, startY: PAD + 80 };
+  return { CH, PAD, startY: BAR_H + 12 };
 }
 
 function drawCheckbox(ctx: CanvasRenderingContext2D, x: number, y: number, size = 14) {
-  const c = C();
+  const c = TC();
   ctx.strokeStyle = c.ruleColor;
   ctx.lineWidth = 1;
-  ctx.strokeRect(x, y, size, size);
+  roundRect(ctx, x, y, size, size, 2);
+  ctx.stroke();
 }
 
 function drawCircleCheck(ctx: CanvasRenderingContext2D, x: number, y: number, r = 7) {
-  const c = C();
-  ctx.strokeStyle = c.ruleColor;
+  const c = TC();
+  ctx.strokeStyle = c.headerA;
+  ctx.globalAlpha = 0.4;
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.arc(x + r, y + r, r, 0, Math.PI * 2);
   ctx.stroke();
+  ctx.globalAlpha = 1;
 }
 
 function drawSectionHeader(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, label: string) {
-  const c = C();
-  ctx.fillStyle = c.headerBg;
+  const c = TC();
+  // 테마 색상의 연한 배경
+  ctx.fillStyle = c.sectionBg;
   ctx.fillRect(x, y, w, h);
   ctx.font = F(12, true, false);
-  ctx.fillStyle = c.textDark;
+  ctx.fillStyle = c.headerA;
   const tw = ctx.measureText(label).width;
   ctx.fillText(label, x + (w - tw) / 2, y + h * 0.68);
 }
@@ -156,9 +173,10 @@ function drawSectionHeader(ctx: CanvasRenderingContext2D, x: number, y: number, 
 function drawCatGrid(
   ctx: CanvasRenderingContext2D, W: number, H: number,
   title: string, categories: string[], rows: number, checkLines: number,
+  useSerif = true,
 ) {
-  const { CH, PAD, startY } = drawPageHeader(ctx, W, H, title, `YEAR: ________`);
-  const c = C();
+  const { CH, PAD, startY } = drawPageHeader(ctx, W, H, title, `YEAR: ________`, useSerif);
+  const c = TC();
   const GAP = 10;
   const cols = 2;
   const boxW = (W - PAD * 2 - GAP) / cols;
@@ -200,9 +218,10 @@ const MONTHS_EN = ['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUG
 function drawMonthGrid(
   ctx: CanvasRenderingContext2D, W: number, H: number,
   title: string, linesPerMonth: number, hasDateCol: boolean,
+  useSerif = true,
 ) {
-  const { CH, PAD, startY } = drawPageHeader(ctx, W, H, title, `YEAR: ________`);
-  const c = C();
+  const { CH, PAD, startY } = drawPageHeader(ctx, W, H, title, `YEAR: ________`, useSerif);
+  const c = TC();
   const cols = 3;
   const rows = 4;
   const GAP = 8;
@@ -257,9 +276,10 @@ function drawTablePage(
   title: string, subtitle: string,
   columns: { label: string; width: number }[],
   dataRows: number, hasTotal: boolean,
+  useSerif = true,
 ) {
-  const { CH, PAD, startY } = drawPageHeader(ctx, W, H, title, subtitle);
-  const c = C();
+  const { CH, PAD, startY } = drawPageHeader(ctx, W, H, title, subtitle, useSerif);
+  const c = TC();
   const tableW = W - PAD * 2;
   const headerH = 28;
   const rowH = (CH - startY - PAD - headerH - (hasTotal ? 30 : 0)) / dataRows;
@@ -323,9 +343,10 @@ function drawSectionsPage(
   ctx: CanvasRenderingContext2D, W: number, H: number,
   title: string, dateLabel: string,
   sections: { label: string; style: 'check' | 'dotted' | 'free'; lines: number }[],
+  useSerif = true,
 ) {
-  const { CH, PAD, startY } = drawPageHeader(ctx, W, H, title, dateLabel);
-  const c = C();
+  const { CH, PAD, startY } = drawPageHeader(ctx, W, H, title, dateLabel, useSerif);
+  const c = TC();
   const GAP = 8;
   const totalLines = sections.reduce((s, sec) => s + sec.lines + 1.5, 0);
   const unitH = (CH - startY - PAD - (sections.length - 1) * GAP) / totalLines;
@@ -381,9 +402,10 @@ function drawTwoCol(
   title: string, dateLabel: string,
   leftSections: { label: string; lines: number }[],
   rightSections: { label: string; lines: number; style?: 'check' | 'line' }[],
+  useSerif = true,
 ) {
-  const { CH, PAD, startY } = drawPageHeader(ctx, W, H, title, dateLabel);
-  const c = C();
+  const { CH, PAD, startY } = drawPageHeader(ctx, W, H, title, dateLabel, useSerif);
+  const c = TC();
   const GAP = 12;
   const colW = (W - PAD * 2 - GAP) / 2;
 
@@ -445,9 +467,10 @@ function drawSimplePage(
   title: string, dateLabel: string,
   style: 'check' | 'lined' | 'grid' | 'numbered' | 'goals',
   lines: number,
+  useSerif = true,
 ) {
-  const { CH, PAD, startY } = drawPageHeader(ctx, W, H, title, dateLabel);
-  const c = C();
+  const { CH, PAD, startY } = drawPageHeader(ctx, W, H, title, dateLabel, useSerif);
+  const c = TC();
 
   if (style === 'grid') {
     const cellSize = 24;
@@ -532,60 +555,62 @@ function drawSimplePage(
 export function drawExtraPage(
   ctx: CanvasRenderingContext2D,
   W: number, H: number,
-  _opts: PlannerOptions,
+  opts: PlannerOptions,
   pageType: ExtraPageType,
 ): void {
+  const useSerif = opts.mode !== 'practice';
+
   switch (pageType) {
     // ── 카테고리 그리드 ─────────────────────────
     case 'inspiration':
-      drawCatGrid(ctx, W, H, 'INSPIRATION', ['팟캐스트', '도서', '음악', '영상', '강의', '오디오'], 3, 6);
+      drawCatGrid(ctx, W, H, 'INSPIRATION', ['팟캐스트', '도서', '음악', '영상', '강의', '오디오'], 3, 6, useSerif);
       break;
     case 'shopping':
-      drawCatGrid(ctx, W, H, 'SHOPPING LIST', ['유제품', '농산물', '육류', '과일·채소', '냉동', '기타'], 3, 6);
+      drawCatGrid(ctx, W, H, 'SHOPPING LIST', ['유제품', '농산물', '육류', '과일·채소', '냉동', '기타'], 3, 6, useSerif);
       break;
     case 'bucket-list':
-      drawCatGrid(ctx, W, H, 'BUCKET LIST', ['개인', '가족', '여행', '재무', '직장', '기타'], 3, 8);
+      drawCatGrid(ctx, W, H, 'BUCKET LIST', ['개인', '가족', '여행', '재무', '직장', '기타'], 3, 8, useSerif);
       break;
     case 'vision-board':
-      drawCatGrid(ctx, W, H, 'VISION BOARD', ['커리어', '가족', '사회생활', '환경', '재정', '건강', '자기계발', '친구'], 4, 0);
+      drawCatGrid(ctx, W, H, 'VISION BOARD', ['커리어', '가족', '사회생활', '환경', '재정', '건강', '자기계발', '친구'], 4, 0, useSerif);
       break;
 
     // ── 월별 그리드 ─────────────────────────────
     case 'year-glance':
-      drawMonthGrid(ctx, W, H, 'YEAR AT A GLANCE', 5, false);
+      drawMonthGrid(ctx, W, H, 'YEAR AT A GLANCE', 5, false, useSerif);
       break;
     case 'important-dates':
-      drawMonthGrid(ctx, W, H, 'IMPORTANT DATES', 6, true);
+      drawMonthGrid(ctx, W, H, 'IMPORTANT DATES', 6, true, useSerif);
       break;
     case 'birthday-cal':
-      drawMonthGrid(ctx, W, H, 'BIRTHDAY CALENDAR', 6, true);
+      drawMonthGrid(ctx, W, H, 'BIRTHDAY CALENDAR', 6, true, useSerif);
       break;
 
     // ── 테이블 ──────────────────────────────────
     case 'savings':
       drawTablePage(ctx, W, H, 'SAVINGS TRACKER', 'MONTH: ________    YEAR: ________',
         [{ label: 'DATE', width: 0.25 }, { label: 'DEPOSIT', width: 0.4 }, { label: 'BALANCE', width: 0.35 }],
-        20, true);
+        20, true, useSerif);
       break;
     case 'budget':
       drawTablePage(ctx, W, H, 'BUDGET TRACKER', 'MONTH: ________    YEAR: ________',
         [{ label: 'DATE', width: 0.15 }, { label: 'DESCRIPTION', width: 0.4 }, { label: 'AMOUNT', width: 0.2 }, { label: 'BALANCE', width: 0.25 }],
-        20, true);
+        20, true, useSerif);
       break;
     case 'expense':
       drawTablePage(ctx, W, H, 'EXPENSE TRACKER', 'MONTH: ________    YEAR: ________',
         [{ label: 'DATE', width: 0.12 }, { label: 'CATEGORY', width: 0.2 }, { label: 'DESCRIPTION', width: 0.33 }, { label: 'AMOUNT', width: 0.15 }, { label: 'BALANCE', width: 0.2 }],
-        22, true);
+        22, true, useSerif);
       break;
     case 'habit-tracker':
       drawTablePage(ctx, W, H, 'HABIT TRACKER', 'WEEK OF: ________',
         [{ label: 'HABIT', width: 0.44 }, { label: 'M', width: 0.08 }, { label: 'T', width: 0.08 }, { label: 'W', width: 0.08 }, { label: 'T', width: 0.08 }, { label: 'F', width: 0.08 }, { label: 'S', width: 0.08 }, { label: 'S', width: 0.08 }],
-        15, false);
+        15, false, useSerif);
       break;
     case 'selfcare':
       drawTablePage(ctx, W, H, 'SELF CARE CHECKLIST', 'WEEK OF: ________',
         [{ label: 'SELF CARE TASK', width: 0.44 }, { label: 'M', width: 0.08 }, { label: 'T', width: 0.08 }, { label: 'W', width: 0.08 }, { label: 'T', width: 0.08 }, { label: 'F', width: 0.08 }, { label: 'S', width: 0.08 }, { label: 'S', width: 0.08 }],
-        18, false);
+        18, false, useSerif);
       break;
     case 'household':
       drawSectionsPage(ctx, W, H, 'MONTHLY HOUSEHOLD BUDGET', 'MONTH: ________    YEAR: ________', [
@@ -594,7 +619,7 @@ export function drawExtraPage(
         { label: '교통비 (TRANSPORTATION)', style: 'free', lines: 3 },
         { label: '보험 (INSURANCE)', style: 'free', lines: 2 },
         { label: '기타 (OTHERS)', style: 'free', lines: 2 },
-      ]);
+      ], useSerif);
       break;
 
     // ── 섹션 ────────────────────────────────────
@@ -605,7 +630,7 @@ export function drawExtraPage(
         { label: '하루 돌아보기 (DAY & EVENING REFLECTIONS)', style: 'dotted', lines: 5 },
         { label: '감사 (GRATITUDE)', style: 'dotted', lines: 3 },
         { label: '내일 계획 (PLAN FOR TOMORROW?)', style: 'dotted', lines: 3 },
-      ]);
+      ], useSerif);
       break;
     case 'gratitude':
       drawSectionsPage(ctx, W, H, 'DAILY GRATITUDE JOURNAL', 'DATE: ________    S M T W T F S', [
@@ -613,7 +638,7 @@ export function drawExtraPage(
         { label: '자랑스러운 1가지 (ONE THING I\'M PROUD OF)', style: 'dotted', lines: 4 },
         { label: '감사한 사람 (THE PERSON I\'M GRATEFUL FOR)', style: 'dotted', lines: 4 },
         { label: '오늘 최고의 순간 (THE BEST PART ABOUT TODAY)', style: 'dotted', lines: 5 },
-      ]);
+      ], useSerif);
       break;
     case 'yearly-review':
       drawSectionsPage(ctx, W, H, 'YEARLY REVIEW', 'YEAR: ________', [
@@ -621,11 +646,11 @@ export function drawExtraPage(
         { label: '잘한 점 (WHAT WENT WELL)', style: 'free', lines: 6 },
         { label: '가장 큰 도전 (MY BIGGEST CHALLENGES)', style: 'free', lines: 5 },
         { label: '감사합니다 (I AM GRATEFUL FOR)', style: 'free', lines: 5 },
-      ]);
+      ], useSerif);
       break;
     case 'weekly-reflection':
       drawCatGrid(ctx, W, H, 'WEEKLY REFLECTION',
-        ['좋았던 순간', '더 하고 싶은 것', '감사한 것', '줄이고 싶은 것', '주요 성과', '기대하는 것'], 3, 5);
+        ['좋았던 순간', '더 하고 싶은 것', '감사한 것', '줄이고 싶은 것', '주요 성과', '기대하는 것'], 3, 5, useSerif);
       break;
     case 'monthly-goals':
       drawSectionsPage(ctx, W, H, 'MONTHLY GOALS', 'MONTH: ________    YEAR: ________', [
@@ -634,7 +659,7 @@ export function drawExtraPage(
         { label: '목표 #2 (GOAL #2)', style: 'check', lines: 4 },
         { label: '목표 #3 (GOAL #3)', style: 'check', lines: 4 },
         { label: '재미있는 것 (FUN THINGS)', style: 'free', lines: 2 },
-      ]);
+      ], useSerif);
       break;
 
     // ── 2열 복합 ────────────────────────────────
@@ -642,24 +667,28 @@ export function drawExtraPage(
       drawTwoCol(ctx, W, H, 'DAILY PLANNER', 'DATE: ________    S M T W T F S',
         [{ label: 'SCHEDULE (7~6)', lines: 12 }, { label: 'TO CALL/EMAIL', lines: 8 }],
         [{ label: 'TOP PRIORITIES', lines: 3, style: 'check' }, { label: 'MUST GET DONE', lines: 3, style: 'check' }, { label: 'TO-DO LIST', lines: 8, style: 'check' }, { label: 'FOR TOMORROW', lines: 4, style: 'check' }],
+        useSerif,
       );
       break;
     case 'weekly-alt':
       drawTwoCol(ctx, W, H, 'WEEKLY PLANNER', 'WEEK OF: ________    YEAR: ________',
         [{ label: 'SUNDAY', lines: 3 }, { label: 'MONDAY', lines: 3 }, { label: 'TUESDAY', lines: 3 }, { label: 'WEDNESDAY', lines: 3 }, { label: 'THURSDAY', lines: 3 }, { label: 'FRIDAY', lines: 3 }, { label: 'SATURDAY', lines: 3 }],
         [{ label: 'TO-DO LIST', lines: 10, style: 'check' }, { label: 'PRIORITIES', lines: 8, style: 'line' }],
+        useSerif,
       );
       break;
     case 'meal-plan':
       drawTwoCol(ctx, W, H, 'WEEKLY MEAL PLAN', 'WEEK OF: ________',
         [{ label: 'SUNDAY', lines: 3 }, { label: 'MONDAY', lines: 3 }, { label: 'TUESDAY', lines: 3 }, { label: 'WEDNESDAY', lines: 3 }, { label: 'THURSDAY', lines: 3 }, { label: 'FRIDAY', lines: 3 }, { label: 'SATURDAY', lines: 3 }],
         [{ label: 'FAVORITE DISHES', lines: 6, style: 'line' }, { label: 'SHOPPING LIST', lines: 8, style: 'line' }, { label: 'NOTES', lines: 4, style: 'line' }],
+        useSerif,
       );
       break;
     case 'travel':
       drawTwoCol(ctx, W, H, 'TRAVEL PLANNER', '',
         [{ label: 'WHERE / WHEN', lines: 2 }, { label: 'PLACE TO VISIT', lines: 5 }, { label: 'VACATION ADDRESS', lines: 3 }, { label: 'SIGHTS TO SEE', lines: 4 }],
         [{ label: 'EXPENSE (BUDGET / ACTUAL)', lines: 6, style: 'line' }, { label: 'TOURS/EXCURSIONS', lines: 4, style: 'line' }, { label: 'TRAVEL INFO', lines: 4, style: 'line' }],
+        useSerif,
       );
       break;
     case 'contacts':
@@ -669,24 +698,24 @@ export function drawExtraPage(
         { label: '연락처 3', style: 'free', lines: 3 },
         { label: '연락처 4', style: 'free', lines: 3 },
         { label: '연락처 5', style: 'free', lines: 3 },
-      ]);
+      ], useSerif);
       break;
 
     // ── 단순 리스트 ─────────────────────────────
     case 'todo':
-      drawSimplePage(ctx, W, H, 'TO-DO LIST', 'DATE: ________', 'check', 20);
+      drawSimplePage(ctx, W, H, 'TO-DO LIST', 'DATE: ________', 'check', 20, useSerif);
       break;
     case 'notes-lined':
-      drawSimplePage(ctx, W, H, 'NOTES', 'DATE: ________', 'lined', 28);
+      drawSimplePage(ctx, W, H, 'NOTES', 'DATE: ________', 'lined', 28, useSerif);
       break;
     case 'notes-grid':
-      drawSimplePage(ctx, W, H, 'NOTES', 'DATE: ________', 'grid', 0);
+      drawSimplePage(ctx, W, H, 'NOTES', 'DATE: ________', 'grid', 0, useSerif);
       break;
     case 'one-line-day':
-      drawSimplePage(ctx, W, H, 'ONE LINE A DAY', 'MONTH: ________    YEAR: ________', 'numbered', 31);
+      drawSimplePage(ctx, W, H, 'ONE LINE A DAY', 'MONTH: ________    YEAR: ________', 'numbered', 31, useSerif);
       break;
     case 'yearly-goals':
-      drawSimplePage(ctx, W, H, 'YEARLY GOALS', 'YEAR: ________', 'goals', 20);
+      drawSimplePage(ctx, W, H, 'YEARLY GOALS', 'YEAR: ________', 'goals', 20, useSerif);
       break;
   }
 }
