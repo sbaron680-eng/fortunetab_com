@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuthStore } from '@/lib/store';
+import { supabase } from '@/lib/supabase';
 import {
   calculateSaju, getSipsinMap, detectSinsal, calcDaeun,
   detectZodiac, getYearGanzhi, elemCountToPercent,
@@ -37,7 +38,6 @@ interface FortuneResult {
   monthly_fortunes: Array<{ month: number; fortune: string; score: number; keywords: string[] }>;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_FORTUNE_API_URL ?? '';
 const TIME_OPTIONS = Object.keys(TIME_TO_BRANCH);
 
 // ── 메인 페이지 ───────────────────────────────────────────────
@@ -102,6 +102,12 @@ export default function FortunePage() {
   } | null>(null);
 
   async function handleAnalyze() {
+    // 로그인 필수 확인
+    if (!user) {
+      setError('AI 운세 분석은 로그인 후 이용 가능합니다. 우측 상단에서 로그인해 주세요.');
+      return;
+    }
+
     setLoading(true);
     setError('');
     setResult(null);
@@ -145,14 +151,12 @@ export default function FortunePage() {
         };
       }
 
-      const res = await fetch(`${API_URL}/fortune`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+      const { data, error: invokeError } = await supabase.functions.invoke('fortune', {
+        body,
       });
 
-      const data = await res.json();
-      if (!data.ok) throw new Error(data.error || '분석 실패');
+      if (invokeError) throw new Error(invokeError.message || '분석 실패');
+      if (!data?.ok) throw new Error(data?.error || '분석 실패');
       setResult(data.data);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : '오류가 발생했습니다.');
