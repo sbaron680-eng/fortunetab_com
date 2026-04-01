@@ -260,6 +260,92 @@ function MonthFortuneCard({ fm, isExpanded, onToggle }: MonthFortuneCardProps) {
   );
 }
 
+// ─── AI 분석 티저 ────────────────────────────────────────────────────
+function AiAnalysisTeaserSection() {
+  const { user } = useAuthStore();
+
+  function handleUnlock() {
+    if (!user) {
+      window.location.href = '/auth/login?next=/saju';
+      return;
+    }
+    window.location.href = '/checkout?product=fortune-saju';
+  }
+
+  return (
+    <section className="mb-8 rounded-2xl overflow-hidden border border-ft-border">
+      {/* 헤더 */}
+      <div className="bg-gradient-to-r from-amber-600 to-amber-500 px-5 py-4 flex items-center gap-2">
+        <span className="text-white text-lg">✨</span>
+        <div>
+          <h3 className="text-white font-bold font-serif">AI 심층 분석</h3>
+          <p className="text-amber-100 text-xs">Claude AI가 사주팔자를 심층 분석합니다</p>
+        </div>
+      </div>
+
+      {/* 블러 미리보기 */}
+      <div className="bg-white p-5 relative">
+        <div className="select-none pointer-events-none blur-[5px] space-y-4">
+          {/* 종합 운세 더미 */}
+          <div>
+            <p className="text-sm font-bold text-ft-ink mb-1">종합 운세</p>
+            <p className="text-sm text-ft-muted leading-relaxed">
+              목하 병화(丙火) 일간의 기운이 강하게 작용하는 한 해입니다.
+              상반기에는 새로운 기회가 열리며 특히 3~4월에 중요한 전환점이 찾아옵니다.
+              하반기에는 내실을 다지는 시기로 무리한 확장보다 안정에 집중하는 것이 유리합니다.
+            </p>
+          </div>
+
+          {/* 분야별 카드 더미 */}
+          <div className="grid grid-cols-2 gap-3">
+            {['💼 직업·사업', '💰 재물·투자', '💕 인간관계', '💪 건강'].map(t => (
+              <div key={t} className="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                <p className="text-xs font-medium text-ft-ink mb-1">{t}</p>
+                <p className="text-xs text-ft-muted">올해는 전반적으로 상승세를 타는 시기로 적극적인 행동이 좋은 결과를 가져옵니다.</p>
+              </div>
+            ))}
+          </div>
+
+          {/* 월별 더미 */}
+          <div className="grid grid-cols-6 gap-2">
+            {[7, 8, 6, 9, 5, 8, 7, 9, 6, 8, 5, 7].map((s, i) => (
+              <div key={i} className="text-center p-2 bg-gray-50 rounded-xl">
+                <p className="text-xs text-ft-muted">{i + 1}월</p>
+                <p className={`text-lg font-bold ${s >= 8 ? 'text-emerald-600' : s >= 6 ? 'text-ft-ink' : 'text-red-500'}`}>{s}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* 행운 정보 더미 */}
+          <div className="flex flex-wrap gap-2">
+            {['행운색: 붉은색', '행운색: 황금색', '행운숫자: 3', '행운숫자: 7', '행운방향: 남쪽'].map(t => (
+              <span key={t} className="px-3 py-1 bg-amber-50 text-amber-700 rounded-full text-xs border border-amber-200">{t}</span>
+            ))}
+          </div>
+        </div>
+
+        {/* 잠금 오버레이 */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/60 backdrop-blur-[1px]">
+          <div className="text-center px-6 py-6 rounded-2xl bg-white border border-ft-border shadow-lg max-w-xs w-full">
+            <div className="text-3xl mb-2">🔒</div>
+            <p className="text-sm font-bold text-ft-ink mb-1">AI 심층 분석 잠금</p>
+            <p className="text-xs text-ft-muted mb-4 leading-relaxed">
+              종합운세·직업·재물·건강·인간관계<br />월별 운세 + 행운 정보 포함
+            </p>
+            <button
+              onClick={handleUnlock}
+              className="w-full py-3 rounded-xl font-bold text-white bg-amber-500 hover:bg-amber-600 transition-colors text-sm"
+            >
+              AI 운세 분석 보기 — ₩3,900
+            </button>
+            <p className="text-[10px] text-ft-muted mt-2">1회 이용권 · 로그인 필요</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ─── 메인 페이지 ─────────────────────────────────────────────────────
 export default function SajuPage() {
   const { user } = useAuthStore();
@@ -518,6 +604,9 @@ export default function SajuPage() {
                 ))}
               </div>
             </section>
+
+            {/* AI 분석 티저 */}
+            <AiAnalysisTeaserSection />
 
             {/* 유료 플래너 CTA */}
             <section className="rounded-2xl p-6 text-center bg-ft-ink border border-ft-border">

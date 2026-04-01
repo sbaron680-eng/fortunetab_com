@@ -97,8 +97,8 @@ export default function Header() {
 
   const navLinks = [
     { href: '/', label: '홈' },
-    { href: '/fortune', label: 'AI 운세' },
     { href: '/saju', label: '사주 계산기' },
+    { href: '/fortune', label: 'AI 운세' },
     { href: '/products', label: '상품' },
   ];
 

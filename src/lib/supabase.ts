@@ -40,3 +40,12 @@ export interface OrderItemRow {
   price: number;
   qty: number;
 }
+
+export interface FortunePurchaseRow {
+  id: string;
+  user_id: string;
+  type: 'saju' | 'astrology' | 'couple';
+  order_id: string;
+  used_at: string | null;
+  created_at: string;
+}
