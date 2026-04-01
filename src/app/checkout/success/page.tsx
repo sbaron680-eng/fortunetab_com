@@ -12,15 +12,17 @@
  */
 
 import { useEffect, useState, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useCartStore, useAuthStore } from '@/lib/store';
 import { createOrder } from '@/lib/orders';
+import { supabase } from '@/lib/supabase';
 
 type ConfirmStatus = 'confirming' | 'done' | 'error';
 
 function SuccessContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const { items, clearCart } = useCartStore();
   const { user } = useAuthStore();
 
@@ -57,6 +59,23 @@ function SuccessContent() {
           throw new Error(confirmData.error || '결제 승인에 실패했습니다.');
         }
 
+        // fortune 단건 구매 처리
+        const fortuneCheckout = typeof window !== 'undefined'
+          ? JSON.parse(sessionStorage.getItem('fortune-checkout') || 'null')
+          : null;
+
+        if (fortuneCheckout && user) {
+          await supabase.from('fortune_purchases').insert({
+            user_id: user.id,
+            type: fortuneCheckout.fortuneType,
+            order_id: orderId,
+          });
+          sessionStorage.removeItem('fortune-checkout');
+          router.push(`/fortune?type=${fortuneCheckout.fortuneType}`);
+          return;
+        }
+
+        // 기존 카트 기반 주문 처리
         let orderNum = orderId;
         const sajuData = savedForm.birthDate ? {
           name: savedForm.name || '',

@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/lib/store';
 import { supabase } from '@/lib/supabase';
 import {
@@ -40,14 +41,46 @@ interface FortuneResult {
 
 const TIME_OPTIONS = Object.keys(TIME_TO_BRANCH);
 
+// ── Suspense 래퍼 (useSearchParams 필요) ─────────────────────
+export default function FortunePageWrapper() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-ft-paper" />}>
+      <FortunePage />
+    </Suspense>
+  );
+}
+
 // ── 메인 페이지 ───────────────────────────────────────────────
-export default function FortunePage() {
+function FortunePage() {
   const { user } = useAuthStore();
+  const searchParams = useSearchParams();
   const [tab, setTab] = useState<FortuneTab>('saju');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<FortuneResult | null>(null);
   const [error, setError] = useState('');
   const [profileLoaded, setProfileLoaded] = useState(false);
+  const [hasPurchase, setHasPurchase] = useState<boolean | null>(null);
+
+  // URL ?type= 파라미터로 탭 설정
+  useEffect(() => {
+    const urlType = searchParams.get('type') as FortuneTab | null;
+    if (urlType && ['saju', 'zodiac', 'couple'].includes(urlType)) {
+      setTab(urlType);
+    }
+  }, [searchParams]);
+
+  // 구매 확인
+  useEffect(() => {
+    if (!user) { setHasPurchase(false); return; }
+    supabase
+      .from('fortune_purchases')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('type', tab)
+      .is('used_at', null)
+      .maybeSingle()
+      .then(({ data }) => setHasPurchase(!!data));
+  }, [user, tab]);
 
   // 사주 폼
   const [sajuForm, setSajuForm] = useState<{
@@ -105,6 +138,12 @@ export default function FortunePage() {
     // 로그인 필수 확인
     if (!user) {
       setError('AI 운세 분석은 로그인 후 이용 가능합니다. 우측 상단에서 로그인해 주세요.');
+      return;
+    }
+
+    // 구매 확인 (paywall)
+    if (!hasPurchase) {
+      window.location.href = `/checkout?product=fortune-${tab}`;
       return;
     }
 
@@ -181,6 +220,15 @@ export default function FortunePage() {
       const data = JSON.parse(responseText);
       if (!data?.ok) throw new Error(data?.error || '분석 실패');
       setResult(data.data);
+
+      // 이용권 사용 처리 (used_at 업데이트)
+      await supabase
+        .from('fortune_purchases')
+        .update({ used_at: new Date().toISOString() })
+        .eq('user_id', user.id)
+        .eq('type', tab)
+        .is('used_at', null);
+      setHasPurchase(false);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : '오류가 발생했습니다.');
     } finally {
@@ -237,7 +285,11 @@ export default function FortunePage() {
           <button
             onClick={handleAnalyze}
             disabled={loading}
-            className="w-full py-3.5 bg-ft-gold text-ft-ink font-bold rounded-xl hover:bg-ft-gold-h transition-all disabled:opacity-50"
+            className={`w-full py-3.5 font-bold rounded-xl transition-all disabled:opacity-50 ${
+              hasPurchase
+                ? 'bg-ft-gold text-ft-ink hover:bg-ft-gold-h'
+                : 'bg-amber-500 text-white hover:bg-amber-600'
+            }`}
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">
@@ -247,8 +299,10 @@ export default function FortunePage() {
                 </svg>
                 AI 분석 중... (10~15초 소요)
               </span>
+            ) : hasPurchase ? (
+              tab === 'couple' ? '궁합 분석하기 (이용권 보유)' : '운세 분석하기 (이용권 보유)'
             ) : (
-              tab === 'couple' ? '궁합 분석하기' : '운세 분석하기'
+              tab === 'couple' ? '궁합 분석 구매하기' : '운세 분석 구매하기'
             )}
           </button>
         </div>

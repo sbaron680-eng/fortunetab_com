@@ -17,6 +17,13 @@ const PaymentWidget = dynamic(
 
 const TOSS_CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY ?? '';
 
+// ── Fortune 단건 상품 정의 ──────────────────────────────────────────
+const FORTUNE_PRODUCTS: Record<string, { name: string; amount: number; type: 'saju' | 'astrology' | 'couple' }> = {
+  'fortune-saju': { name: 'AI 사주 분석 1회', amount: 3900, type: 'saju' },
+  'fortune-astrology': { name: 'AI 별자리 분석 1회', amount: 2900, type: 'astrology' },
+  'fortune-couple': { name: 'AI 궁합 분석 1회', amount: 3900, type: 'couple' },
+};
+
 type Step = 'info' | 'payment' | 'complete';
 
 interface OrderForm {
@@ -68,6 +75,10 @@ export default function CheckoutPage() {
   const [infoErrors, setInfoErrors] = useState<InfoErrors>({});
   const [widgetReady, setWidgetReady] = useState(false);
 
+  // fortune 단건 결제 감지
+  const [fortuneProduct, setFortuneProduct] = useState<string | null>(null);
+  const fortuneInfo = fortuneProduct ? FORTUNE_PRODUCTS[fortuneProduct] : null;
+
   const [form, setForm] = useState<OrderForm>({
     name: user?.name ?? '',
     email: user?.email ?? '',
@@ -80,6 +91,12 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     setMounted(true);
+    // ?product=fortune-saju 감지
+    const params = new URLSearchParams(window.location.search);
+    const product = params.get('product');
+    if (product && FORTUNE_PRODUCTS[product]) {
+      setFortuneProduct(product);
+    }
   }, []);
 
   // 사주 플래너 포함 여부 확인 (사주 입력이 필요한 상품만)
@@ -172,6 +189,123 @@ export default function CheckoutPage() {
       setIsSubmitting(false);
     }
   };
+
+  // ── Fortune 단건 결제 핸들러 ─────────────────────
+  const handleFortunePayment = async () => {
+    if (!fortuneInfo) return;
+    if (!agreeTerms) {
+      setAgreeError('이용약관 및 개인정보 처리방침에 동의해 주세요.');
+      return;
+    }
+    setAgreeError('');
+    setIsSubmitting(true);
+    try {
+      sessionStorage.setItem('fortune-checkout', JSON.stringify({
+        fortuneType: fortuneInfo.type,
+        product: fortuneProduct,
+      }));
+
+      const orderId = `FORTUNE-${fortuneInfo.type.toUpperCase()}-${Date.now()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
+      await paymentWidgetRef.current!.requestPayment({
+        orderId,
+        orderName: fortuneInfo.name,
+        customerName: user?.name ?? '사용자',
+        customerEmail: user?.email ?? '',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // ── Fortune 단건 결제 UI ───────────────────────
+  if (mounted && fortuneInfo) {
+    if (!user) {
+      return (
+        <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center py-20 px-4 text-center">
+          <div className="text-5xl mb-4">🔒</div>
+          <h1 className="text-xl font-bold text-ft-ink mb-2">로그인이 필요합니다</h1>
+          <p className="text-sm text-ft-muted mb-6">AI 운세 분석을 구매하려면 로그인해 주세요.</p>
+          <Link
+            href={`/auth/login?next=/checkout?product=${fortuneProduct}`}
+            className="px-8 py-3 font-bold text-white bg-ft-ink rounded-xl hover:bg-ft-ink-mid transition-colors"
+          >
+            로그인하기
+          </Link>
+        </div>
+      );
+    }
+
+    return (
+      <div className="min-h-[calc(100vh-4rem)] bg-ft-paper py-10 px-4">
+        <div className="max-w-lg mx-auto">
+          <h1 className="text-2xl font-black font-serif text-ft-ink mb-6">AI 운세 결제</h1>
+
+          {/* 상품 요약 */}
+          <div className="bg-white rounded-2xl shadow-sm border border-ft-border p-5 mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 flex items-center justify-center bg-amber-50 rounded-xl text-2xl">✨</div>
+              <div className="flex-1">
+                <p className="font-bold text-ft-ink">{fortuneInfo.name}</p>
+                <p className="text-xs text-ft-muted">1회 이용권 · Claude AI 심층 분석</p>
+              </div>
+              <p className="text-lg font-black text-ft-ink">{formatPrice(fortuneInfo.amount)}</p>
+            </div>
+          </div>
+
+          {/* 결제 위젯 */}
+          <div className="bg-white rounded-2xl shadow-sm border border-ft-border p-5 mb-4">
+            <h2 className="font-bold font-serif text-ft-ink mb-4">💳 결제 수단</h2>
+            <PaymentWidget
+              ref={paymentWidgetRef}
+              clientKey={TOSS_CLIENT_KEY}
+              customerKey={user.id}
+              amount={fortuneInfo.amount}
+              onReady={() => setWidgetReady(true)}
+            />
+          </div>
+
+          {/* 약관 동의 */}
+          <div className="bg-white rounded-2xl shadow-sm border border-ft-border p-5 mb-4">
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={agreeTerms}
+                onChange={(e) => {
+                  setAgreeTerms(e.target.checked);
+                  if (e.target.checked) setAgreeError('');
+                }}
+                className="mt-0.5 w-4 h-4 rounded border-ft-border text-ft-ink focus:ring-ft-ink flex-shrink-0"
+              />
+              <span className="text-sm text-gray-600 leading-relaxed">
+                <Link href="/terms" target="_blank" className="font-medium text-gray-900 underline hover:text-ft-ink transition-colors">이용약관</Link>,{' '}
+                <Link href="/privacy" target="_blank" className="font-medium text-gray-900 underline hover:text-ft-ink transition-colors">개인정보 처리방침</Link>에 동의합니다.
+                AI 운세 분석은 명리학의 학문적 관점에서 참고용으로 제공됩니다.
+              </span>
+            </label>
+            {agreeError && (
+              <p className="mt-2 text-xs text-red-500 flex items-center gap-1">
+                <span>⚠</span> {agreeError}
+              </p>
+            )}
+          </div>
+
+          <button
+            onClick={handleFortunePayment}
+            disabled={isSubmitting || !widgetReady}
+            className="w-full py-4 font-bold text-ft-navy bg-ft-gold rounded-2xl hover:bg-ft-gold-h transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {isSubmitting && (
+              <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+            )}
+            {isSubmitting ? '처리 중...' : `${formatPrice(fortuneInfo.amount)} 결제하기`}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // ── 로딩 중 ────────────────────────────────────────────
   if (!mounted) {
