@@ -151,11 +151,34 @@ export default function FortunePage() {
         };
       }
 
-      const { data, error: invokeError } = await supabase.functions.invoke('fortune', {
-        body,
+      // Edge Function 직접 호출 (JWT 첨부)
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+      if (!accessToken) throw new Error('로그인 세션이 만료되었습니다. 다시 로그인해 주세요.');
+
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+      const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+      const res = await fetch(`${supabaseUrl}/functions/v1/fortune`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+          'apikey': anonKey,
+        },
+        body: JSON.stringify(body),
       });
 
-      if (invokeError) throw new Error(invokeError.message || '분석 실패');
+      if (!res.ok) {
+        const errText = await res.text().catch(() => '');
+        if (res.status === 401) throw new Error('로그인 세션이 만료되었습니다. 다시 로그인해 주세요.');
+        throw new Error(errText || `서버 오류 (${res.status})`);
+      }
+
+      const responseText = await res.text();
+      if (!responseText) throw new Error('서버로부터 빈 응답을 받았습니다. 다시 시도해 주세요.');
+
+      const data = JSON.parse(responseText);
       if (!data?.ok) throw new Error(data?.error || '분석 실패');
       setResult(data.data);
     } catch (err: unknown) {
