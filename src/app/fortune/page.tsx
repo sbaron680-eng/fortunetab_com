@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useAuthStore } from '@/lib/store';
 import {
   calculateSaju, getSipsinMap, detectSinsal, calcDaeun,
   detectZodiac, getYearGanzhi, elemCountToPercent,
@@ -41,24 +42,56 @@ const TIME_OPTIONS = Object.keys(TIME_TO_BRANCH);
 
 // ── 메인 페이지 ───────────────────────────────────────────────
 export default function FortunePage() {
+  const { user } = useAuthStore();
   const [tab, setTab] = useState<FortuneTab>('saju');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<FortuneResult | null>(null);
   const [error, setError] = useState('');
+  const [profileLoaded, setProfileLoaded] = useState(false);
 
   // 사주 폼
-  const [sajuForm, setSajuForm] = useState({
-    name: '', year: '1990', month: '1', day: '1', time: '모름', gender: 'male' as const,
+  const [sajuForm, setSajuForm] = useState<{
+    name: string; year: string; month: string; day: string; time: string; gender: 'male' | 'female';
+  }>({
+    name: '', year: '1990', month: '1', day: '1', time: '모름', gender: 'male',
   });
 
   // 별자리 폼
   const [zodiacForm, setZodiacForm] = useState({ name: '', birthDate: '' });
 
   // 궁합 폼
-  const [coupleForm, setCoupleForm] = useState({
-    name1: '', birthDate1: '', gender1: 'female' as const,
-    name2: '', birthDate2: '', gender2: 'male' as const,
+  const [coupleForm, setCoupleForm] = useState<{
+    name1: string; birthDate1: string; gender1: 'male' | 'female';
+    name2: string; birthDate2: string; gender2: 'male' | 'female';
+  }>({
+    name1: '', birthDate1: '', gender1: 'female',
+    name2: '', birthDate2: '', gender2: 'male',
   });
+
+  // 프로필 생년월일 자동 채움 (3개 탭 모두)
+  useEffect(() => {
+    if (!user?.birthDate) return;
+    const [y, m, d] = user.birthDate.split('-').map(String);
+    setSajuForm(prev => ({
+      ...prev,
+      name: user.name || prev.name,
+      year: y, month: String(Number(m)), day: String(Number(d)),
+      time: user.birthHour ?? '모름',
+      gender: (user.gender as 'male' | 'female') ?? prev.gender,
+    }));
+    setZodiacForm(prev => ({
+      ...prev,
+      name: user.name || prev.name,
+      birthDate: user.birthDate!,
+    }));
+    setCoupleForm(prev => ({
+      ...prev,
+      name1: user.name || prev.name1,
+      birthDate1: user.birthDate!,
+      gender1: (user.gender as 'male' | 'female') ?? prev.gender1,
+    }));
+    setProfileLoaded(true);
+  }, [user?.birthDate, user?.birthHour, user?.gender, user?.name]);
 
   // 사주 엔진 결과 (로컬 계산)
   const [localSaju, setLocalSaju] = useState<{
@@ -159,6 +192,14 @@ export default function FortunePage() {
             </button>
           ))}
         </div>
+
+        {/* 프로필 자동 입력 안내 */}
+        {profileLoaded && (
+          <div className="bg-ft-paper-alt border border-ft-border rounded-xl px-4 py-2.5 flex items-center justify-between">
+            <span className="text-xs text-ft-body">&#10003; 프로필 생년월일이 자동 입력되었습니다.</span>
+            <Link href="/settings" className="text-xs text-ft-muted hover:text-ft-ink transition-colors">설정에서 수정 →</Link>
+          </div>
+        )}
 
         {/* 입력 폼 */}
         <div className="bg-white border border-ft-border rounded-2xl p-5 space-y-4">

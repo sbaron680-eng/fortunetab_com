@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import Link from 'next/link';
 import {
   calculateSaju,
@@ -21,7 +21,7 @@ import {
   type FortuneMonth,
   type ElemKo,
 } from '@/lib/saju';
-import { useSajuStore } from '@/lib/store';
+import { useSajuStore, useAuthStore } from '@/lib/store';
 import { PLANNER_YEAR } from '@/lib/products';
 
 // 연도 → 간지(干支) 이름 계산
@@ -262,14 +262,30 @@ function MonthFortuneCard({ fm, isExpanded, onToggle }: MonthFortuneCardProps) {
 
 // ─── 메인 페이지 ─────────────────────────────────────────────────────
 export default function SajuPage() {
+  const { user } = useAuthStore();
   const [form, setForm] = useState<BirthForm>({
     year: '1990', month: '1', day: '1', time: '모름', gender: 'male',
   });
+  const [profileLoaded, setProfileLoaded] = useState(false);
   const [saju, setSaju]       = useState<SajuResult | null>(null);
   const [fortune, setFortune] = useState<FortuneMonth[]>([]);
   const [error, setError]     = useState('');
   const [calculated, setCalculated] = useState(false);
   const [expandedMonth, setExpandedMonth] = useState<number | null>(null);
+
+  // 프로필 생년월일 자동 채움
+  useEffect(() => {
+    if (!user?.birthDate) return;
+    const [y, m, d] = user.birthDate.split('-').map(String);
+    setForm({
+      year: y,
+      month: String(Number(m)),
+      day: String(Number(d)),
+      time: user.birthHour ?? '모름',
+      gender: (user.gender as 'male' | 'female') ?? 'male',
+    });
+    setProfileLoaded(true);
+  }, [user?.birthDate, user?.birthHour, user?.gender]);
 
   const handleChange = (key: keyof BirthForm, val: string) => {
     setForm(prev => ({ ...prev, [key]: val }));
@@ -330,6 +346,14 @@ export default function SajuPage() {
             AI 심층 분석을 원하시면 <a href="/fortune" className="text-white underline hover:text-ft-gold transition-colors">AI 운세 분석</a>을 이용해 보세요
           </p>
         </div>
+
+        {/* 프로필 자동 입력 안내 */}
+        {profileLoaded && (
+          <div className="bg-ft-paper-alt border border-ft-border rounded-xl px-4 py-2.5 mb-4 flex items-center justify-between">
+            <span className="text-xs text-ft-body">&#10003; 프로필 생년월일이 자동 입력되었습니다.</span>
+            <Link href="/settings" className="text-xs text-ft-muted hover:text-ft-ink transition-colors">설정에서 수정 →</Link>
+          </div>
+        )}
 
         {/* 입력 카드 */}
         <div className="rounded-2xl p-6 mb-8 bg-white border border-ft-border shadow-sm">

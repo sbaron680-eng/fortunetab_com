@@ -103,7 +103,11 @@ export default function DownloadPage() {
   const [year, setYear]       = useState(() => getAvailableYears()[0]);
   const [advancedMode, setAdvancedMode] = useState(false);
   const [theme, setTheme]     = useState('rose');
-  const [zodiacBirthYear, setZodiacBirthYear] = useState<number | ''>('');
+  const [zodiacBirthYear, setZodiacBirthYear] = useState<number | ''>(() => {
+    // 로그인 사용자의 프로필 생년에서 자동 설정
+    if (user?.birthDate) return Number(user.birthDate.split('-')[0]);
+    return '';
+  });
 
   // 띠 운세 필요 여부: 운세 모드 + 생년월일 미입력 사용자
   const needsZodiacInput = mode === 'fortune' && !user?.birthDate;
