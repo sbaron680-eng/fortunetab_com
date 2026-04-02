@@ -1,13 +1,12 @@
 'use client';
 
 /**
- * TossPayments 결제위젯 컴포넌트
- * @tosspayments/payment-widget-sdk v0.12.x
+ * TossPayments v2 SDK 결제위젯 컴포넌트
+ * @tosspayments/tosspayments-sdk
  *
- * 사용 방법:
- * 1. ref를 통해 requestPayment()를 호출하면 Toss 결제창으로 이동
- * 2. 성공 시 → /checkout/success?paymentKey=...&orderId=...&amount=...
- * 3. 실패 시 → /checkout/fail?code=...&message=...&orderId=...
+ * 1. ref.requestPayment()를 호출하면 Toss 결제창으로 이동
+ * 2. 성공 → /checkout/success?paymentKey=...&orderId=...&amount=...
+ * 3. 실패 → /checkout/fail?code=...&message=...&orderId=...
  */
 
 import {
@@ -17,7 +16,6 @@ import {
   useImperativeHandle,
   forwardRef,
 } from 'react';
-import type { PaymentWidgetInstance } from '@tosspayments/payment-widget-sdk';
 
 export interface RequestPaymentParams {
   orderId: string;
@@ -33,7 +31,7 @@ export interface PaymentWidgetHandle {
 
 interface Props {
   clientKey: string;
-  customerKey?: string;  // 비회원 = undefined → ANONYMOUS
+  customerKey?: string;
   amount: number;
   onLoadStart?: () => void;
   onReady?: () => void;
@@ -44,14 +42,18 @@ const PaymentWidget = forwardRef<PaymentWidgetHandle, Props>(function PaymentWid
   { clientKey, customerKey, amount, onLoadStart, onReady, onError },
   ref,
 ) {
-  const widgetRef = useRef<PaymentWidgetInstance | null>(null);
+  const widgetsRef = useRef<any>(null);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
 
   useImperativeHandle(ref, () => ({
     requestPayment: async (params: RequestPaymentParams) => {
-      if (!widgetRef.current) throw new Error('결제 위젯이 준비되지 않았습니다');
-      await widgetRef.current.requestPayment({
-        ...params,
+      if (!widgetsRef.current) throw new Error('결제 위젯이 준비되지 않았습니다');
+      await widgetsRef.current.requestPayment({
+        orderId: params.orderId,
+        orderName: params.orderName,
+        customerName: params.customerName,
+        customerEmail: params.customerEmail,
+        customerMobilePhone: params.customerMobilePhone,
         successUrl: `${window.location.origin}/checkout/success`,
         failUrl: `${window.location.origin}/checkout/fail`,
       });
@@ -64,21 +66,34 @@ const PaymentWidget = forwardRef<PaymentWidgetHandle, Props>(function PaymentWid
 
     (async () => {
       try {
-        const { loadPaymentWidget, ANONYMOUS } = await import(
-          '@tosspayments/payment-widget-sdk'
-        );
-        const widget = await loadPaymentWidget(
-          clientKey,
-          customerKey ?? ANONYMOUS,
+        const { loadTossPayments, ANONYMOUS } = await import(
+          '@tosspayments/tosspayments-sdk'
         );
         if (cancelled) return;
 
-        widgetRef.current = widget;
+        const tossPayments = await loadTossPayments(clientKey);
+        if (cancelled) return;
 
-        await widget.renderPaymentMethods('#toss-payment-method', amount);
-        await widget.renderAgreement('#toss-payment-agreement');
+        const widgets = tossPayments.widgets({
+          customerKey: customerKey ?? ANONYMOUS,
+        });
+
+        await widgets.setAmount({ currency: 'KRW', value: amount });
+        if (cancelled) return;
+
+        await Promise.all([
+          widgets.renderPaymentMethods({
+            selector: '#toss-payment-method',
+            variantKey: 'DEFAULT',
+          }),
+          widgets.renderAgreement({
+            selector: '#toss-payment-agreement',
+            variantKey: 'AGREEMENT',
+          }),
+        ]);
 
         if (!cancelled) {
+          widgetsRef.current = widgets;
           setStatus('ready');
           onReady?.();
         }
@@ -114,7 +129,6 @@ const PaymentWidget = forwardRef<PaymentWidgetHandle, Props>(function PaymentWid
         </div>
       )}
 
-      {/* 토스페이먼츠 SDK가 이 div에 결제 UI를 마운트합니다 */}
       <div id="toss-payment-method" />
       <div id="toss-payment-agreement" className="mt-4" />
     </div>
