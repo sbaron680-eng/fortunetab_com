@@ -44,6 +44,7 @@ const PaymentWidget = forwardRef<PaymentWidgetHandle, Props>(function PaymentWid
 ) {
   const widgetsRef = useRef<any>(null);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [errorMessage, setErrorMessage] = useState('');
 
   useImperativeHandle(ref, () => ({
     requestPayment: async (params: RequestPaymentParams) => {
@@ -63,6 +64,12 @@ const PaymentWidget = forwardRef<PaymentWidgetHandle, Props>(function PaymentWid
   useEffect(() => {
     let cancelled = false;
     onLoadStart?.();
+
+    if (!clientKey) {
+      setStatus('error');
+      setErrorMessage('결제 키가 설정되지 않았습니다');
+      return;
+    }
 
     (async () => {
       try {
@@ -99,8 +106,11 @@ const PaymentWidget = forwardRef<PaymentWidgetHandle, Props>(function PaymentWid
         }
       } catch (err) {
         if (!cancelled) {
+          const error = err instanceof Error ? err : new Error(String(err));
+          console.error('[PaymentWidget] 결제 위젯 초기화 실패:', error);
           setStatus('error');
-          onError?.(err instanceof Error ? err : new Error(String(err)));
+          setErrorMessage(error.message);
+          onError?.(error);
         }
       }
     })();
@@ -126,6 +136,9 @@ const PaymentWidget = forwardRef<PaymentWidgetHandle, Props>(function PaymentWid
       {status === 'error' && (
         <div className="text-center py-6 text-sm text-red-500">
           결제 모듈을 불러올 수 없습니다. 새로고침 후 다시 시도해 주세요.
+          {errorMessage && (
+            <p className="mt-2 text-xs text-gray-400">{errorMessage}</p>
+          )}
         </div>
       )}
 

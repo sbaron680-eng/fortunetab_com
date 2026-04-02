@@ -337,6 +337,7 @@ export default function CheckoutPage() {
                 customerKey={user.id}
                 amount={fortuneInfo.amount}
                 onReady={() => setWidgetReady(true)}
+                onError={(err) => console.error('[Fortune] 결제위젯 에러:', err)}
               />
             ) : (
               <PayPalPaymentWidget
@@ -749,6 +750,7 @@ export default function CheckoutPage() {
                         customerKey={user?.id}
                         amount={total}
                         onReady={() => setWidgetReady(true)}
+                        onError={(err) => console.error('[Checkout] 결제위젯 에러:', err)}
                       />
                     </div>
                   ) : (
