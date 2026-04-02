@@ -100,9 +100,9 @@ export default function CheckoutPage() {
     name: user?.name ?? '',
     email: user?.email ?? '',
     phone: '',
-    birthDate: '',
-    birthTime: '',
-    birthGender: '양력',
+    birthDate: user?.birthDate ?? '',
+    birthTime: user?.birthHour ?? '',
+    birthGender: user?.gender ?? '',
     notes: '',
   });
 
@@ -115,6 +115,20 @@ export default function CheckoutPage() {
       setFortuneProduct(product);
     }
   }, []);
+
+  // user 로딩 후 사주 정보 자동 입력 (프로필에 저장된 값 우선)
+  useEffect(() => {
+    if (user) {
+      setForm(prev => ({
+        ...prev,
+        name: prev.name || user.name || '',
+        email: prev.email || user.email || '',
+        birthDate: prev.birthDate || user.birthDate || '',
+        birthTime: prev.birthTime || user.birthHour || '',
+        birthGender: prev.birthGender || user.gender || '',
+      }));
+    }
+  }, [user]);
 
   // 사주 플래너 포함 여부 확인 (사주 입력이 필요한 상품만)
   const SAJU_SLUGS = ['saju-planner-basic', 'saju-planner-premium'];
@@ -651,8 +665,9 @@ export default function CheckoutPage() {
                           onChange={handleFormChange}
                           className="w-full px-4 py-3 text-sm border border-ft-border rounded-xl focus:outline-none focus:ring-2 focus:ring-ft-ink focus:border-transparent transition-all bg-ft-paper-alt"
                         >
-                          <option value="양력">남성</option>
-                          <option value="음력">여성</option>
+                          <option value="">선택해주세요</option>
+                          <option value="male">남성</option>
+                          <option value="female">여성</option>
                         </select>
                       </div>
                       <div className="sm:col-span-2">
