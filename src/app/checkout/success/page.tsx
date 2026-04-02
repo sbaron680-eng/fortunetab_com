@@ -26,9 +26,10 @@ function SuccessContent() {
   const { items, clearCart } = useCartStore();
   const { user } = useAuthStore();
 
-  const paymentKey = searchParams.get('paymentKey') ?? '';
-  const orderId    = searchParams.get('orderId') ?? '';
-  const amount     = Number(searchParams.get('amount') ?? '0');
+  const paymentKey   = searchParams.get('paymentKey') ?? '';
+  const orderId      = searchParams.get('orderId') ?? '';
+  const amount       = Number(searchParams.get('amount') ?? '0');
+  const paymentType  = searchParams.get('paymentType') ?? '';
 
   const savedForm = typeof window !== 'undefined'
     ? JSON.parse(sessionStorage.getItem('checkout-form') || '{}')
@@ -52,7 +53,7 @@ function SuccessContent() {
         const confirmRes = await fetch(`${confirmUrl}/payments/confirm`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ paymentKey, orderId, amount }),
+          body: JSON.stringify({ paymentKey, orderId, amount, paymentType }),
         });
         const confirmData = await confirmRes.json();
         if (!confirmData.ok) {
@@ -146,7 +147,7 @@ function SuccessContent() {
         주문번호: <span className="font-medium text-gray-700">{orderNumber || orderId}</span>
       </p>
       <p className="text-gray-500 text-sm mb-2">
-        결제금액: <span className="font-medium text-gray-700">₩{amount.toLocaleString('ko-KR')}</span>
+        결제금액: <span className="font-medium text-gray-700">{paymentType === 'PAYPAL' ? `$${amount}` : `₩${amount.toLocaleString('ko-KR')}`}</span>
       </p>
 
       <div className="mt-6 bg-indigo-50 rounded-2xl p-4 text-left text-sm text-gray-600 space-y-2 border border-indigo-100">

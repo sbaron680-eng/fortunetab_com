@@ -1,0 +1,151 @@
+'use client';
+
+/**
+ * TossPayments v2 SDK — PayPal 결제위젯 컴포넌트
+ *
+ * 국내 결제(v1 SDK)와 독립적으로 동작합니다.
+ * CDN 스크립트를 동적으로 로드하고, variantKey: "PAYPAL"로 위젯을 렌더합니다.
+ *
+ * 1. ref.requestPayment()를 호출하면 PayPal 로그인 페이지로 이동
+ * 2. 성공 → /checkout/success?paymentType=PAYPAL&paymentKey=...&orderId=...&amount=...
+ * 3. 실패 → /checkout/fail?code=...&message=...&orderId=...
+ */
+
+import {
+  useState,
+  useEffect,
+  useRef,
+  useImperativeHandle,
+  forwardRef,
+  useCallback,
+} from 'react';
+
+const V2_SDK_URL = 'https://js.tosspayments.com/v2/standard';
+
+export interface PayPalRequestPaymentParams {
+  orderId: string;
+  orderName: string;
+  customerName: string;
+  customerEmail: string;
+  product: {
+    name: string;
+    unitAmount: number;
+  };
+}
+
+export interface PayPalPaymentWidgetHandle {
+  requestPayment: (params: PayPalRequestPaymentParams) => Promise<void>;
+}
+
+interface Props {
+  clientKey: string;
+  customerKey: string;
+  amount: number; // USD
+  onReady?: () => void;
+  onError?: (error: Error) => void;
+}
+
+/** v2 CDN 스크립트를 한 번만 로드 */
+function loadV2Script(): Promise<void> {
+  if (window.TossPayments) return Promise.resolve();
+
+  const existing = document.querySelector<HTMLScriptElement>(`script[src="${V2_SDK_URL}"]`);
+  if (existing) {
+    return new Promise((resolve, reject) => {
+      existing.addEventListener('load', () => resolve());
+      existing.addEventListener('error', () => reject(new Error('TossPayments v2 SDK 로드 실패')));
+      if (window.TossPayments) resolve();
+    });
+  }
+
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = V2_SDK_URL;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error('TossPayments v2 SDK 로드 실패'));
+    document.head.appendChild(script);
+  });
+}
+
+const PayPalPaymentWidget = forwardRef<PayPalPaymentWidgetHandle, Props>(
+  function PayPalPaymentWidget({ clientKey, customerKey, amount, onReady, onError }, ref) {
+    const widgetsRef = useRef<TossPaymentsWidgets | null>(null);
+    const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+
+    const initWidget = useCallback(async () => {
+      try {
+        await loadV2Script();
+
+        const tp = window.TossPayments!(clientKey);
+        const widgets = tp.widgets({ customerKey });
+
+        await widgets.setAmount({ currency: 'USD', value: amount });
+
+        await Promise.all([
+          widgets.renderPaymentMethods({ selector: '#paypal-payment-method', variantKey: 'PAYPAL' }),
+          widgets.renderAgreement({ selector: '#paypal-agreement', variantKey: 'AGREEMENT' }),
+        ]);
+
+        widgetsRef.current = widgets;
+        setStatus('ready');
+        onReady?.();
+      } catch (err) {
+        setStatus('error');
+        onError?.(err instanceof Error ? err : new Error(String(err)));
+      }
+    }, [clientKey, customerKey, amount, onReady, onError]);
+
+    useImperativeHandle(ref, () => ({
+      requestPayment: async (params: PayPalRequestPaymentParams) => {
+        if (!widgetsRef.current) throw new Error('PayPal 위젯이 준비되지 않았습니다');
+        await widgetsRef.current.requestPayment({
+          orderId: params.orderId,
+          orderName: params.orderName,
+          customerEmail: params.customerEmail,
+          customerName: params.customerName,
+          successUrl: `${window.location.origin}/checkout/success?paymentType=PAYPAL`,
+          failUrl: `${window.location.origin}/checkout/fail`,
+          foreignEasyPay: {
+            country: 'US',
+            products: [{
+              name: params.product.name,
+              quantity: 1,
+              unitAmount: params.product.unitAmount,
+              currency: 'USD',
+            }],
+            shipping: { fullName: params.customerName },
+          },
+        });
+      },
+    }));
+
+    useEffect(() => {
+      initWidget();
+    }, [initWidget]);
+
+    return (
+      <div>
+        {status === 'loading' && (
+          <div className="flex items-center justify-center py-8 text-sm text-ft-muted gap-2">
+            <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+            PayPal 결제 수단 불러오는 중…
+          </div>
+        )}
+
+        {status === 'error' && (
+          <div className="text-center py-6 text-sm text-red-500">
+            PayPal 결제 모듈을 불러올 수 없습니다. 새로고침 후 다시 시도해 주세요.
+          </div>
+        )}
+
+        <div id="paypal-payment-method" />
+        <div id="paypal-agreement" className="mt-4" />
+      </div>
+    );
+  },
+);
+
+export default PayPalPaymentWidget;

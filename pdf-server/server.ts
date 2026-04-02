@@ -69,15 +69,19 @@ app.get('/download/:fileName', (req, res) => {
 // ── 토스페이먼츠 결제 승인 API ────────────────────────────────────
 app.post('/payments/confirm', async (req, res) => {
   try {
-    const { paymentKey, orderId, amount } = req.body;
+    const { paymentKey, orderId, amount, paymentType } = req.body;
     if (!paymentKey || !orderId || !amount) {
       res.status(400).json({ ok: false, error: 'paymentKey, orderId, amount는 필수입니다.' });
       return;
     }
 
-    const secretKey = process.env.TOSS_SECRET_KEY;
+    // PayPal은 별도 MID의 시크릿키 사용
+    const secretKey = paymentType === 'PAYPAL'
+      ? process.env.TOSS_PAYPAL_SECRET_KEY
+      : process.env.TOSS_SECRET_KEY;
     if (!secretKey) {
-      res.status(500).json({ ok: false, error: 'TOSS_SECRET_KEY가 설정되지 않았습니다.' });
+      const keyName = paymentType === 'PAYPAL' ? 'TOSS_PAYPAL_SECRET_KEY' : 'TOSS_SECRET_KEY';
+      res.status(500).json({ ok: false, error: `${keyName}가 설정되지 않았습니다.` });
       return;
     }
 
@@ -104,7 +108,7 @@ app.post('/payments/confirm', async (req, res) => {
       return;
     }
 
-    console.log(`[Payment] 승인 성공: ${orderId} (${amount}원)`);
+    console.log(`[Payment] 승인 성공: ${orderId} (${paymentType === 'PAYPAL' ? `$${amount}` : `${amount}원`})`);
     res.json({ ok: true, data });
   } catch (err: any) {
     console.error('[Payment] 오류:', err.message);

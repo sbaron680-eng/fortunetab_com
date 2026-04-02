@@ -9,20 +9,32 @@ import { usePromotions } from '@/lib/usePromotions';
 import { createOrder } from '@/lib/orders';
 import dynamic from 'next/dynamic';
 import type { PaymentWidgetHandle } from '@/components/checkout/PaymentWidget';
+import type { PayPalPaymentWidgetHandle } from '@/components/checkout/PayPalPaymentWidget';
 
 const PaymentWidget = dynamic(
   () => import('@/components/checkout/PaymentWidget'),
   { ssr: false }
 );
 
+const PayPalPaymentWidget = dynamic(
+  () => import('@/components/checkout/PayPalPaymentWidget'),
+  { ssr: false }
+);
+
 const TOSS_CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY ?? '';
 
 // ── Fortune 단건 상품 정의 ──────────────────────────────────────────
-const FORTUNE_PRODUCTS: Record<string, { name: string; amount: number; type: 'saju' | 'astrology' | 'couple' }> = {
-  'fortune-saju': { name: 'AI 사주 분석 1회', amount: 3900, type: 'saju' },
-  'fortune-astrology': { name: 'AI 별자리 분석 1회', amount: 2900, type: 'astrology' },
-  'fortune-couple': { name: 'AI 궁합 분석 1회', amount: 3900, type: 'couple' },
+const FORTUNE_PRODUCTS: Record<string, {
+  name: string; nameEn: string;
+  amount: number; usdAmount: number;
+  type: 'saju' | 'astrology' | 'couple';
+}> = {
+  'fortune-saju':      { name: 'AI 사주 분석 1회',   nameEn: 'AI Saju Analysis',          amount: 3900, usdAmount: 2.99, type: 'saju' },
+  'fortune-astrology': { name: 'AI 별자리 분석 1회', nameEn: 'AI Astrology Analysis',    amount: 2900, usdAmount: 1.99, type: 'astrology' },
+  'fortune-couple':    { name: 'AI 궁합 분석 1회',   nameEn: 'AI Compatibility Analysis', amount: 3900, usdAmount: 2.99, type: 'couple' },
 };
+
+const TOSS_PAYPAL_CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_PAYPAL_CLIENT_KEY ?? '';
 
 type Step = 'info' | 'payment' | 'complete';
 
@@ -78,6 +90,11 @@ export default function CheckoutPage() {
   // fortune 단건 결제 감지
   const [fortuneProduct, setFortuneProduct] = useState<string | null>(null);
   const fortuneInfo = fortuneProduct ? FORTUNE_PRODUCTS[fortuneProduct] : null;
+
+  // PayPal 결제
+  const [paymentMethod, setPaymentMethod] = useState<'domestic' | 'paypal'>('domestic');
+  const paypalWidgetRef = useRef<PayPalPaymentWidgetHandle>(null);
+  const [paypalWidgetReady, setPaypalWidgetReady] = useState(false);
 
   const [form, setForm] = useState<OrderForm>({
     name: user?.name ?? '',
@@ -203,15 +220,27 @@ export default function CheckoutPage() {
       sessionStorage.setItem('fortune-checkout', JSON.stringify({
         fortuneType: fortuneInfo.type,
         product: fortuneProduct,
+        paymentMethod,
       }));
 
       const orderId = `FORTUNE-${fortuneInfo.type.toUpperCase()}-${Date.now()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
-      await paymentWidgetRef.current!.requestPayment({
-        orderId,
-        orderName: fortuneInfo.name,
-        customerName: user?.name ?? '사용자',
-        customerEmail: user?.email ?? '',
-      });
+
+      if (paymentMethod === 'paypal') {
+        await paypalWidgetRef.current!.requestPayment({
+          orderId,
+          orderName: fortuneInfo.nameEn,
+          customerName: user?.name ?? 'User',
+          customerEmail: user?.email ?? '',
+          product: { name: fortuneInfo.nameEn, unitAmount: fortuneInfo.usdAmount },
+        });
+      } else {
+        await paymentWidgetRef.current!.requestPayment({
+          orderId,
+          orderName: fortuneInfo.name,
+          customerName: user?.name ?? '사용자',
+          customerEmail: user?.email ?? '',
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -245,23 +274,65 @@ export default function CheckoutPage() {
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 flex items-center justify-center bg-amber-50 rounded-xl text-2xl">✨</div>
               <div className="flex-1">
-                <p className="font-bold text-ft-ink">{fortuneInfo.name}</p>
+                <p className="font-bold text-ft-ink">
+                  {paymentMethod === 'paypal' ? fortuneInfo.nameEn : fortuneInfo.name}
+                </p>
                 <p className="text-xs text-ft-muted">1회 이용권 · Claude AI 심층 분석</p>
               </div>
-              <p className="text-lg font-black text-ft-ink">{formatPrice(fortuneInfo.amount)}</p>
+              <p className="text-lg font-black text-ft-ink">
+                {paymentMethod === 'paypal' ? `$${fortuneInfo.usdAmount}` : formatPrice(fortuneInfo.amount)}
+              </p>
             </div>
           </div>
 
+          {/* 결제수단 선택 (PayPal 키가 있을 때만 토글 표시) */}
+          {TOSS_PAYPAL_CLIENT_KEY && (
+            <div className="flex gap-2 mb-4">
+              <button
+                onClick={() => { setPaymentMethod('domestic'); setWidgetReady(false); setPaypalWidgetReady(false); }}
+                className={`flex-1 py-2.5 text-sm font-medium rounded-xl border transition-all ${
+                  paymentMethod === 'domestic'
+                    ? 'bg-ft-ink text-white border-ft-ink'
+                    : 'bg-white text-ft-muted border-ft-border hover:border-ft-ink'
+                }`}
+              >
+                국내 결제 {formatPrice(fortuneInfo.amount)}
+              </button>
+              <button
+                onClick={() => { setPaymentMethod('paypal'); setWidgetReady(false); setPaypalWidgetReady(false); }}
+                className={`flex-1 py-2.5 text-sm font-medium rounded-xl border transition-all ${
+                  paymentMethod === 'paypal'
+                    ? 'bg-[#0070ba] text-white border-[#0070ba]'
+                    : 'bg-white text-ft-muted border-ft-border hover:border-[#0070ba]'
+                }`}
+              >
+                PayPal ${fortuneInfo.usdAmount}
+              </button>
+            </div>
+          )}
+
           {/* 결제 위젯 */}
           <div className="bg-white rounded-2xl shadow-sm border border-ft-border p-5 mb-4">
-            <h2 className="font-bold font-serif text-ft-ink mb-4">💳 결제 수단</h2>
-            <PaymentWidget
-              ref={paymentWidgetRef}
-              clientKey={TOSS_CLIENT_KEY}
-              customerKey={user.id}
-              amount={fortuneInfo.amount}
-              onReady={() => setWidgetReady(true)}
-            />
+            <h2 className="font-bold font-serif text-ft-ink mb-4">
+              {paymentMethod === 'paypal' ? '🌐 PayPal' : '💳 결제 수단'}
+            </h2>
+            {paymentMethod === 'domestic' ? (
+              <PaymentWidget
+                ref={paymentWidgetRef}
+                clientKey={TOSS_CLIENT_KEY}
+                customerKey={user.id}
+                amount={fortuneInfo.amount}
+                onReady={() => setWidgetReady(true)}
+              />
+            ) : (
+              <PayPalPaymentWidget
+                ref={paypalWidgetRef}
+                clientKey={TOSS_PAYPAL_CLIENT_KEY}
+                customerKey={user.id}
+                amount={fortuneInfo.usdAmount}
+                onReady={() => setPaypalWidgetReady(true)}
+              />
+            )}
           </div>
 
           {/* 약관 동의 */}
@@ -291,8 +362,12 @@ export default function CheckoutPage() {
 
           <button
             onClick={handleFortunePayment}
-            disabled={isSubmitting || !widgetReady}
-            className="w-full py-4 font-bold text-ft-navy bg-ft-gold rounded-2xl hover:bg-ft-gold-h transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            disabled={isSubmitting || (paymentMethod === 'domestic' ? !widgetReady : !paypalWidgetReady)}
+            className={`w-full py-4 font-bold rounded-2xl transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${
+              paymentMethod === 'paypal'
+                ? 'text-white bg-[#0070ba] hover:bg-[#005ea6]'
+                : 'text-ft-navy bg-ft-gold hover:bg-ft-gold-h'
+            }`}
           >
             {isSubmitting && (
               <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
@@ -300,7 +375,11 @@ export default function CheckoutPage() {
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
             )}
-            {isSubmitting ? '처리 중...' : `${formatPrice(fortuneInfo.amount)} 결제하기`}
+            {isSubmitting
+              ? '처리 중...'
+              : paymentMethod === 'paypal'
+                ? `Pay $${fortuneInfo.usdAmount} with PayPal`
+                : `${formatPrice(fortuneInfo.amount)} 결제하기`}
           </button>
         </div>
       </div>
