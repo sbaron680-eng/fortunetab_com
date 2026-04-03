@@ -21,6 +21,9 @@ export default function StepGenerate({ phase }: Props) {
   const [errorMsg, setErrorMsg] = useState('');
   const calledRef = useRef(false);
 
+  // AI API가 아직 배포되지 않았는지 확인 (static export에서는 /api 미포함)
+  const [apiUnavailable, setApiUnavailable] = useState(false);
+
   // story 단계에서 API 호출 (1번만, retry 시 retryCount 변경으로 재실행)
   useEffect(() => {
     if (phase !== 'story' || result) return;
@@ -30,6 +33,7 @@ export default function StepGenerate({ phase }: Props) {
     async function generate() {
       setGenerating(true);
       setErrorMsg('');
+      setApiUnavailable(false);
       try {
         const { data: { session } } = await supabase.auth.getSession();
         const token = session?.access_token;
@@ -53,10 +57,20 @@ export default function StepGenerate({ phase }: Props) {
           }),
         });
 
+        // 404 = API 라우트 미배포 (static export)
+        if (res.status === 404) {
+          setApiUnavailable(true);
+          return;
+        }
         if (!res.ok) throw new Error('AI 생성 실패');
         const data = await res.json();
         setResult(data);
       } catch (err) {
+        // fetch 자체 실패 또는 HTML 404 페이지 반환 시
+        if (err instanceof TypeError || (err instanceof Error && err.message.includes('JSON'))) {
+          setApiUnavailable(true);
+          return;
+        }
         setErrorMsg(err instanceof Error ? err.message : '분석 중 오류가 발생했습니다.');
       } finally {
         setGenerating(false);
@@ -65,6 +79,39 @@ export default function StepGenerate({ phase }: Props) {
 
     generate();
   }, [phase, result, retryCount, mode, fortuneScore, daunPhase, answers, setGenerating, setResult]);
+
+  // AI API 미배포 상태 (준비 중)
+  if (apiUnavailable) {
+    return (
+      <div className="bg-white border border-ft-border rounded-2xl p-8 text-center">
+        <div className="text-4xl mb-4">🚀</div>
+        <p className="font-serif text-lg font-bold text-ft-ink mb-2">
+          AI 분석 기능 준비 중
+        </p>
+        <p className="text-sm text-ft-muted mb-2 leading-relaxed">
+          Claude AI 기반 명발굴 분석은 현재 개발 중입니다.<br />
+          곧 업데이트될 예정이니 조금만 기다려 주세요!
+        </p>
+        <p className="text-xs text-ft-muted mb-6">
+          입력하신 내용은 서비스 오픈 시 바로 활용할 수 있습니다.
+        </p>
+        <div className="flex gap-3 justify-center">
+          <button
+            onClick={prevStep}
+            className="px-6 py-2 rounded-xl border border-ft-border text-ft-muted text-sm font-medium hover:bg-ft-paper transition-colors"
+          >
+            이전 단계로
+          </button>
+          <Link
+            href="/"
+            className="px-6 py-2 rounded-xl bg-ft-ink text-white text-sm font-medium hover:bg-ft-ink/90 transition-colors"
+          >
+            홈으로
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   // 비로그인 시 로그인 유도
   if (!user) {
