@@ -6,10 +6,14 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "preview": "wrangler pages dev out/",
-    "deploy": "next build && wrangler pages deploy out/ --project-name=fortunetab-landing"
+    "build:cloudflare": "opennextjs-cloudflare build",
+    "preview": "opennextjs-cloudflare build && wrangler dev",
+    "deploy": "opennextjs-cloudflare build && wrangler deploy"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.82.0",
+    "@opennextjs/cloudflare": "^1.18.0",
+    "@react-pdf/renderer": "^4.3.2",
     "@supabase/supabase-js": "^2.99.1",
     "@tosspayments/tosspayments-sdk": "^2.6.0",
     "jspdf": "^4.2.0",
