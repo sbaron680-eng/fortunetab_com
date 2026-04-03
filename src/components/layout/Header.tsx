@@ -56,6 +56,26 @@ function UserMenu({ user, logout }: { user: User; logout: () => void }) {
             </svg>
             마이페이지
           </Link>
+          <Link
+            href="/history"
+            onClick={() => setOpen(false)}
+            className="flex items-center gap-2 px-3 py-2 text-sm text-ft-body hover:bg-ft-paper hover:text-ft-ink transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            세션 히스토리
+          </Link>
+          <Link
+            href="/fortune"
+            onClick={() => setOpen(false)}
+            className="flex items-center gap-2 px-3 py-2 text-sm text-ft-body hover:bg-ft-paper hover:text-ft-ink transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
+            </svg>
+            AI 운세
+          </Link>
           {user.isAdmin && (
             <Link
               href="/admin"
@@ -97,9 +117,10 @@ export default function Header() {
 
   const navLinks = [
     { href: '/', label: '홈' },
-    { href: '/saju', label: '사주 계산기' },
-    { href: '/fortune', label: 'AI 운세' },
-    { href: '/products', label: '상품' },
+    { href: '/session', label: '명발굴' },
+    { href: '/products', label: '플래너' },
+    { href: '/saju', label: '사주' },
+    { href: '/pricing', label: '요금제' },
   ];
 
   const isActive = (href: string) =>
@@ -234,6 +255,26 @@ export default function Header() {
                     </svg>
                     마이페이지
                   </Link>
+                  <Link
+                    href="/history"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center gap-2 px-2 py-2 text-sm text-ft-body hover:text-ft-ink hover:bg-ft-paper rounded-lg transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    세션 히스토리
+                  </Link>
+                  <Link
+                    href="/fortune"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center gap-2 px-2 py-2 text-sm text-ft-body hover:text-ft-ink hover:bg-ft-paper rounded-lg transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
+                    </svg>
+                    AI 운세
+                  </Link>
                   {user.isAdmin && (
                     <Link
                       href="/admin"
@@ -258,13 +299,22 @@ export default function Header() {
                   </button>
                 </div>
               ) : (
-                <Link
-                  href="/auth/login"
-                  onClick={() => setMobileOpen(false)}
-                  className="block px-2 py-2 text-sm text-ft-ink font-medium hover:text-ft-ink-mid"
-                >
-                  로그인
-                </Link>
+                <div className="space-y-1">
+                  <Link
+                    href="/fortune"
+                    onClick={() => setMobileOpen(false)}
+                    className="block px-2 py-2 text-sm text-ft-body hover:text-ft-ink hover:bg-ft-paper rounded-lg transition-colors"
+                  >
+                    AI 운세
+                  </Link>
+                  <Link
+                    href="/auth/login"
+                    onClick={() => setMobileOpen(false)}
+                    className="block px-2 py-2 text-sm text-ft-ink font-medium hover:text-ft-ink-mid"
+                  >
+                    로그인
+                  </Link>
+                </div>
               ))}
             </div>
           </div>

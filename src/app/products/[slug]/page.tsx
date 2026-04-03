@@ -57,15 +57,8 @@ export default async function ProductDetailPage({ params }: Props) {
           <div>
             <PlannerProductPreview
               year={PLANNER_YEAR}
-              theme={
-                slug === 'common-planner'
-                  ? 'blue'
-                  : slug === 'saju-planner-basic'
-                  ? 'rose'
-                  : slug === 'saju-planner-premium'
-                  ? 'gold'
-                  : 'rose'
-              }
+              theme={product.previewTheme ?? 'rose'}
+              coverStyle={product.coverStyle}
             />
           </div>
 

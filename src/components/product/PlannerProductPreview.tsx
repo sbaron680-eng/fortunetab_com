@@ -11,6 +11,7 @@ import PlannerPreviewCanvas from '@/components/planner/PlannerPreviewCanvas';
 import PreviewLightbox from '@/components/ui/PreviewLightbox';
 import { PLANNER_YEAR } from '@/lib/products';
 import type { PageType } from '@/lib/pdf-generator';
+import type { CoverStyle } from '@/lib/pdf-utils';
 
 const PAGES: { type: PageType; label: string; icon: string; idx: number }[] = [
   { type: 'cover',      label: '커버',    icon: '🌙', idx: 0 },
@@ -23,9 +24,10 @@ const PAGES: { type: PageType; label: string; icon: string; idx: number }[] = [
 interface Props {
   year?: number;
   theme?: string;
+  coverStyle?: CoverStyle;
 }
 
-export default function PlannerProductPreview({ year = PLANNER_YEAR, theme = 'rose' }: Props) {
+export default function PlannerProductPreview({ year = PLANNER_YEAR, theme = 'rose', coverStyle }: Props) {
   const [activeIdx, setActiveIdx] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const active = PAGES[activeIdx];
@@ -33,7 +35,7 @@ export default function PlannerProductPreview({ year = PLANNER_YEAR, theme = 'ro
   const prev = () => setActiveIdx((i) => (i === 0 ? PAGES.length - 1 : i - 1));
   const next = () => setActiveIdx((i) => (i === PAGES.length - 1 ? 0 : i + 1));
 
-  const opts = { orientation: 'portrait' as const, year, theme, name: '나의 플래너' };
+  const opts = { orientation: 'portrait' as const, year, theme, coverStyle, name: '나의 플래너' };
 
   return (
     <div className="flex flex-col gap-4">

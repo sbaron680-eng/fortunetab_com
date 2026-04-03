@@ -1,15 +1,11 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import { useCartStore, useToastStore } from '@/lib/store';
 import { formatPrice, PLANNER_YEAR } from '@/lib/products';
 import { usePromotions } from '@/lib/usePromotions';
 import PlannerPreviewCanvas from '@/components/planner/PlannerPreviewCanvas';
 import type { Product } from '@/types';
-
-/** Canva 커버 이미지의 한글이 양호한 상품 — 정적 이미지 사용 */
-const STATIC_COVER_SLUGS = new Set(['saju-planner-premium', 'practice-planner']);
 
 const BADGE_STYLES: Record<string, string> = {
   green: 'bg-ft-red text-white',
@@ -45,26 +41,15 @@ export default function ProductCard({ product, priority = false }: Props) {
         </span>
       )}
 
-      {/* 상품 미리보기 — 정적 커버 이미지 or 실시간 캔버스 렌더링 */}
+      {/* 상품 미리보기 — 실시간 캔버스 렌더링 (상세 페이지와 동일) */}
       <Link href={`/products/${product.slug}`} className="block overflow-hidden bg-[#0f0e17]">
         <div className="flex items-center justify-center py-6 group-hover:scale-[1.03] transition-transform duration-500">
-          {STATIC_COVER_SLUGS.has(product.slug) ? (
-            <Image
-              src={product.thumbnailImage}
-              alt={product.name}
-              width={180}
-              height={255}
-              priority={priority}
-              className="rounded-lg shadow-xl object-cover"
-            />
-          ) : (
-            <PlannerPreviewCanvas
-              pageType="cover"
-              opts={{ orientation: 'portrait', year: PLANNER_YEAR, theme: product.previewTheme ?? 'rose', coverStyle: product.coverStyle, name: '' }}
-              displayWidth={180}
-              className="shadow-xl"
-            />
-          )}
+          <PlannerPreviewCanvas
+            pageType="cover"
+            opts={{ orientation: 'portrait', year: PLANNER_YEAR, theme: product.previewTheme ?? 'rose', coverStyle: product.coverStyle, name: '' }}
+            displayWidth={180}
+            className="shadow-xl"
+          />
         </div>
       </Link>
 
