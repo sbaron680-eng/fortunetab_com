@@ -39,11 +39,15 @@ export default function StepGenerate({ phase }: Props) {
         const token = session?.access_token;
         if (!token) throw new Error('로그인이 필요합니다');
 
-        const res = await fetch('/api/generate', {
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+        const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+        const res = await fetch(`${supabaseUrl}/functions/v1/generate`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`,
+            'apikey': anonKey,
           },
           body: JSON.stringify({
             mode,
@@ -57,14 +61,15 @@ export default function StepGenerate({ phase }: Props) {
           }),
         });
 
-        // 404 = API 라우트 미배포 (static export)
+        // Edge Function 미배포 시
         if (res.status === 404) {
           setApiUnavailable(true);
           return;
         }
-        if (!res.ok) throw new Error('AI 생성 실패');
+
         const data = await res.json();
-        setResult(data);
+        if (!data?.ok) throw new Error(data?.error || 'AI 생성 실패');
+        setResult({ story: data.story, actions: data.actions, brake: data.brake });
       } catch (err) {
         // fetch 자체 실패 또는 HTML 404 페이지 반환 시
         if (err instanceof TypeError || (err instanceof Error && err.message.includes('JSON'))) {

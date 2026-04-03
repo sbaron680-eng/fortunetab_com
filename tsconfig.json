@@ -37,6 +37,7 @@
   ],
   "exclude": [
     "node_modules",
-    "pdf-server"
+    "pdf-server",
+    "supabase/functions"
   ]
 }
