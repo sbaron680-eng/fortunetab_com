@@ -60,6 +60,34 @@ function SuccessContent() {
           throw new Error(confirmData.error || '결제 승인에 실패했습니다.');
         }
 
+        // 명발굴 세션 결제 처리
+        const pendingSession = typeof window !== 'undefined'
+          ? JSON.parse(sessionStorage.getItem('ft_pending_session') || 'null')
+          : null;
+
+        if (pendingSession && user) {
+          const { data } = await supabase.from('ft_sessions').insert({
+            user_id: user.id,
+            mode: pendingSession.mode ?? 'gen',
+            fortune_score: pendingSession.fortuneScore,
+            daun_phase: pendingSession.daunPhase,
+            answers: {
+              step1: pendingSession.answers?.step1,
+              step2: pendingSession.answers?.step2,
+              step3: pendingSession.answers?.step3,
+              step4Brake: pendingSession.answers?.step4Brake,
+              firstSprout: pendingSession.answers?.firstSprout,
+            },
+            result: pendingSession.result,
+            payment_type: 'single' as const,
+          }).select('id').single();
+
+          sessionStorage.removeItem('ft_pending_session');
+          clearCart();
+          router.push(data ? `/session/result?id=${data.id}` : '/session/result');
+          return;
+        }
+
         // fortune 단건 구매 처리
         const fortuneCheckout = typeof window !== 'undefined'
           ? JSON.parse(sessionStorage.getItem('fortune-checkout') || 'null')

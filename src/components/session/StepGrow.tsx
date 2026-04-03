@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSessionStore } from '@/lib/stores/session';
-import { useAuthStore } from '@/lib/store';
+import { useAuthStore, useCartStore } from '@/lib/store';
 import { supabase } from '@/lib/supabase';
 import type { PaymentType } from '@/lib/supabase';
+import type { Product } from '@/types';
 
 const GROW_LABELS = [
   { key: 'ground', letter: 'G', name: 'Ground', desc: '지금 바로 땅에 심을 수 있는 행동', color: 'bg-emerald-50 border-emerald-200' },
@@ -146,39 +147,45 @@ export default function StepGrow() {
     }
   }
 
-  async function handleSingleCheckout() {
+  function handleSingleCheckout() {
     setIsCheckingOut(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-      if (!token) return;
 
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-      const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+    // 세션 데이터를 임시 저장 (결제 완료 후 복구용)
+    sessionStorage.setItem('ft_pending_session', JSON.stringify({
+      mode, fortuneScore, daunPhase, answers, result,
+    }));
 
-      const res = await fetch(`${supabaseUrl}/functions/v1/checkout`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          'apikey': anonKey,
-        },
-        body: JSON.stringify({ plan: 'single' }),
-      });
+    // 가상 세션 상품을 카트에 추가 후 /checkout 이동
+    const { clearCart, addItem } = useCartStore.getState();
+    const sessionProduct: Product = {
+      id: 'ft-session-single',
+      slug: 'ft-session-single',
+      name: '명발굴 세션 (1회)',
+      subtitle: 'AI 기반 잠재의식 발굴 세션',
+      price: 3900,
+      originalPrice: null,
+      badge: null,
+      badgeColor: 'gold',
+      images: [],
+      thumbnailImage: '',
+      shortDescription: '명발굴 세션 단건 결제',
+      description: '',
+      features: [],
+      specs: [],
+      downloadUrl: null,
+      category: 'basic',
+      inStock: true,
+      seo: { title: '', description: '', keywords: [] },
+    };
 
-      const data = await res.json();
-      if (!res.ok || !data?.ok) throw new Error(data?.error || '결제 페이지 생성 실패');
-      const { url } = data;
+    clearCart();
+    addItem(sessionProduct);
 
-      // 세션 데이터를 임시 저장 (결제 완료 후 복구용)
-      sessionStorage.setItem('ft_pending_session', JSON.stringify({
-        mode, fortuneScore, daunPhase, answers, result,
-      }));
-
-      window.location.href = url;
-    } finally {
+    // 100ms 후 이동 (localStorage 동기화 대기)
+    setTimeout(() => {
+      router.push('/checkout');
       setIsCheckingOut(false);
-    }
+    }, 100);
   }
 
   return (
