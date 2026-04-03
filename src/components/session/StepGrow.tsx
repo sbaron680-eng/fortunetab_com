@@ -153,17 +153,22 @@ export default function StepGrow() {
       const token = session?.access_token;
       if (!token) return;
 
-      const res = await fetch('/api/payments/checkout', {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+      const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+      const res = await fetch(`${supabaseUrl}/functions/v1/checkout`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
+          'apikey': anonKey,
         },
         body: JSON.stringify({ plan: 'single' }),
       });
 
-      if (!res.ok) throw new Error('결제 페이지 생성 실패');
-      const { url } = await res.json();
+      const data = await res.json();
+      if (!res.ok || !data?.ok) throw new Error(data?.error || '결제 페이지 생성 실패');
+      const { url } = data;
 
       // 세션 데이터를 임시 저장 (결제 완료 후 복구용)
       sessionStorage.setItem('ft_pending_session', JSON.stringify({
