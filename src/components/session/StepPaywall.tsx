@@ -14,7 +14,7 @@ export default function StepPaywall() {
   const router = useRouter();
   const { user } = useAuthStore();
   const {
-    mode, fortuneScore, daunPhase, answers,
+    mode, fortuneScore, fortunePercent, daunPhase, gradeLabel, answers,
     nextStep, prevStep, setPaid,
   } = useSessionStore();
 
@@ -138,7 +138,7 @@ export default function StepPaywall() {
   function handleSingleCheckout() {
     // 세션 데이터를 임시 저장 (결제 완료 후 복구용)
     sessionStorage.setItem('ft_pending_session', JSON.stringify({
-      mode, fortuneScore, daunPhase, answers,
+      mode, fortuneScore, fortunePercent, daunPhase, gradeLabel, answers,
     }));
 
     // 가상 세션 상품을 카트에 추가 후 /checkout 이동

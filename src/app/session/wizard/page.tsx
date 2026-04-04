@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSessionStore } from '@/lib/stores/session';
+import type { SessionAnswers } from '@/lib/stores/session';
 import StepFortune from '@/components/session/StepFortune';
 import StepQuestion from '@/components/session/StepQuestion';
 import StepPaywall from '@/components/session/StepPaywall';
@@ -22,14 +23,60 @@ const STEP_LABELS = [
 
 export default function SessionWizardPage() {
   const router = useRouter();
-  const { currentStep, mode } = useSessionStore();
+  const {
+    currentStep, mode,
+    setMode, setStep, setAnswer, setFortuneScore, setPaid,
+  } = useSessionStore();
+  const [isRestoring, setIsRestoring] = useState(true);
 
-  // 모드 미선택 시 시작 페이지로
+  // 결제 복귀 시 sessionStorage에서 Zustand 스토어 복원
   useEffect(() => {
-    if (!mode) router.replace('/session');
-  }, [mode, router]);
+    const paid = sessionStorage.getItem('ft_paid');
+    const pendingRaw = sessionStorage.getItem('ft_pending_session');
 
-  if (!mode) return null;
+    if (paid && pendingRaw) {
+      try {
+        const pending = JSON.parse(pendingRaw);
+
+        // 스토어 복원
+        if (pending.mode) setMode(pending.mode);
+        if (pending.fortuneScore != null) {
+          setFortuneScore(
+            pending.fortuneScore,
+            pending.fortunePercent ?? 50,
+            pending.daunPhase ?? '안정기',
+            pending.gradeLabel ?? '중립',
+          );
+        }
+        if (pending.answers) {
+          for (const [key, value] of Object.entries(pending.answers)) {
+            if (typeof value === 'string') {
+              setAnswer(key as keyof SessionAnswers, value);
+            }
+          }
+        }
+
+        // 결제 완료 → Step 5(AI 생성)로 직행
+        setPaid(true);
+        setStep(5);
+
+        sessionStorage.removeItem('ft_paid');
+        sessionStorage.removeItem('ft_pending_session');
+      } catch {
+        // 파싱 실패 시 무시
+      }
+    }
+
+    setIsRestoring(false);
+  }, [setMode, setStep, setAnswer, setFortuneScore, setPaid]);
+
+  // 모드 미선택 시 시작 페이지로 (복원 완료 후에만 체크)
+  useEffect(() => {
+    if (!isRestoring && !mode) router.replace('/session');
+  }, [isRestoring, mode, router]);
+
+  // 복원 중이거나 모드 없으면 렌더링 안 함
+  if (isRestoring || !mode) return null;
 
   function renderStep() {
     switch (currentStep) {
