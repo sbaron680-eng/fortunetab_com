@@ -48,11 +48,15 @@ function SuccessContent() {
 
     (async () => {
       try {
-        // 토스페이먼츠 결제 최종 승인 (서버 → 토스 API)
-        const confirmUrl = process.env.NEXT_PUBLIC_FORTUNE_API_URL!;
-        const confirmRes = await fetch(`${confirmUrl}/payments/confirm`, {
+        // 토스페이먼츠 결제 최종 승인 (Supabase Edge Function → 토스 API)
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+        const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+        const confirmRes = await fetch(`${supabaseUrl}/functions/v1/confirm-payment`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': anonKey,
+          },
           body: JSON.stringify({ paymentKey, orderId, amount, paymentType }),
         });
         const confirmData = await confirmRes.json();
