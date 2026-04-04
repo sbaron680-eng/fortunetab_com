@@ -118,35 +118,6 @@ export default function StepGenerate({ phase }: Props) {
     );
   }
 
-  // 비로그인 시 로그인 유도
-  if (!user) {
-    return (
-      <div className="bg-white border border-ft-border rounded-2xl p-8 text-center">
-        <p className="font-serif text-lg font-bold text-ft-ink mb-2">
-          로그인이 필요합니다
-        </p>
-        <p className="text-sm text-ft-muted mb-6">
-          AI 분석을 진행하려면 로그인해 주세요.<br />
-          입력한 내용은 로그인 후에도 유지됩니다.
-        </p>
-        <div className="flex gap-3 justify-center">
-          <button
-            onClick={prevStep}
-            className="px-6 py-2 rounded-xl border border-ft-border text-ft-muted text-sm font-medium"
-          >
-            이전
-          </button>
-          <Link
-            href="/auth/login"
-            className="px-6 py-2 rounded-xl bg-ft-ink text-white text-sm font-medium"
-          >
-            로그인하기
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
   // 로딩 상태
   if (isGenerating) {
     return (

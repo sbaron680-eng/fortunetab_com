@@ -1,12 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSessionStore } from '@/lib/stores/session';
-import { useAuthStore, useCartStore } from '@/lib/store';
+import { useAuthStore } from '@/lib/store';
 import { supabase } from '@/lib/supabase';
-import type { PaymentType } from '@/lib/supabase';
-import type { Product } from '@/types';
 
 const GROW_LABELS = [
   { key: 'ground', letter: 'G', name: 'Ground', desc: '지금 바로 땅에 심을 수 있는 행동', color: 'bg-emerald-50 border-emerald-200' },
@@ -14,8 +12,6 @@ const GROW_LABELS = [
   { key: 'open', letter: 'O', name: 'Open', desc: '새로운 가능성을 여는 행동', color: 'bg-blue-50 border-blue-200' },
   { key: 'water', letter: 'W', name: 'Water', desc: '지속적으로 물주는 습관', color: 'bg-cyan-50 border-cyan-200' },
 ] as const;
-
-type AccessType = 'subscription' | 'credits' | 'none';
 
 export default function StepGrow() {
   const router = useRouter();
@@ -25,167 +21,54 @@ export default function StepGrow() {
     setAnswer, setSessionId, prevStep,
   } = useSessionStore();
   const [isSaving, setIsSaving] = useState(false);
-  const [isCheckingOut, setIsCheckingOut] = useState(false);
-  const [accessType, setAccessType] = useState<AccessType>('none');
-  const [isAccessLoading, setIsAccessLoading] = useState(true);
-
-  // 결제 상태 확인: 구독 or 포인트 보유 여부
-  useEffect(() => {
-    if (!user) { setIsAccessLoading(false); return; }
-
-    async function checkAccess() {
-      // 1. 활성 구독 확인
-      const { data: sub } = await supabase
-        .from('subscriptions')
-        .select('status')
-        .eq('user_id', user!.id)
-        .eq('service', 'ft')
-        .eq('status', 'active')
-        .maybeSingle();
-
-      if (sub) { setAccessType('subscription'); setIsAccessLoading(false); return; }
-
-      // 2. 크레딧 잔액 확인
-      const { data: credit } = await supabase
-        .from('credits')
-        .select('balance, expires_at')
-        .eq('user_id', user!.id)
-        .eq('service', 'ft')
-        .maybeSingle();
-
-      if (credit && credit.balance > 0 && (!credit.expires_at || new Date(credit.expires_at) > new Date())) {
-        setAccessType('credits');
-        setIsAccessLoading(false);
-        return;
-      }
-
-      setAccessType('none');
-      setIsAccessLoading(false);
-    }
-
-    checkAccess();
-  }, [user]);
 
   if (!result) return null;
 
   const canFinish = answers.firstSprout.trim().length >= 5;
-
-  async function saveSession(paymentType: PaymentType) {
-    if (!result || !user) return;
-
-    const { data, error } = await supabase
-      .from('ft_sessions')
-      .insert({
-        user_id: user.id,
-        mode: mode ?? 'gen',
-        fortune_score: fortuneScore,
-        daun_phase: daunPhase,
-        answers: {
-          step1: answers.step1,
-          step2: answers.step2,
-          step3: answers.step3,
-          step4Brake: answers.step4Brake,
-          firstSprout: answers.firstSprout,
-        },
-        result: {
-          story: result.story,
-          actions: result.actions,
-          brake: result.brake,
-        },
-        payment_type: paymentType,
-      })
-      .select('id')
-      .single();
-
-    if (!error && data) {
-      setSessionId(data.id);
-      return data.id;
-    }
-    return null;
-  }
 
   async function handleFinish() {
     if (!result) return;
     setIsSaving(true);
 
     try {
-      if (!user) {
-        // 비로그인 — 결과 페이지만 (저장/PDF 불가)
-        router.push('/session/result');
-        return;
-      }
-
-      if (accessType === 'subscription') {
-        // 구독 사용자 — 바로 저장
-        const sessionId = await saveSession('subscription');
-        router.push(sessionId ? `/session/result?id=${sessionId}` : '/session/result');
-      } else if (accessType === 'credits') {
-        // 포인트 차감 후 저장
-        const { data: credit } = await supabase
-          .from('credits')
-          .select('balance')
-          .eq('user_id', user.id)
-          .eq('service', 'ft')
+      if (user) {
+        // 결제는 StepPaywall에서 이미 완료됨 — DB 저장만 수행
+        const { data, error } = await supabase
+          .from('ft_sessions')
+          .insert({
+            user_id: user.id,
+            mode: mode ?? 'gen',
+            fortune_score: fortuneScore,
+            daun_phase: daunPhase,
+            answers: {
+              step1: answers.step1,
+              step2: answers.step2,
+              step3: answers.step3,
+              step4Brake: answers.step4Brake,
+              firstSprout: answers.firstSprout,
+            },
+            result: {
+              story: result.story,
+              actions: result.actions,
+              brake: result.brake,
+            },
+            payment_type: 'single',
+          })
+          .select('id')
           .single();
 
-        if (credit && credit.balance > 0) {
-          await supabase
-            .from('credits')
-            .update({ balance: credit.balance - 1 })
-            .eq('user_id', user.id)
-            .eq('service', 'ft');
-
-          const sessionId = await saveSession('credit');
-          router.push(sessionId ? `/session/result?id=${sessionId}` : '/session/result');
+        if (!error && data) {
+          setSessionId(data.id);
+          router.push(`/session/result?id=${data.id}`);
+        } else {
+          router.push('/session/result');
         }
       } else {
-        // 단건 결제 — LS Checkout으로 이동
-        await handleSingleCheckout();
+        router.push('/session/result');
       }
     } finally {
       setIsSaving(false);
     }
-  }
-
-  function handleSingleCheckout() {
-    setIsCheckingOut(true);
-
-    // 세션 데이터를 임시 저장 (결제 완료 후 복구용)
-    sessionStorage.setItem('ft_pending_session', JSON.stringify({
-      mode, fortuneScore, daunPhase, answers, result,
-    }));
-
-    // 가상 세션 상품을 카트에 추가 후 /checkout 이동
-    const { clearCart, addItem } = useCartStore.getState();
-    const sessionProduct: Product = {
-      id: 'ft-session-single',
-      slug: 'ft-session-single',
-      name: '명발굴 세션 (1회)',
-      subtitle: 'AI 기반 잠재의식 발굴 세션',
-      price: 3900,
-      originalPrice: null,
-      badge: null,
-      badgeColor: 'gold',
-      images: [],
-      thumbnailImage: '',
-      shortDescription: '명발굴 세션 단건 결제',
-      description: '',
-      features: [],
-      specs: [],
-      downloadUrl: null,
-      category: 'basic',
-      inStock: true,
-      seo: { title: '', description: '', keywords: [] },
-    };
-
-    clearCart();
-    addItem(sessionProduct);
-
-    // 100ms 후 이동 (localStorage 동기화 대기)
-    setTimeout(() => {
-      router.push('/checkout');
-      setIsCheckingOut(false);
-    }, 100);
   }
 
   return (
@@ -240,16 +123,10 @@ export default function StepGrow() {
         </button>
         <button
           onClick={handleFinish}
-          disabled={!canFinish || isSaving || isCheckingOut || isAccessLoading}
+          disabled={!canFinish || isSaving}
           className="flex-1 py-3 rounded-xl bg-ft-ink text-white font-semibold text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:bg-ft-ink/90 transition-colors"
         >
-          {isSaving || isCheckingOut
-            ? '처리 중...'
-            : isAccessLoading
-              ? '확인 중...'
-              : accessType === 'none' && user
-                ? '결제 후 결과 보기 (₩3,900)'
-                : '세션 완료'}
+          {isSaving ? '저장 중...' : '세션 완료'}
         </button>
       </div>
     </div>

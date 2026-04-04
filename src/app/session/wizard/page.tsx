@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useSessionStore } from '@/lib/stores/session';
 import StepFortune from '@/components/session/StepFortune';
 import StepQuestion from '@/components/session/StepQuestion';
+import StepPaywall from '@/components/session/StepPaywall';
 import StepGenerate from '@/components/session/StepGenerate';
 import StepGrow from '@/components/session/StepGrow';
 
@@ -13,6 +14,7 @@ const STEP_LABELS = [
   '막힘 진단',
   '수확 장면',
   '지금 목소리',
+  '결제',
   '운명 흐름',
   '실행 브레이크',
   '뿌리 행동',
@@ -20,7 +22,7 @@ const STEP_LABELS = [
 
 export default function SessionWizardPage() {
   const router = useRouter();
-  const { currentStep, mode, result } = useSessionStore();
+  const { currentStep, mode } = useSessionStore();
 
   // 모드 미선택 시 시작 페이지로
   useEffect(() => {
@@ -58,10 +60,12 @@ export default function SessionWizardPage() {
           />
         );
       case 4:
-        return <StepGenerate phase="story" />;
+        return <StepPaywall />;
       case 5:
-        return <StepGenerate phase="brake" />;
+        return <StepGenerate phase="story" />;
       case 6:
+        return <StepGenerate phase="brake" />;
+      case 7:
         return <StepGrow />;
       default:
         return null;
@@ -75,7 +79,7 @@ export default function SessionWizardPage() {
         <div className="mb-8">
           <div className="flex justify-between items-center mb-2">
             <span className="text-xs text-ft-muted">
-              Step {currentStep} / 6
+              Step {currentStep} / 7
             </span>
             <span className="text-xs font-medium text-ft-ink">
               {STEP_LABELS[currentStep]}
@@ -84,7 +88,7 @@ export default function SessionWizardPage() {
           <div className="h-1.5 bg-ft-border rounded-full overflow-hidden">
             <div
               className="h-full bg-ft-ink rounded-full transition-all duration-500"
-              style={{ width: `${((currentStep + 1) / 7) * 100}%` }}
+              style={{ width: `${((currentStep + 1) / 8) * 100}%` }}
             />
           </div>
         </div>

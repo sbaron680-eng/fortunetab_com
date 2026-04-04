@@ -64,31 +64,17 @@ function SuccessContent() {
           throw new Error(confirmData.error || '결제 승인에 실패했습니다.');
         }
 
-        // 명발굴 세션 결제 처리
+        // 명발굴 세션 결제 처리 — 결제 완료 후 wizard로 복귀하여 AI 생성 진행
         const pendingSession = typeof window !== 'undefined'
           ? JSON.parse(sessionStorage.getItem('ft_pending_session') || 'null')
           : null;
 
-        if (pendingSession && user) {
-          const { data } = await supabase.from('ft_sessions').insert({
-            user_id: user.id,
-            mode: pendingSession.mode ?? 'gen',
-            fortune_score: pendingSession.fortuneScore,
-            daun_phase: pendingSession.daunPhase,
-            answers: {
-              step1: pendingSession.answers?.step1,
-              step2: pendingSession.answers?.step2,
-              step3: pendingSession.answers?.step3,
-              step4Brake: pendingSession.answers?.step4Brake,
-              firstSprout: pendingSession.answers?.firstSprout,
-            },
-            result: pendingSession.result,
-            payment_type: 'single' as const,
-          }).select('id').single();
-
-          sessionStorage.removeItem('ft_pending_session');
+        if (pendingSession) {
+          // ft_pending_session은 유지 — StepPaywall에서 감지하여 다음 단계로 진행
+          // isPaid 플래그를 sessionStorage에 추가
+          sessionStorage.setItem('ft_paid', 'true');
           clearCart();
-          router.push(data ? `/session/result?id=${data.id}` : '/session/result');
+          router.push('/session/wizard');
           return;
         }
 

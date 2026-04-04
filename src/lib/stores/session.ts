@@ -41,9 +41,10 @@ export interface GenerateResult {
 
 interface SessionState {
   // 진행 상태
-  currentStep: number;       // 0~6
+  currentStep: number;       // 0~7
   mode: UserMode | null;
   isGenerating: boolean;
+  isPaid: boolean;           // 결제 완료 여부 (Step 4 게이트)
 
   // Fortune Score
   fortuneScore: number | null;
@@ -70,6 +71,7 @@ interface SessionState {
   setGenerating: (v: boolean) => void;
   setResult: (result: GenerateResult) => void;
   setSessionId: (id: string) => void;
+  setPaid: (v: boolean) => void;
   reset: () => void;
 }
 
@@ -89,6 +91,7 @@ export const useSessionStore = create<SessionState>()((set) => ({
   currentStep: 0,
   mode: null,
   isGenerating: false,
+  isPaid: false,
   fortuneScore: null,
   fortunePercent: null,
   daunPhase: null,
@@ -99,7 +102,7 @@ export const useSessionStore = create<SessionState>()((set) => ({
 
   setMode: (mode) => set({ mode }),
   setStep: (step) => set({ currentStep: step }),
-  nextStep: () => set((s) => ({ currentStep: Math.min(s.currentStep + 1, 6) })),
+  nextStep: () => set((s) => ({ currentStep: Math.min(s.currentStep + 1, 7) })),
   prevStep: () => set((s) => ({ currentStep: Math.max(s.currentStep - 1, 0) })),
   setAnswer: (key, value) =>
     set((s) => ({ answers: { ...s.answers, [key]: value } })),
@@ -108,11 +111,13 @@ export const useSessionStore = create<SessionState>()((set) => ({
   setGenerating: (v) => set({ isGenerating: v }),
   setResult: (result) => set({ result }),
   setSessionId: (id) => set({ sessionId: id }),
+  setPaid: (v) => set({ isPaid: v }),
   reset: () =>
     set({
       currentStep: 0,
       mode: null,
       isGenerating: false,
+      isPaid: false,
       fortuneScore: null,
       fortunePercent: null,
       daunPhase: null,
