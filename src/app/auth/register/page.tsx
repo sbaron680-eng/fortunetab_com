@@ -89,7 +89,7 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-ft-paper py-12 px-4">
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-md animate-fade-in">
         <div className="bg-white border border-ft-border rounded-2xl shadow-sm p-8">
           {/* 헤더 */}
           <div className="text-center mb-8">
@@ -212,7 +212,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3.5 font-bold text-white bg-ft-ink rounded-xl hover:bg-ft-ink-mid transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2"
+              className="w-full py-3.5 font-bold text-white bg-ft-ink rounded-xl hover:bg-ft-ink/90 btn-press transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2"
             >
               {isLoading && (
                 <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
@@ -236,7 +236,7 @@ export default function RegisterPage() {
             <button
               onClick={() => loginWithOAuth('google')}
               disabled={isLoading}
-              className="w-full flex items-center justify-center gap-3 py-3 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-3 py-3 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 btn-press transition-all disabled:opacity-50"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
@@ -249,7 +249,7 @@ export default function RegisterPage() {
             <button
               onClick={() => loginWithOAuth('kakao')}
               disabled={isLoading}
-              className="w-full flex items-center justify-center gap-3 py-3 bg-[#FEE500] rounded-xl text-sm font-medium text-[#191919] hover:bg-[#FDD800] transition-all disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-3 py-3 bg-[#FEE500] rounded-xl text-sm font-medium text-[#191919] hover:bg-[#FDD800] btn-press transition-all disabled:opacity-50"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path fill="#191919" d="M12 3C6.48 3 2 6.48 2 10.8c0 2.78 1.86 5.22 4.66 6.6-.14.52-.9 3.34-.93 3.55 0 0-.02.17.09.23.11.07.24.01.24.01.32-.04 3.7-2.44 4.28-2.85.54.08 1.1.12 1.66.12 5.52 0 10-3.48 10-7.8S17.52 3 12 3" />

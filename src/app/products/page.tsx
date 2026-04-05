@@ -11,11 +11,12 @@ export const metadata: Metadata = {
 
 export default function ProductsPage() {
   return (
-    <div className="min-h-screen bg-ft-paper py-10 px-4">
+    <div className="min-h-screen bg-ft-paper py-20 px-6">
       <div className="max-w-6xl mx-auto">
         {/* 페이지 헤더 */}
-        <div className="mb-8">
-          <h1 className="text-2xl sm:text-3xl font-black text-ft-ink">플래너 상품</h1>
+        <div className="mb-10">
+          <p className="text-xs font-semibold text-ft-red uppercase tracking-[0.2em] mb-3">플래너 라인업</p>
+          <h1 className="text-2xl sm:text-3xl font-serif font-black text-ft-ink">플래너 상품</h1>
           <p className="mt-2 text-ft-muted text-sm">
             나에게 맞는 플래너를 선택하세요. 무료 체험 후 업그레이드하실 수 있습니다.
           </p>
@@ -26,8 +27,8 @@ export default function ProductsPage() {
 
         {/* 비교 안내 */}
         {/* ── 사주 플래너 비교표 ────────────────────────────────── */}
-        <div className="mt-12 bg-white rounded-2xl p-6 shadow-sm border border-ft-border">
-          <h2 className="text-lg font-bold text-ft-ink mb-1">사주 플래너 비교</h2>
+        <div className="mt-12 bg-white rounded-2xl p-6 shadow-sm border border-ft-border hover-lift">
+          <h2 className="text-lg font-serif font-bold text-ft-ink mb-1">사주 플래너 비교</h2>
           <p className="text-xs text-ft-muted mb-4">무료 체험 → 기본 → 프리미엄 순서로 업그레이드할 수 있습니다</p>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -66,8 +67,8 @@ export default function ProductsPage() {
         </div>
 
         {/* ── 부록 플래너 비교표 ────────────────────────────────── */}
-        <div className="mt-6 bg-white rounded-2xl p-6 shadow-sm border border-ft-border">
-          <h2 className="text-lg font-bold text-ft-ink mb-1">부록 · 실천 플래너 비교</h2>
+        <div className="mt-6 bg-white rounded-2xl p-6 shadow-sm border border-ft-border hover-lift">
+          <h2 className="text-lg font-serif font-bold text-ft-ink mb-1">부록 · 실천 플래너 비교</h2>
           <p className="text-xs text-ft-muted mb-4">기본 플래너에 추가할 수 있는 부록 페이지 세트</p>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">

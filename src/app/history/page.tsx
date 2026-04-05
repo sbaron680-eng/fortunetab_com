@@ -53,8 +53,8 @@ export default function HistoryPage() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-ft-paper py-12 px-4">
-      <div className="max-w-2xl mx-auto">
+    <div className="min-h-[calc(100vh-4rem)] bg-ft-paper py-20 px-6">
+      <div className="max-w-2xl mx-auto animate-fade-in">
         {/* 헤더 */}
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -63,7 +63,7 @@ export default function HistoryPage() {
           </div>
           <Link
             href="/session"
-            className="px-4 py-2 rounded-xl bg-ft-ink text-white text-sm font-medium hover:bg-ft-ink/90 transition-colors"
+            className="px-4 py-2 rounded-xl bg-ft-ink text-white text-sm font-medium hover:bg-ft-ink/90 btn-press transition-colors"
           >
             새 세션
           </Link>
@@ -76,7 +76,7 @@ export default function HistoryPage() {
             <p className="text-ft-muted mb-4">아직 완료된 세션이 없습니다</p>
             <Link
               href="/session"
-              className="inline-block px-6 py-2 rounded-xl bg-ft-ink text-white text-sm font-medium"
+              className="inline-block px-6 py-2 rounded-xl bg-ft-ink text-white text-sm font-medium btn-press hover:bg-ft-ink/90 transition-colors"
             >
               첫 세션 시작하기
             </Link>
@@ -98,7 +98,7 @@ export default function HistoryPage() {
             return (
               <div
                 key={s.id}
-                className="bg-white border border-ft-border rounded-2xl p-5 hover:shadow-sm transition-shadow"
+                className="bg-white border border-ft-border rounded-2xl p-5 hover-lift transition-all"
               >
                 <div className="flex items-start justify-between mb-3">
                   <div>

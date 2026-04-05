@@ -5,7 +5,7 @@ export default function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-ft-ink text-white/50 mt-auto border-t-2 border-ft-gold/30">
+    <footer className="bg-ft-ink text-white/60 mt-auto border-t-2 border-ft-gold/30">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
 
         {/* ── 단일 그리드: 브랜드(2col) + 쇼핑 + 안내 ── */}
@@ -39,7 +39,7 @@ export default function Footer() {
             </div>
 
             {/* 하단: 사업자 정보 (브랜드와 같은 컬럼에 자연스럽게 배치) */}
-            <div className="text-xs space-y-1.5 text-white/35">
+            <div className="text-xs space-y-1.5 text-white/45">
               <p>상호: 비포에이 &nbsp;|&nbsp; 대표: 박성준 &nbsp;|&nbsp; 사업자등록번호: 238-18-00745</p>
               <p>통신판매업신고: 제 2019-울산울주-0053호</p>
               <p>사업장 주소: 울산광역시 울주군 범서읍 대리로 43, 108동 1406호(구영1주공아파트)</p>
@@ -83,7 +83,7 @@ export default function Footer() {
         </div>
 
         {/* ── 카피라이트 ── */}
-        <p className="mt-12 text-xs text-white/20">
+        <p className="mt-12 text-xs text-white/30">
           © {currentYear} FortuneTab · 비포에이. All rights reserved.
         </p>
 

@@ -103,7 +103,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <main className="max-w-xl mx-auto px-4 py-12">
+    <main className="max-w-xl mx-auto px-6 py-20 animate-fade-in">
       {/* 헤더 */}
       <div className="mb-8">
         <Link href="/dashboard" className="text-sm text-ft-muted hover:text-ft-body transition-colors">
@@ -205,7 +205,7 @@ export default function SettingsPage() {
                 key={v}
                 type="button"
                 onClick={() => setGender(v)}
-                className={`flex-1 py-2.5 rounded-xl text-sm font-medium border-2 transition-all ${
+                className={`btn-press flex-1 py-2.5 rounded-xl text-sm font-medium border-2 transition-all ${
                   gender === v
                     ? 'bg-ft-ink text-white border-ft-ink'
                     : 'bg-white border-ft-border text-ft-body hover:bg-ft-paper-alt'
@@ -227,7 +227,7 @@ export default function SettingsPage() {
         <button
           onClick={handleSave}
           disabled={!canSave || saving}
-          className="w-full py-3 rounded-xl text-sm font-bold bg-ft-red text-white hover:bg-ft-red-h transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full py-3 rounded-xl text-sm font-bold bg-ft-red text-white hover:bg-ft-red-h btn-press transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {saving ? '저장 중…' : '저장하기'}
         </button>

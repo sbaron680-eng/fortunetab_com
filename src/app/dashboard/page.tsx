@@ -59,17 +59,40 @@ export default function DashboardPage() {
 
   if (!isAuthReady || fetching) {
     return (
-      <div className="min-h-[calc(100vh-4rem)] bg-ft-paper flex items-center justify-center">
-        <svg className="animate-spin w-7 h-7 text-ft-ink" fill="none" viewBox="0 0 24 24">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-        </svg>
+      <div className="min-h-[calc(100vh-4rem)] bg-ft-paper py-10 px-4">
+        <div className="max-w-3xl mx-auto space-y-6">
+          {/* 프로필 헤더 스켈레톤 */}
+          <div className="bg-white border border-ft-border rounded-2xl p-6">
+            <div className="flex items-center justify-between">
+              <div className="space-y-2">
+                <div className="skeleton h-3 w-16" />
+                <div className="skeleton h-5 w-28" />
+                <div className="skeleton h-4 w-40" />
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="skeleton h-8 w-20 rounded-lg" />
+                <div className="skeleton h-8 w-20 rounded-lg" />
+              </div>
+            </div>
+          </div>
+          {/* 주문 내역 스켈레톤 */}
+          <div className="bg-white border border-ft-border rounded-2xl overflow-hidden">
+            <div className="p-5 border-b border-ft-border">
+              <div className="skeleton h-5 w-24" />
+            </div>
+            <div className="space-y-4 p-5">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="skeleton h-24 w-full" />
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-ft-paper py-10 px-4">
+    <div className="min-h-[calc(100vh-4rem)] bg-ft-paper py-10 px-4 animate-fade-in">
       <div className="max-w-3xl mx-auto space-y-6">
 
         {/* 프로필 헤더 */}
@@ -110,19 +133,27 @@ export default function DashboardPage() {
           </div>
 
           {orders.length === 0 ? (
-            <div className="p-12 text-center">
-              <p className="text-ft-muted text-sm mb-4">아직 주문 내역이 없습니다.</p>
+            <div className="p-16 text-center">
+              <div className="text-5xl mb-4">📋</div>
+              <h3 className="text-lg font-bold text-ft-ink mb-2">아직 주문 내역이 없습니다</h3>
+              <p className="text-sm text-ft-muted mb-6 max-w-xs mx-auto">
+                사주 기반 맞춤 플래너로 나만의 한 해를 설계해 보세요.
+              </p>
               <Link
                 href="/products"
-                className="inline-block px-5 py-2.5 bg-ft-gold text-ft-ink font-bold rounded-xl text-sm hover:bg-ft-gold-h transition-colors"
+                className="inline-block px-6 py-3 bg-ft-gold text-ft-ink font-bold rounded-xl text-sm hover:bg-ft-gold-h transition-colors btn-press"
               >
-                플래너 둘러보기
+                플래너 둘러보기 →
               </Link>
             </div>
           ) : (
             <div className="divide-y divide-ft-border">
-              {orders.map((order) => (
-                <div key={order.id} className="p-5">
+              {orders.map((order, index) => (
+                <div
+                  key={order.id}
+                  className="p-5 hover-lift animate-stagger-in"
+                  style={{ animationDelay: `${index * 0.08}s` }}
+                >
                   {/* 주문번호 + 상태 + 날짜 */}
                   <div className="flex items-start justify-between mb-3">
                     <div>

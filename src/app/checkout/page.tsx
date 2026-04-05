@@ -264,7 +264,7 @@ export default function CheckoutPage() {
   if (mounted && fortuneInfo) {
     if (!user) {
       return (
-        <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center py-20 px-4 text-center">
+        <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center py-20 px-6 text-center animate-fade-in">
           <div className="text-5xl mb-4">🔒</div>
           <h1 className="text-xl font-bold text-ft-ink mb-2">로그인이 필요합니다</h1>
           <p className="text-sm text-ft-muted mb-6">AI 운세 분석을 구매하려면 로그인해 주세요.</p>
@@ -279,7 +279,7 @@ export default function CheckoutPage() {
     }
 
     return (
-      <div className="min-h-[calc(100vh-4rem)] bg-ft-paper py-10 px-4">
+      <div className="min-h-[calc(100vh-4rem)] bg-ft-paper py-20 px-6 animate-fade-in">
         <div className="max-w-lg mx-auto">
           <h1 className="text-2xl font-black font-serif text-ft-ink mb-6">AI 운세 결제</h1>
 
@@ -378,7 +378,7 @@ export default function CheckoutPage() {
           <button
             onClick={handleFortunePayment}
             disabled={isSubmitting || (paymentMethod === 'domestic' ? !widgetReady : !paypalWidgetReady)}
-            className={`w-full py-4 font-bold rounded-2xl transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${
+            className={`btn-press w-full py-4 font-bold rounded-2xl transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${
               paymentMethod === 'paypal'
                 ? 'text-white bg-[#0070ba] hover:bg-[#005ea6]'
                 : 'text-ft-navy bg-ft-gold hover:bg-ft-gold-h'
@@ -413,10 +413,15 @@ export default function CheckoutPage() {
   // ── 빈 카트 ────────────────────────────────────────────
   if (items.length === 0 && step !== 'complete') {
     return (
-      <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center py-20 px-4 text-center">
-        <div className="text-7xl mb-6">🛒</div>
-        <h1 className="text-2xl font-bold text-gray-800 mb-2">장바구니가 비어 있습니다</h1>
-        <Link href="/products" className="mt-4 px-8 py-4 font-bold text-white bg-ft-ink rounded-2xl hover:bg-ft-ink-mid transition-colors">
+      <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center py-20 px-6 text-center animate-fade-in bg-ft-paper">
+        <div className="w-24 h-24 mb-6 flex items-center justify-center bg-ft-paper-alt rounded-full">
+          <svg className="w-12 h-12 text-ft-muted" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+          </svg>
+        </div>
+        <h1 className="text-2xl font-black font-serif text-ft-ink mb-2">장바구니가 비어 있습니다</h1>
+        <p className="text-ft-muted mb-8">마음에 드는 플래너를 담아보세요!</p>
+        <Link href="/products" className="px-8 py-4 font-bold text-white bg-ft-navy rounded-2xl hover:bg-ft-ink transition-colors shadow-lg hover-lift btn-press">
           상품 보러 가기 →
         </Link>
       </div>
@@ -463,7 +468,7 @@ export default function CheckoutPage() {
                   ? `/download?mode=fortune&orderId=${orderNumber}`
                   : '/download'
               }
-              className="block w-full py-3.5 font-bold text-ft-navy bg-ft-gold rounded-xl hover:bg-ft-gold-h transition-colors text-center"
+              className="block w-full py-3.5 font-bold text-ft-navy bg-ft-gold rounded-xl hover:bg-ft-gold-h btn-press transition-colors text-center"
             >
               {hasSajuProduct ? '🔮 지금 바로 사주 플래너 PDF 만들기 →' : 'PDF 다운로드 →'}
             </Link>
@@ -492,7 +497,7 @@ export default function CheckoutPage() {
   ];
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-ft-paper py-10 px-4">
+    <div className="min-h-[calc(100vh-4rem)] bg-ft-paper py-20 px-6 animate-fade-in">
       <div className="max-w-5xl mx-auto">
         {/* 페이지 헤더 */}
         <div className="mb-8">

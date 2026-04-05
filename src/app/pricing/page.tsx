@@ -115,7 +115,7 @@ export default function PricingPage() {
     <div className="min-h-[calc(100vh-4rem)] bg-ft-paper py-16 px-4">
       <div className="max-w-5xl mx-auto">
         {/* 헤더 */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-12 animate-fade-in">
           <h1 className="font-serif text-3xl font-bold text-ft-ink mb-3">
             명발굴 세션 요금제
           </h1>
@@ -127,14 +127,15 @@ export default function PricingPage() {
 
         {/* 요금제 카드 */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-          {PLANS.map((plan) => (
+          {PLANS.map((plan, idx) => (
             <div
               key={plan.id}
-              className={`relative bg-white rounded-2xl p-6 flex flex-col ${
+              className={`relative bg-white rounded-2xl p-6 flex flex-col hover-lift animate-stagger-in ${
                 plan.highlight
                   ? 'border-2 border-ft-ink shadow-lg'
                   : 'border border-ft-border'
               }`}
+              style={{ animationDelay: `${idx * 0.1}s` }}
             >
               {/* 배지 */}
               {plan.badge && (
@@ -162,7 +163,7 @@ export default function PricingPage() {
               <ul className="space-y-2 mb-6 flex-1">
                 {plan.features.map((f) => (
                   <li key={f} className="flex items-start gap-2 text-sm text-ft-ink/80">
-                    <svg className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <svg className="w-4 h-4 text-ft-red shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
                     {f}
@@ -175,7 +176,7 @@ export default function PricingPage() {
                 <button
                   onClick={() => handleSelect(plan.id)}
                   disabled={loadingPlan === plan.id}
-                  className={`w-full py-3 rounded-xl font-semibold text-sm transition-colors disabled:opacity-40 ${
+                  className={`w-full py-3 rounded-xl font-semibold text-sm transition-colors disabled:opacity-40 btn-press ${
                     plan.highlight
                       ? 'bg-ft-ink text-white hover:bg-ft-ink/90'
                       : 'bg-ft-paper text-ft-ink border border-ft-border hover:bg-ft-border/30'
@@ -186,7 +187,7 @@ export default function PricingPage() {
               ) : (
                 <Link
                   href="/auth/login"
-                  className={`w-full py-3 rounded-xl font-semibold text-sm text-center block transition-colors ${
+                  className={`w-full py-3 rounded-xl font-semibold text-sm text-center block transition-colors btn-press ${
                     plan.highlight
                       ? 'bg-ft-ink text-white hover:bg-ft-ink/90'
                       : 'bg-ft-paper text-ft-ink border border-ft-border hover:bg-ft-border/30'

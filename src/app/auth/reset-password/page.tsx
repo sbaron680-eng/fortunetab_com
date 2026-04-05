@@ -94,7 +94,7 @@ function ResetPasswordForm() {
 
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-ft-paper py-12 px-4">
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-md animate-fade-in">
         <div className="bg-white border border-ft-border rounded-2xl shadow-sm p-8">
           {/* 헤더 */}
           <div className="text-center mb-8">
@@ -121,7 +121,7 @@ function ResetPasswordForm() {
               </div>
               <button
                 onClick={() => router.push('/auth/login')}
-                className="w-full py-3.5 font-bold text-white bg-ft-ink rounded-xl hover:bg-ft-ink-mid transition-colors"
+                className="w-full py-3.5 font-bold text-white bg-ft-ink rounded-xl hover:bg-ft-ink/90 btn-press transition-colors"
               >
                 로그인하러 가기
               </button>
@@ -194,7 +194,7 @@ function ResetPasswordForm() {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full py-3.5 font-bold text-white bg-ft-ink rounded-xl hover:bg-ft-ink-mid transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="w-full py-3.5 font-bold text-white bg-ft-ink rounded-xl hover:bg-ft-ink/90 btn-press transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {isLoading && (
                     <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">

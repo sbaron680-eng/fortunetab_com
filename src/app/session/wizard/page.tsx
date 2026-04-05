@@ -126,22 +126,27 @@ export default function SessionWizardPage() {
         <div className="mb-8">
           <div className="flex justify-between items-center mb-2">
             <span className="text-xs text-ft-muted">
-              Step {currentStep} / 7
+              {currentStep + 1} / 8
             </span>
-            <span className="text-xs font-medium text-ft-ink">
+            <span className="text-xs font-medium text-ft-ink tracking-wide">
               {STEP_LABELS[currentStep]}
             </span>
           </div>
-          <div className="h-1.5 bg-ft-border rounded-full overflow-hidden">
+          <div className="h-2 bg-ft-border/60 rounded-full overflow-hidden">
             <div
-              className="h-full bg-ft-ink rounded-full transition-all duration-500"
-              style={{ width: `${((currentStep + 1) / 8) * 100}%` }}
+              className="h-full rounded-full transition-all duration-700 ease-out"
+              style={{
+                width: `${((currentStep + 1) / 8) * 100}%`,
+                background: 'linear-gradient(90deg, #111111, #333333)',
+              }}
             />
           </div>
         </div>
 
         {/* 현재 Step */}
-        {renderStep()}
+        <div key={currentStep} className="animate-step-in">
+          {renderStep()}
+        </div>
       </div>
     </div>
   );

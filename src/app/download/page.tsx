@@ -203,7 +203,7 @@ export default function DownloadPage() {
   const progressPct = progress ? Math.round((progress.current / progress.total) * 100) : 0;
 
   return (
-    <main className="min-h-screen bg-ft-paper py-16 px-4">
+    <main className="min-h-screen bg-ft-paper py-16 px-4 animate-fade-in">
       {/* ── 헤더 ──────────────────────────────────────────────────────────────── */}
       <div className="bg-ft-ink -mx-4 -mt-16 px-4 pt-16 pb-12 mb-12">
         <div className="max-w-2xl mx-auto text-center">

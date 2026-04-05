@@ -172,11 +172,20 @@ export default function StepPaywall() {
     }, 100);
   }
 
+  const features = [
+    { icon: '📖', title: '운명 흐름', desc: '과거 뿌리 → 현재 갈림길 → 미래 수확' },
+    { icon: '🚧', title: '실행 브레이크 진단', desc: '성장목표 / 브레이크행동 / 숨겨진 이유' },
+    { icon: '🌱', title: 'GROW 4법 행동 계획', desc: 'Ground / Root / Open / Water' },
+  ];
+
   return (
-    <div className="bg-white border border-ft-border rounded-2xl p-6">
-      <div className="text-center mb-6">
-        <div className="text-4xl mb-3">🔮</div>
-        <h2 className="font-serif text-lg font-bold text-ft-ink mb-2">
+    <div className="bg-white border border-ft-border rounded-2xl overflow-hidden">
+      {/* 상단 그라디언트 헤더 */}
+      <div className="bg-gradient-to-b from-ft-paper-alt to-white px-6 pt-8 pb-6 text-center">
+        <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-white border border-ft-border flex items-center justify-center text-3xl shadow-sm">
+          🔮
+        </div>
+        <h2 className="font-serif text-xl font-bold text-ft-ink mb-2">
           AI 분석 준비 완료
         </h2>
         <p className="text-sm text-ft-muted leading-relaxed">
@@ -185,69 +194,92 @@ export default function StepPaywall() {
         </p>
       </div>
 
-      {/* 분석 미리보기 */}
-      <div className="space-y-2 mb-6">
-        {[
-          { icon: '📖', title: '운명 흐름', desc: '과거 뿌리 → 현재 갈림길 → 미래 수확' },
-          { icon: '🚧', title: '실행 브레이크 진단', desc: '성장목표 / 브레이크행동 / 숨겨진 이유' },
-          { icon: '🌱', title: 'GROW 4법 행동 계획', desc: 'Ground / Root / Open / Water' },
-        ].map((item) => (
-          <div key={item.title} className="flex items-start gap-3 bg-ft-paper rounded-xl p-3">
-            <span className="text-lg">{item.icon}</span>
-            <div>
-              <p className="text-sm font-semibold text-ft-ink">{item.title}</p>
-              <p className="text-xs text-ft-muted">{item.desc}</p>
+      <div className="px-6 pb-6">
+        {/* 분석 미리보기 */}
+        <div className="space-y-2 mb-6">
+          {features.map((item, i) => (
+            <div
+              key={item.title}
+              className="flex items-start gap-3 bg-ft-paper rounded-xl p-3.5 animate-stagger-in"
+              style={{ animationDelay: `${i * 0.1}s` }}
+            >
+              <span className="text-lg mt-0.5">{item.icon}</span>
+              <div>
+                <p className="text-sm font-semibold text-ft-ink">{item.title}</p>
+                <p className="text-xs text-ft-muted">{item.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* 구분선 */}
+        <div className="border-t border-ft-border/50 mb-6" />
+
+        {/* 결제 정보 */}
+        {isAccessLoading ? (
+          <div className="text-center py-4">
+            <div className="flex justify-center gap-1.5 mb-2">
+              {[0, 1, 2].map((i) => (
+                <span
+                  key={i}
+                  className="w-2 h-2 rounded-full bg-ft-muted"
+                  style={{ animation: `typing-dot 1.4s ease-in-out ${i * 0.2}s infinite` }}
+                />
+              ))}
+            </div>
+            <p className="text-sm text-ft-muted">결제 정보 확인 중</p>
+          </div>
+        ) : accessType === 'subscription' ? (
+          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 mb-6 text-center">
+            <p className="text-sm font-semibold text-emerald-700">구독 이용 중</p>
+            <p className="text-xs text-emerald-600 mt-0.5">추가 결제 없이 바로 이용 가능합니다</p>
+          </div>
+        ) : accessType === 'credits' ? (
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6 text-center">
+            <p className="text-sm font-semibold text-blue-700">크레딧 1회 차감</p>
+            <p className="text-xs text-blue-600 mt-0.5">보유 크레딧에서 1회가 차감됩니다</p>
+          </div>
+        ) : (
+          <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-5 mb-6">
+            <div className="flex items-baseline justify-between mb-2">
+              <span className="text-sm font-semibold text-ft-ink">명발굴 세션</span>
+              <div className="text-right">
+                <span className="text-2xl font-bold text-ft-ink">₩3,900</span>
+                <span className="text-xs text-ft-muted ml-1">/ 1회</span>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-1.5 mt-3">
+              {['AI 분석 결과', 'GROW 행동 계획', '세션 저장'].map((tag) => (
+                <span key={tag} className="text-xs bg-white/70 text-ft-ink/70 px-2 py-0.5 rounded-full">
+                  {tag}
+                </span>
+              ))}
             </div>
           </div>
-        ))}
-      </div>
+        )}
 
-      {/* 결제 정보 */}
-      {isAccessLoading ? (
-        <div className="text-center py-4">
-          <p className="text-sm text-ft-muted">결제 정보 확인 중...</p>
+        {/* 네비게이션 */}
+        <div className="flex gap-3">
+          <button
+            onClick={prevStep}
+            className="flex-1 py-3.5 rounded-xl border border-ft-border text-ft-muted font-medium text-sm hover:bg-ft-paper transition-colors"
+          >
+            이전
+          </button>
+          <button
+            onClick={handleProceed}
+            disabled={isAccessLoading || isProcessing}
+            className="flex-1 py-3.5 rounded-xl bg-ft-ink text-white font-semibold text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:bg-ft-ink/90 transition-colors"
+          >
+            {isProcessing
+              ? '처리 중...'
+              : isAccessLoading
+                ? '확인 중...'
+                : accessType === 'none'
+                  ? '결제하고 분석 받기'
+                  : 'AI 분석 시작'}
+          </button>
         </div>
-      ) : accessType === 'subscription' ? (
-        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 mb-6 text-center">
-          <p className="text-sm font-medium text-emerald-700">구독 이용 중 — 추가 결제 없이 이용 가능</p>
-        </div>
-      ) : accessType === 'credits' ? (
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-6 text-center">
-          <p className="text-sm font-medium text-blue-700">크레딧 1회 차감으로 이용 가능</p>
-        </div>
-      ) : (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-semibold text-ft-ink">명발굴 세션 (1회)</span>
-            <span className="text-lg font-bold text-ft-ink">₩3,900</span>
-          </div>
-          <p className="text-xs text-ft-muted">
-            AI 분석 결과 + GROW 4법 행동 계획 + 세션 저장
-          </p>
-        </div>
-      )}
-
-      {/* 네비게이션 */}
-      <div className="flex gap-3">
-        <button
-          onClick={prevStep}
-          className="flex-1 py-3 rounded-xl border border-ft-border text-ft-muted font-medium text-sm hover:bg-ft-paper transition-colors"
-        >
-          이전
-        </button>
-        <button
-          onClick={handleProceed}
-          disabled={isAccessLoading || isProcessing}
-          className="flex-1 py-3 rounded-xl bg-ft-ink text-white font-semibold text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:bg-ft-ink/90 transition-colors"
-        >
-          {isProcessing
-            ? '처리 중...'
-            : isAccessLoading
-              ? '확인 중...'
-              : accessType === 'none'
-                ? '결제하고 분석 받기 (₩3,900)'
-                : 'AI 분석 시작'}
-        </button>
       </div>
     </div>
   );

@@ -693,14 +693,14 @@ export default function SajuPage() {
   const todayFortune = saju ? getTodayFortune(saju) : null;
 
   return (
-    <main className="min-h-screen bg-ft-paper py-10 px-4">
-      <div className="max-w-3xl mx-auto">
+    <main className="min-h-screen bg-ft-paper py-20 px-6">
+      <div className="max-w-3xl mx-auto animate-fade-in">
         {/* 히어로 — 대칭형 2컬럼 (모드 셀렉터) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
           {/* 무료 — 라이트 카드 */}
           <button
             onClick={() => setMode('free')}
-            className={`rounded-2xl border-2 bg-white p-6 flex flex-col items-center text-center transition-all text-left ${
+            className={`hover-lift btn-press rounded-2xl border-2 bg-white p-6 flex flex-col items-center text-center transition-all text-left ${
               mode === 'free' ? 'border-ft-ink shadow-lg scale-[1.02]' : 'border-ft-border hover:border-gray-300'
             }`}
           >
@@ -735,7 +735,7 @@ export default function SajuPage() {
           {/* 유료 — 다크 카드 */}
           <button
             onClick={() => setMode('paid')}
-            className={`rounded-2xl border-2 bg-ft-ink p-6 flex flex-col items-center text-center transition-all text-left ${
+            className={`hover-lift btn-press rounded-2xl border-2 bg-ft-ink p-6 flex flex-col items-center text-center transition-all text-left ${
               mode === 'paid' ? 'border-ft-gold shadow-lg scale-[1.02]' : 'border-ft-ink hover:border-indigo-400'
             }`}
           >
@@ -866,7 +866,7 @@ export default function SajuPage() {
           <div className="grid grid-cols-2 gap-3">
             <button
               onClick={() => { setMode('free'); handleCalculate(); }}
-              className={`py-3 rounded-xl font-bold transition-colors text-sm ${
+              className={`btn-press py-3 rounded-xl font-bold transition-colors text-sm ${
                 mode === 'free'
                   ? 'bg-ft-ink text-white'
                   : 'text-ft-ink border-2 border-ft-ink hover:bg-ft-ink hover:text-white'
@@ -877,7 +877,7 @@ export default function SajuPage() {
             <button
               onClick={() => { setMode('paid'); handleAiAnalyze(); }}
               disabled={aiLoading}
-              className={`py-3 rounded-xl font-bold transition-colors text-sm ${
+              className={`btn-press py-3 rounded-xl font-bold transition-colors text-sm ${
                 mode === 'paid'
                   ? 'bg-ft-gold text-ft-ink'
                   : 'bg-ft-gold/80 text-ft-ink hover:bg-ft-gold'

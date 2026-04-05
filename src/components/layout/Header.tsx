@@ -42,7 +42,7 @@ function UserMenu({ user, logout }: { user: User; logout: () => void }) {
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-48 bg-white border border-ft-border rounded-xl shadow-lg py-1.5 z-50">
+        <div className="absolute right-0 mt-2 w-48 bg-white border border-ft-border rounded-xl shadow-lg py-1.5 z-50 animate-fade-in">
           <p className="px-3 py-1.5 text-xs text-ft-muted border-b border-ft-border mb-1 truncate">
             {user.email}
           </p>
@@ -154,13 +154,16 @@ export default function Header() {
               <Link
                 key={href}
                 href={href}
-                className={`text-sm font-medium transition-colors ${
+                className={`relative text-sm font-medium transition-colors py-1 ${
                   isActive(href)
                     ? 'text-ft-ink font-semibold'
                     : 'text-ft-body hover:text-ft-ink'
                 }`}
               >
                 {label}
+                {isActive(href) && (
+                  <span className="absolute -bottom-[1.19rem] left-0 right-0 h-0.5 bg-ft-red rounded-full" />
+                )}
               </Link>
             ))}
           </nav>
@@ -187,7 +190,10 @@ export default function Header() {
                 />
               </svg>
               {mounted && totalItems() > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center w-4 h-4 text-xs font-bold bg-ft-gold text-ft-navy rounded-full">
+                <span
+                  key={totalItems()}
+                  className="absolute -top-0.5 -right-0.5 flex items-center justify-center w-4 h-4 text-xs font-bold bg-ft-gold text-ft-navy rounded-full animate-badge-bounce"
+                >
                   {totalItems()}
                 </span>
               )}
@@ -226,7 +232,7 @@ export default function Header() {
 
         {/* 모바일 메뉴 */}
         {mobileOpen && (
-          <div className="md:hidden bg-white border-t border-ft-border py-3 space-y-1">
+          <div className="md:hidden bg-white border-t border-ft-border py-3 space-y-1 animate-fade-in">
             {navLinks.map(({ href, label }) => (
               <Link
                 key={href}

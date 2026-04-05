@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/lib/store';
 import { supabase } from '@/lib/supabase';
+import { analyzeSaju, analyzeCompatibility, analyzeCareer } from '@/lib/ai-service';
 import {
   calculateSaju, getSipsinMap, detectSinsal, calcDaeun,
   detectZodiac, getYearGanzhi, elemCountToPercent,
@@ -153,7 +154,7 @@ function FortunePage() {
     setLocalSaju(null);
 
     try {
-      let body: { type: string; input: Record<string, unknown> };
+      let aiResult: string | null = null;
 
       if (tab === 'saju') {
         const { name, year, month, day, time, gender } = sajuForm;
@@ -168,67 +169,80 @@ function FortunePage() {
           daeun: calcDaeun(saju, gender),
         });
 
-        body = {
-          type: 'saju',
-          input: { name: name || '사용자', birth_date: birthDate, birth_time: time, gender, year: 2026 },
-        };
+        // PDF 서버 AI 분석 시도
+        try {
+          const hour = time === '모름' ? 12 : Object.keys(TIME_TO_BRANCH).indexOf(time);
+          const response = await analyzeSaju({
+            birth_year: Number(year),
+            birth_month: Number(month),
+            birth_day: Number(day),
+            birth_hour: hour >= 0 ? hour : 12,
+            analysis_type: 'full',
+          });
+          if (response.success) {
+            aiResult = response.result;
+          }
+        } catch (aiErr) {
+          console.warn('PDF 서버 AI 분석 실패, Supabase 백업 사용:', aiErr);
+        }
+
+        // AI 결과가 없으면 기존 Supabase 방식 시도
+        if (!aiResult) {
+          const body = {
+            type: 'saju',
+            input: { name: name || '사용자', birth_date: birthDate, birth_time: time, gender, year: 2026 },
+          };
+          aiResult = await callSupabaseFortune(body);
+        }
       } else if (tab === 'zodiac') {
         const [y, m, d] = zodiacForm.birthDate.split('-').map(Number);
         const zodiac = detectZodiac(m, d);
-        body = {
+        const body = {
           type: 'astrology',
           input: { name: zodiacForm.name || '사용자', birth_date: zodiacForm.birthDate, zodiac, year: 2026 },
         };
+        aiResult = await callSupabaseFortune(body);
       } else {
-        body = {
-          type: 'couple',
-          input: {
-            person1: { name: coupleForm.name1, birth_date: coupleForm.birthDate1, gender: coupleForm.gender1 },
-            person2: { name: coupleForm.name2, birth_date: coupleForm.birthDate2, gender: coupleForm.gender2 },
-            year: 2026,
-          },
-        };
+        // 궁합 분석
+        try {
+          const [y1, m1, d1] = coupleForm.birthDate1.split('-').map(Number);
+          const [y2, m2, d2] = coupleForm.birthDate2.split('-').map(Number);
+          const response = await analyzeCompatibility({
+            birth_year1: y1, birth_month1: m1, birth_day1: d1, birth_hour1: 12,
+            birth_year2: y2, birth_month2: m2, birth_day2: d2, birth_hour2: 12,
+          });
+          if (response.success) {
+            aiResult = response.result;
+          }
+        } catch (aiErr) {
+          console.warn('PDF 서버 궁합 분석 실패:', aiErr);
+          const body = {
+            type: 'couple',
+            input: {
+              person1: { name: coupleForm.name1, birth_date: coupleForm.birthDate1, gender: coupleForm.gender1 },
+              person2: { name: coupleForm.name2, birth_date: coupleForm.birthDate2, gender: coupleForm.gender2 },
+              year: 2026,
+            },
+          };
+          aiResult = await callSupabaseFortune(body);
+        }
       }
 
-      // Edge Function 직접 호출 (JWT 첨부)
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData?.session?.access_token;
-      if (!accessToken) throw new Error('로그인 세션이 만료되었습니다. 다시 로그인해 주세요.');
-
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-      const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-
-      const res = await fetch(`${supabaseUrl}/functions/v1/fortune`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
-          'apikey': anonKey,
-        },
-        body: JSON.stringify(body),
-      });
-
-      if (!res.ok) {
-        const errText = await res.text().catch(() => '');
-        if (res.status === 401) throw new Error('로그인 세션이 만료되었습니다. 다시 로그인해 주세요.');
-        throw new Error(errText || `서버 오류 (${res.status})`);
+      if (aiResult) {
+        // 결과를 포맷팅하여 설정 (기존 FortuneResult 형식으로 변환)
+        setResult({ summary: aiResult, yearly_fortune: '', relationships: '', career: '', wealth: '', health: '', lucky_colors: [], lucky_numbers: [], monthly_fortunes: [] });
+        
+        // 이용권 사용 처리 (used_at 업데이트)
+        if (user) {
+          await supabase
+            .from('fortune_purchases')
+            .update({ used_at: new Date().toISOString() })
+            .eq('user_id', user.id)
+            .eq('type', tab)
+            .is('used_at', null);
+          setHasPurchase(false);
+        }
       }
-
-      const responseText = await res.text();
-      if (!responseText) throw new Error('서버로부터 빈 응답을 받았습니다. 다시 시도해 주세요.');
-
-      const data = JSON.parse(responseText);
-      if (!data?.ok) throw new Error(data?.error || '분석 실패');
-      setResult(data.data);
-
-      // 이용권 사용 처리 (used_at 업데이트)
-      await supabase
-        .from('fortune_purchases')
-        .update({ used_at: new Date().toISOString() })
-        .eq('user_id', user.id)
-        .eq('type', tab)
-        .is('used_at', null);
-      setHasPurchase(false);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : '오류가 발생했습니다.');
     } finally {
@@ -236,19 +250,52 @@ function FortunePage() {
     }
   }
 
+  // Supabase Fortune Edge Function 호출
+  async function callSupabaseFortune(body: { type: string; input: Record<string, unknown> }): Promise<string> {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const accessToken = sessionData?.session?.access_token;
+    if (!accessToken) throw new Error('로그인 세션이 만료되었습니다. 다시 로그인해 주세요.');
+
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+    const res = await fetch(`${supabaseUrl}/functions/v1/fortune`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+        'apikey': anonKey,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text().catch(() => '');
+      if (res.status === 401) throw new Error('로그인 세션이 만료되었습니다. 다시 로그인해 주세요.');
+      throw new Error(errText || `서버 오류 (${res.status})`);
+    }
+
+    const responseText = await res.text();
+    if (!responseText) throw new Error('서버로부터 빈 응답을 받았습니다. 다시 시도해 주세요.');
+
+    const data = JSON.parse(responseText);
+    if (!data?.ok) throw new Error(data?.error || '분석 실패');
+      return data.data?.summary || JSON.stringify(data.data);
+  }
+
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-ft-paper py-8 px-4">
-      <div className="max-w-2xl mx-auto space-y-6">
+    <div className="min-h-[calc(100vh-4rem)] bg-ft-paper py-20 px-6">
+      <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
 
         {/* 헤더 */}
         <div className="text-center">
-          <h1 className="text-2xl font-bold font-serif text-ft-ink">AI 운세 분석</h1>
-          <p className="text-sm text-ft-muted mt-1">Claude AI가 사주·별자리를 심층 분석합니다 (10~15초 소요)</p>
+          <h1 className="text-3xl font-bold font-serif text-ft-ink tracking-tight">AI 운세 분석</h1>
+          <p className="text-sm text-ft-muted mt-2">Claude AI가 사주·별자리를 심층 분석합니다 (10~15초 소요)</p>
           <p className="text-xs text-ft-muted mt-1">즉시 무료 계산만 원하시면 <a href="/saju" className="text-ft-ink underline hover:text-ft-red transition-colors">사주 계산기</a>를 이용해 보세요</p>
         </div>
 
         {/* 탭 */}
-        <div className="flex gap-1 bg-gray-100 rounded-xl p-1">
+        <div className="flex gap-1 bg-ft-paper-alt border border-ft-border rounded-xl p-1">
           {([
             ['saju', '사주 분석'],
             ['zodiac', '별자리 운세'],
@@ -259,7 +306,7 @@ function FortunePage() {
               onClick={() => { setTab(key); setResult(null); setLocalSaju(null); }}
               className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all ${
                 tab === key
-                  ? 'bg-white text-ft-ink shadow-sm'
+                  ? 'bg-white text-ft-ink shadow-sm font-semibold'
                   : 'text-ft-muted hover:text-ft-ink'
               }`}
             >
@@ -277,7 +324,7 @@ function FortunePage() {
         )}
 
         {/* 입력 폼 */}
-        <div className="bg-white border border-ft-border rounded-2xl p-5 space-y-4">
+        <div className="bg-white border border-ft-border rounded-2xl p-6 space-y-4 shadow-sm">
           {tab === 'saju' && <SajuForm form={sajuForm} setForm={setSajuForm} />}
           {tab === 'zodiac' && <ZodiacForm form={zodiacForm} setForm={setZodiacForm} />}
           {tab === 'couple' && <CoupleForm form={coupleForm} setForm={setCoupleForm} />}
@@ -285,10 +332,10 @@ function FortunePage() {
           <button
             onClick={handleAnalyze}
             disabled={loading}
-            className={`w-full py-3.5 font-bold rounded-xl transition-all disabled:opacity-50 ${
+            className={`w-full py-3.5 font-bold rounded-xl transition-all btn-press disabled:opacity-50 ${
               hasPurchase
-                ? 'bg-ft-gold text-ft-ink hover:bg-ft-gold-h'
-                : 'bg-amber-500 text-white hover:bg-amber-600'
+                ? 'bg-ft-gold text-ft-ink hover:bg-ft-gold-h shadow-md hover:shadow-lg'
+                : 'bg-amber-500 text-white hover:bg-amber-600 shadow-md hover:shadow-lg'
             }`}
           >
             {loading ? (
@@ -314,8 +361,8 @@ function FortunePage() {
 
         {/* 분석 결과 안내 (결과 없을 때만 표시) */}
         {!result && !localSaju && !loading && (
-          <div className="bg-white border border-ft-border rounded-2xl p-5">
-            <h3 className="text-sm font-semibold text-ft-ink mb-3">
+          <div className="bg-white border border-ft-border rounded-2xl p-6 shadow-sm">
+            <h3 className="text-sm font-semibold font-serif text-ft-ink mb-3">
               {tab === 'saju' && '사주 분석에서 확인할 수 있는 내용'}
               {tab === 'zodiac' && '별자리 운세에서 확인할 수 있는 내용'}
               {tab === 'couple' && '궁합 분석에서 확인할 수 있는 내용'}
@@ -472,11 +519,12 @@ function LocalSajuCard({ data }: { data: {
   const pct = elemCountToPercent(saju.elemCount, saju.hasHour);
 
   return (
-    <div className="bg-white border border-ft-border rounded-2xl overflow-hidden">
-      <div className="bg-gradient-to-r from-indigo-900 to-indigo-700 p-4">
-        <h3 className="text-white font-bold font-serif">사주 원국 (엔진 계산)</h3>
+    <div className="bg-white border border-ft-border rounded-2xl overflow-hidden shadow-sm animate-fade-in">
+      <div className="bg-gradient-to-r from-ft-navy to-ft-ink px-5 py-4">
+        <h3 className="text-white font-bold font-serif text-lg">사주 원국 (엔진 계산)</h3>
+        <p className="text-indigo-200 text-xs mt-0.5">사주팔자 즉시 계산 결과</p>
       </div>
-      <div className="p-5 space-y-4">
+      <div className="p-5 space-y-5">
         {/* 4주 8자 테이블 */}
         <div className="grid grid-cols-4 gap-2 text-center text-sm">
           {(['year', 'month', 'day', 'hour'] as const).map(k => {
@@ -484,7 +532,7 @@ function LocalSajuCard({ data }: { data: {
             const label = { year: '년주', month: '월주', day: '일주', hour: '시주' }[k];
             const s = k === 'day' ? '일간' : (sipsin as any)[`${k}Stem`];
             return (
-              <div key={k} className="border border-ft-border rounded-xl p-2">
+              <div key={k} className={`border rounded-xl p-2.5 transition-all ${k === 'day' ? 'border-ft-gold bg-amber-50/50' : 'border-ft-border hover:border-gray-300'}`}>
                 <p className="text-xs text-ft-muted mb-1">{label} {k === 'day' && <span className="text-ft-gold">★</span>}</p>
                 <p className="font-bold text-lg text-ft-ink">{p.stemKo}{p.branchKo}</p>
                 <p className="text-xs text-ft-muted">{p.stemHj}{p.branchHj}</p>
@@ -636,7 +684,7 @@ function FortuneResultCard({ result, tab }: { result: FortuneResult; tab: Fortun
         {/* 플래너 CTA */}
         <Link
           href="/products/saju-planner-basic"
-          className="block text-center py-3 bg-ft-ink text-white font-bold rounded-xl text-sm hover:bg-ft-ink-mid transition-colors"
+          className="block text-center py-3 bg-ft-ink text-white font-bold rounded-xl text-sm hover:bg-ft-ink/90 btn-press transition-colors"
         >
           이 사주로 맞춤 플래너 만들기 →
         </Link>

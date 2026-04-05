@@ -4,6 +4,7 @@ import ProductCard from '@/components/product/ProductCard';
 import PlannerPreviewSection from '@/components/home/PlannerPreviewSection';
 import SansuBackground from '@/components/home/SansuBackground';
 import SeasonIcons from '@/components/home/SeasonIcons';
+import ScrollReveal from '@/components/ui/ScrollReveal';
 import { PRODUCTS, PLANNER_YEAR } from '@/lib/products';
 
 export const metadata: Metadata = {
@@ -67,16 +68,16 @@ export default function HomePage() {
         <div className="relative w-full max-w-6xl mx-auto px-6 sm:px-8 py-24">
           <div className="max-w-xl">
             {/* 얼리버드 배지 */}
-            <span className="inline-flex items-center gap-2 px-4 py-1.5 text-xs font-semibold border border-ft-red/30 text-ft-red rounded-full mb-10 tracking-widest bg-ft-red/5">
+            <span className="inline-flex items-center gap-2 px-4 py-1.5 text-xs font-semibold border border-ft-red/30 text-ft-red rounded-full mb-10 tracking-widest bg-ft-red/5 animate-fade-in">
               <span className="w-1.5 h-1.5 rounded-full bg-ft-red animate-pulse" />
               {PLANNER_YEAR}년 얼리버드 특가 — 6월 30일 마감
             </span>
 
             {/* 메인 헤드라인 */}
             <h1 className="font-serif font-black text-ft-ink leading-[1.15] mb-6">
-              <span className="block text-4xl sm:text-5xl lg:text-[3.5rem]">사주·운세로</span>
-              <span className="block text-4xl sm:text-5xl lg:text-[3.5rem]">설계한 나만의</span>
-              <span className="block text-4xl sm:text-5xl lg:text-[3.5rem]">
+              <span className="block text-4xl sm:text-5xl lg:text-[3.5rem] animate-stagger-in" style={{ animationDelay: '0.1s' }}>사주·운세로</span>
+              <span className="block text-4xl sm:text-5xl lg:text-[3.5rem] animate-stagger-in" style={{ animationDelay: '0.25s' }}>설계한 나만의</span>
+              <span className="block text-4xl sm:text-5xl lg:text-[3.5rem] animate-stagger-in" style={{ animationDelay: '0.4s' }}>
                 <span className="text-ft-red">{PLANNER_YEAR}</span> 플래너
               </span>
             </h1>
@@ -97,14 +98,14 @@ export default function HomePage() {
             <div className="flex flex-col sm:flex-row items-start gap-4 mb-14">
               <Link
                 href="/products"
-                className="inline-flex items-center gap-2 px-8 py-4 text-base font-bold text-white bg-ft-red rounded-xl hover:bg-ft-red-h transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+                className="inline-flex items-center gap-2 px-8 py-4 text-base font-bold text-white bg-ft-red rounded-xl hover:bg-ft-red-h transition-all shadow-lg hover-lift btn-press"
               >
                 플래너 보러 가기
                 <span aria-hidden="true">→</span>
               </Link>
               <Link
                 href="/products/common-planner"
-                className="inline-flex items-center gap-2 px-8 py-4 text-base font-medium text-ft-ink border border-ft-ink/20 rounded-xl hover:border-ft-ink/50 hover:bg-ft-ink/5 transition-all"
+                className="inline-flex items-center gap-2 px-8 py-4 text-base font-medium text-ft-ink border border-ft-ink/20 rounded-xl hover:border-ft-ink/50 hover:bg-ft-ink/5 transition-all btn-press"
               >
                 무료 체험판 받기
               </Link>
@@ -133,11 +134,12 @@ export default function HomePage() {
           </h2>
 
           {/* 4컬럼 단청 비례 그리드 */}
+          <ScrollReveal staggerDelay={120}>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-0 border border-ft-ink/10 divide-x divide-ft-ink/10">
             {HOW_IT_WORKS.map(({ step, title, desc, time }, idx) => (
               <div
                 key={step}
-                className={`p-8 flex flex-col gap-3 ${idx % 2 === 0 && idx < 2 ? 'border-b border-ft-ink/10 lg:border-b-0' : ''}`}
+                className={`scroll-hidden p-8 flex flex-col gap-3 ${idx % 2 === 0 && idx < 2 ? 'border-b border-ft-ink/10 lg:border-b-0' : ''}`}
               >
                 <div className="flex items-center justify-between">
                   <span className="font-serif font-black text-3xl text-ft-red/20 leading-none">{step}</span>
@@ -148,6 +150,8 @@ export default function HomePage() {
               </div>
             ))}
           </div>
+
+          </ScrollReveal>
 
           {/* 하단 대들보 라인 */}
           <div className="flex items-center gap-4 mt-12">
@@ -260,7 +264,7 @@ export default function HomePage() {
                   </div>
                   {/* 내용 */}
                   <div className={`flex-1 ${idx < arr.length - 1 ? 'pb-5' : ''}`}>
-                    <div className="bg-white border border-ft-border rounded-xl p-4">
+                    <div className="bg-white border border-ft-border rounded-xl p-4 hover-lift">
                       <div className="font-semibold text-ft-ink text-sm">{label}</div>
                       <div className="text-xs text-ft-muted mt-0.5">{desc}</div>
                     </div>
@@ -283,9 +287,10 @@ export default function HomePage() {
             <p className="text-sm text-ft-muted mt-2">서비스 출시 전 베타 테스터분들의 솔직한 후기입니다</p>
           </div>
 
+          <ScrollReveal staggerDelay={150}>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
             {REVIEWS.map(({ name, title, product, date, rating, text }) => (
-              <div key={name} className="relative">
+              <div key={name} className="scroll-hidden relative">
                 {/* 빨강 큰 따옴표 */}
                 <span
                   aria-hidden="true"
@@ -319,6 +324,7 @@ export default function HomePage() {
               </div>
             ))}
           </div>
+          </ScrollReveal>
         </div>
       </section>
 
@@ -374,13 +380,13 @@ export default function HomePage() {
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link
               href="/products/common-planner"
-              className="px-8 py-4 font-bold text-white bg-ft-red rounded-xl hover:bg-ft-red-h transition-all shadow-lg"
+              className="px-8 py-4 font-bold text-white bg-ft-red rounded-xl hover:bg-ft-red-h transition-all shadow-lg hover-lift btn-press"
             >
               무료 플래너 받기
             </Link>
             <Link
               href="/products/saju-planner-premium"
-              className="px-8 py-4 font-medium text-white border border-white/30 rounded-xl hover:bg-white/10 transition-all"
+              className="px-8 py-4 font-medium text-white border border-white/30 rounded-xl hover:bg-white/10 transition-all btn-press"
             >
               프리미엄 플래너 보기
             </Link>

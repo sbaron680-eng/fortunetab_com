@@ -23,21 +23,28 @@ export default function CartPage() {
 
   if (!mounted) {
     return (
-      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center">
-        <div className="animate-pulse text-gray-400">로딩 중...</div>
+      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-ft-paper">
+        <div className="flex flex-col items-center gap-4 animate-fade-in">
+          <div className="w-12 h-12 rounded-2xl skeleton" />
+          <div className="h-4 w-32 rounded-lg skeleton" />
+        </div>
       </div>
     );
   }
 
   if (items.length === 0) {
     return (
-      <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center py-20 px-4 text-center">
-        <div className="text-7xl mb-6">🛒</div>
-        <h1 className="text-2xl font-bold text-gray-800 mb-2">장바구니가 비어 있습니다</h1>
-        <p className="text-gray-500 mb-8">마음에 드는 플래너를 담아보세요!</p>
+      <div className="min-h-[calc(100vh-4rem)] bg-ft-paper flex flex-col items-center justify-center py-20 px-6 text-center animate-fade-in">
+        <div className="w-24 h-24 mb-6 flex items-center justify-center bg-ft-paper-alt rounded-full">
+          <svg className="w-12 h-12 text-ft-muted" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+          </svg>
+        </div>
+        <h1 className="text-2xl font-black font-serif text-ft-ink mb-2">장바구니가 비어 있습니다</h1>
+        <p className="text-ft-muted mb-8">마음에 드는 플래너를 담아보세요!</p>
         <Link
           href="/products"
-          className="px-8 py-4 font-bold text-white bg-[#1e1b4b] rounded-2xl hover:bg-indigo-800 transition-colors shadow-lg"
+          className="px-8 py-4 font-bold text-white bg-ft-navy rounded-2xl hover:bg-ft-ink transition-colors shadow-lg hover-lift btn-press"
         >
           플래너 보러 가기 →
         </Link>
@@ -50,22 +57,22 @@ export default function CartPage() {
   const hasPaidItem = items.some((i) => getItemPrice(i.product.slug, i.product.price) > 0);
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-gray-50 py-10 px-4">
+    <div className="min-h-[calc(100vh-4rem)] bg-ft-paper py-20 px-6 animate-fade-in">
       <div className="max-w-5xl mx-auto">
         {/* 페이지 헤더 */}
-        <div className="mb-8">
-          <h1 className="text-2xl sm:text-3xl font-black text-[#1e1b4b]">장바구니</h1>
-          <p className="mt-1 text-sm text-gray-500">총 {totalItems()}개의 상품</p>
+        <div className="mb-10">
+          <h1 className="text-2xl sm:text-3xl font-black font-serif text-ft-ink">장바구니</h1>
+          <p className="mt-2 text-sm text-ft-muted">총 {totalItems()}개의 상품</p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* ── 상품 목록 ──────────────────────────────── */}
           <div className="lg:col-span-2 space-y-4">
             {/* 전체 삭제 버튼 */}
             <div className="flex justify-end">
               <button
                 onClick={clearCart}
-                className="text-xs text-gray-400 hover:text-red-500 transition-colors"
+                className="text-xs text-ft-muted hover:text-ft-red transition-colors btn-press"
               >
                 전체 삭제
               </button>
@@ -76,7 +83,7 @@ export default function CartPage() {
               return (
                 <div
                   key={product.id}
-                  className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-5 flex gap-4"
+                  className="bg-white rounded-2xl shadow-sm border border-ft-border p-4 sm:p-5 flex gap-4 hover-lift transition-all"
                 >
                   {/* 썸네일 */}
                   <Link

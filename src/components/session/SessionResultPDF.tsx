@@ -232,13 +232,13 @@ export default function SessionResultPDF({
         <View style={s.section}>
           <Text style={s.sectionTitle}>GROW 4법 행동</Text>
           {[
-            { letter: 'G', name: 'Ground — 지금 심는 행동', text: result.actions.ground },
-            { letter: 'R', name: 'Root — 뿌리 내리는 행동', text: result.actions.root },
-            { letter: 'O', name: 'Open — 가능성 여는 행동', text: result.actions.open },
-            { letter: 'W', name: 'Water — 물주는 습관', text: result.actions.water },
+            { letter: 'G', name: 'Ground — 지금 심는 행동', text: result.actions.ground, bg: '#059669' },
+            { letter: 'R', name: 'Root — 뿌리 내리는 행동', text: result.actions.root, bg: '#d97706' },
+            { letter: 'O', name: 'Open — 가능성 여는 행동', text: result.actions.open, bg: '#2563eb' },
+            { letter: 'W', name: 'Water — 물주는 습관', text: result.actions.water, bg: '#0891b2' },
           ].map((g) => (
             <View key={g.letter} style={s.growRow}>
-              <Text style={s.growBadge}>{g.letter}</Text>
+              <Text style={[s.growBadge, { backgroundColor: g.bg }]}>{g.letter}</Text>
               <View style={s.growContent}>
                 <Text style={s.growName}>{g.name}</Text>
                 <Text style={s.cardText}>{g.text}</Text>

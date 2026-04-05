@@ -96,7 +96,7 @@ export default async function ProductDetailPage({ params }: Props) {
             </p>
 
             {/* 주요 스펙 요약 */}
-            <div className="mt-6 bg-white rounded-xl p-4 border border-ft-border space-y-2">
+            <div className="mt-6 bg-white rounded-xl p-6 border border-ft-border space-y-2">
               {product.specs.slice(0, 3).map(({ label, value }) => (
                 <div key={label} className="flex items-start gap-3 text-sm">
                   <span className="w-20 flex-shrink-0 text-ft-muted">{label}</span>
@@ -140,7 +140,7 @@ export default async function ProductDetailPage({ params }: Props) {
             <h2 className="text-lg font-bold text-ft-ink mt-8 mb-4">주요 특징</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {product.features.map(({ icon, title, description }) => (
-                <div key={title} className="flex gap-3 p-4 rounded-xl bg-white border border-ft-border">
+                <div key={title} className="flex gap-3 p-6 rounded-xl bg-white border border-ft-border hover-lift">
                   <span className="text-2xl flex-shrink-0">{icon}</span>
                   <div>
                     <p className="font-bold text-ft-ink text-sm">{title}</p>
@@ -181,7 +181,7 @@ export default async function ProductDetailPage({ params }: Props) {
               <a
                 key={p.id}
                 href={`/products/${p.slug}`}
-                className="flex items-center gap-4 bg-white p-4 rounded-xl border border-ft-border hover:shadow-md transition-shadow group"
+                className="flex items-center gap-4 bg-white p-6 rounded-xl border border-ft-border hover:shadow-md transition-shadow group hover-lift"
               >
                 <div className="w-12 h-12 rounded-lg bg-ft-paper-alt flex items-center justify-center text-xl flex-shrink-0">
                   {p.badge === '무료' ? '🎁' : p.badge === 'BEST' ? '🏆' : '⭐'}

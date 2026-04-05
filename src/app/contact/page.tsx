@@ -68,84 +68,87 @@ export default function ContactPage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-ft-paper py-16 px-4">
-      <div className="max-w-xl mx-auto">
+    <div className="min-h-[calc(100vh-4rem)] bg-ft-paper py-20 px-6">
+      <div className="max-w-xl mx-auto animate-fade-in">
 
         {/* 헤더 */}
         <div className="mb-10">
           <Link href="/" className="text-sm text-ft-muted hover:text-ft-ink transition-colors">
             ← 홈으로
           </Link>
-          <h1 className="mt-4 text-2xl font-bold font-serif text-ft-ink">문의하기</h1>
-          <p className="mt-2 text-sm text-ft-muted">
+          <h1 className="mt-4 text-3xl font-bold font-serif text-ft-ink tracking-tight">문의하기</h1>
+          <p className="mt-2 text-sm text-ft-muted leading-relaxed">
             궁금한 점을 남겨주세요. 영업일 기준 1~2일 내 이메일로 답변드립니다.
           </p>
         </div>
 
         {/* 성공 상태 */}
         {state === 'success' ? (
-          <div className="bg-white border border-ft-border rounded-2xl shadow-sm p-10 text-center">
-            <div className="w-14 h-14 mx-auto mb-5 rounded-full bg-emerald-50 flex items-center justify-center">
-              <svg className="w-7 h-7 text-emerald-500" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+          <div className="bg-white border border-ft-border rounded-2xl shadow-sm p-10 text-center hover-lift animate-fade-in">
+            <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-emerald-50 flex items-center justify-center">
+              <svg className="w-8 h-8 text-emerald-500" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h2 className="text-lg font-bold text-ft-ink mb-2">문의가 접수되었습니다</h2>
-            <p className="text-sm text-ft-muted mb-6">
+            <h2 className="text-xl font-bold font-serif text-ft-ink mb-2">문의가 접수되었습니다</h2>
+            <p className="text-sm text-ft-muted mb-8 leading-relaxed">
               입력하신 이메일로 1~2 영업일 내에 답변드리겠습니다.
             </p>
             <button
               onClick={() => setState('idle')}
-              className="px-6 py-2.5 text-sm font-semibold bg-ft-ink text-white rounded-xl hover:bg-ft-ink-mid transition-colors"
+              className="px-6 py-3 text-sm font-semibold bg-ft-ink text-white rounded-xl hover:bg-ft-ink-mid transition-all btn-press"
             >
               새 문의 작성
             </button>
           </div>
         ) : (
-          <div className="bg-white border border-ft-border rounded-2xl shadow-sm p-8">
+          <div className="bg-white border border-ft-border rounded-2xl shadow-sm p-8 hover-lift">
 
             {/* 에러 배너 */}
             {state === 'error' && (
-              <div className="mb-5 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600 flex items-center gap-2">
+                <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
                 {errorMsg}
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-6">
 
               {/* 이름 */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">이름</label>
+                <label className="block text-sm font-medium text-ft-ink mb-1.5">이름</label>
                 <input
                   type="text"
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="홍길동"
-                  className="w-full px-4 py-3 text-sm border border-ft-border rounded-xl focus:outline-none focus:ring-2 focus:ring-ft-ink focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 text-sm border border-ft-border rounded-xl bg-ft-paper-alt focus:bg-white focus:outline-none focus:ring-2 focus:ring-ft-ink/80 focus:ring-offset-2 focus:border-transparent transition-all"
                 />
               </div>
 
               {/* 이메일 */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">이메일</label>
+                <label className="block text-sm font-medium text-ft-ink mb-1.5">이메일</label>
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="your@email.com"
-                  className="w-full px-4 py-3 text-sm border border-ft-border rounded-xl focus:outline-none focus:ring-2 focus:ring-ft-ink focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 text-sm border border-ft-border rounded-xl bg-ft-paper-alt focus:bg-white focus:outline-none focus:ring-2 focus:ring-ft-ink/80 focus:ring-offset-2 focus:border-transparent transition-all"
                 />
               </div>
 
               {/* 문의 유형 */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">문의 유형</label>
+                <label className="block text-sm font-medium text-ft-ink mb-1.5">문의 유형</label>
                 <select
                   value={type}
                   onChange={(e) => setType(e.target.value)}
-                  className="w-full px-4 py-3 text-sm border border-ft-border rounded-xl focus:outline-none focus:ring-2 focus:ring-ft-ink focus:border-transparent transition-all bg-white"
+                  className="w-full px-4 py-3 text-sm border border-ft-border rounded-xl bg-ft-paper-alt focus:bg-white focus:outline-none focus:ring-2 focus:ring-ft-ink/80 focus:ring-offset-2 focus:border-transparent transition-all"
                 >
                   {INQUIRY_TYPES.map((t) => (
                     <option key={t.value} value={t.value}>{t.label}</option>
@@ -155,14 +158,14 @@ export default function ContactPage() {
 
               {/* 문의 내용 */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">문의 내용</label>
+                <label className="block text-sm font-medium text-ft-ink mb-1.5">문의 내용</label>
                 <textarea
                   required
                   rows={5}
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder="문의하실 내용을 자세히 적어주세요."
-                  className="w-full px-4 py-3 text-sm border border-ft-border rounded-xl focus:outline-none focus:ring-2 focus:ring-ft-ink focus:border-transparent transition-all resize-none"
+                  className="w-full px-4 py-3 text-sm border border-ft-border rounded-xl bg-ft-paper-alt focus:bg-white focus:outline-none focus:ring-2 focus:ring-ft-ink/80 focus:ring-offset-2 focus:border-transparent transition-all resize-none"
                 />
               </div>
 
@@ -170,7 +173,7 @@ export default function ContactPage() {
               <button
                 type="submit"
                 disabled={state === 'submitting'}
-                className="w-full py-3.5 font-bold text-white bg-ft-ink rounded-xl hover:bg-ft-ink-mid transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full py-3.5 font-bold text-white bg-ft-ink rounded-xl hover:bg-ft-ink-mid transition-all btn-press disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {state === 'submitting' && (
                   <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
@@ -183,13 +186,15 @@ export default function ContactPage() {
             </form>
 
             {/* 빠른 문의 안내 */}
-            <p className="mt-5 text-center text-xs text-ft-muted">
-              급한 문의는{' '}
-              <a href="mailto:sbaron680@gmail.com" className="text-ft-ink underline underline-offset-2 hover:text-ft-ink-mid transition-colors">
-                sbaron680@gmail.com
-              </a>
-              으로 직접 이메일 주셔도 됩니다.
-            </p>
+            <div className="mt-6 pt-5 border-t border-ft-border text-center">
+              <p className="text-xs text-ft-muted">
+                급한 문의는{' '}
+                <a href="mailto:sbaron680@gmail.com" className="text-ft-ink underline underline-offset-2 hover:text-ft-ink-mid transition-colors font-medium">
+                  sbaron680@gmail.com
+                </a>
+                으로 직접 이메일 주셔도 됩니다.
+              </p>
+            </div>
           </div>
         )}
       </div>
