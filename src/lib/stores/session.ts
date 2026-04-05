@@ -1,6 +1,7 @@
 'use client';
 
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import type { UserMode, DaunPhase } from '@/lib/supabase';
 
 // ─── 타입 ─────────────────────────────────────────────────────────────
@@ -87,33 +88,9 @@ const INITIAL_ANSWERS: SessionAnswers = {
 
 // ─── 스토어 ───────────────────────────────────────────────────────────
 
-export const useSessionStore = create<SessionState>()((set) => ({
-  currentStep: 0,
-  mode: null,
-  isGenerating: false,
-  isPaid: false,
-  fortuneScore: null,
-  fortunePercent: null,
-  daunPhase: null,
-  gradeLabel: null,
-  answers: { ...INITIAL_ANSWERS },
-  result: null,
-  sessionId: null,
-
-  setMode: (mode) => set({ mode }),
-  setStep: (step) => set({ currentStep: step }),
-  nextStep: () => set((s) => ({ currentStep: Math.min(s.currentStep + 1, 7) })),
-  prevStep: () => set((s) => ({ currentStep: Math.max(s.currentStep - 1, 0) })),
-  setAnswer: (key, value) =>
-    set((s) => ({ answers: { ...s.answers, [key]: value } })),
-  setFortuneScore: (score, percent, phase, label) =>
-    set({ fortuneScore: score, fortunePercent: percent, daunPhase: phase, gradeLabel: label }),
-  setGenerating: (v) => set({ isGenerating: v }),
-  setResult: (result) => set({ result }),
-  setSessionId: (id) => set({ sessionId: id }),
-  setPaid: (v) => set({ isPaid: v }),
-  reset: () =>
-    set({
+export const useSessionStore = create<SessionState>()(
+  persist(
+    (set) => ({
       currentStep: 0,
       mode: null,
       isGenerating: false,
@@ -125,5 +102,61 @@ export const useSessionStore = create<SessionState>()((set) => ({
       answers: { ...INITIAL_ANSWERS },
       result: null,
       sessionId: null,
+
+      setMode: (mode) => set({ mode }),
+      setStep: (step) => set({ currentStep: step }),
+      nextStep: () => set((s) => ({ currentStep: Math.min(s.currentStep + 1, 7) })),
+      prevStep: () => set((s) => ({ currentStep: Math.max(s.currentStep - 1, 0) })),
+      setAnswer: (key, value) =>
+        set((s) => ({ answers: { ...s.answers, [key]: value } })),
+      setFortuneScore: (score, percent, phase, label) =>
+        set({ fortuneScore: score, fortunePercent: percent, daunPhase: phase, gradeLabel: label }),
+      setGenerating: (v) => set({ isGenerating: v }),
+      setResult: (result) => set({ result }),
+      setSessionId: (id) => set({ sessionId: id }),
+      setPaid: (v) => set({ isPaid: v }),
+      reset: () =>
+        set({
+          currentStep: 0,
+          mode: null,
+          isGenerating: false,
+          isPaid: false,
+          fortuneScore: null,
+          fortunePercent: null,
+          daunPhase: null,
+          gradeLabel: null,
+          answers: { ...INITIAL_ANSWERS },
+          result: null,
+          sessionId: null,
+        }),
     }),
-}));
+    {
+      name: 'ft-session',
+      storage: {
+        getItem: (name) => {
+          if (typeof window === 'undefined') return null;
+          const raw = sessionStorage.getItem(name);
+          return raw ? JSON.parse(raw) : null;
+        },
+        setItem: (name, value) => {
+          if (typeof window !== 'undefined') sessionStorage.setItem(name, JSON.stringify(value));
+        },
+        removeItem: (name) => {
+          if (typeof window !== 'undefined') sessionStorage.removeItem(name);
+        },
+      },
+      partialize: (state) => ({
+        currentStep: state.currentStep,
+        mode: state.mode,
+        isPaid: state.isPaid,
+        fortuneScore: state.fortuneScore,
+        fortunePercent: state.fortunePercent,
+        daunPhase: state.daunPhase,
+        gradeLabel: state.gradeLabel,
+        answers: state.answers,
+        result: state.result,
+        sessionId: state.sessionId,
+      }) as unknown as SessionState,
+    }
+  )
+);

@@ -27,6 +27,12 @@ from fastapi.responses import StreamingResponse
 from PIL import Image, ImageDraw, ImageFont
 from pydantic import BaseModel, Field
 
+# AI 분석 라우터
+try:
+    from ai.routes import router as ai_router
+except ImportError:
+    ai_router = None
+
 # 한국 음력 변환
 try:
     from korean_lunar_calendar import KoreanLunarCalendar
@@ -68,6 +74,10 @@ app = FastAPI(
     description="유료 사주 플래너 PDF 생성 로컬 서버",
     version="2.0.0",
 )
+
+# AI 라우터 등록
+if ai_router:
+    app.include_router(ai_router)
 
 app.add_middleware(
     CORSMiddleware,

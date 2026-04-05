@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { calcFortuneScore } from '@/lib/fortune-score';
 
-export const runtime = 'edge';
-
 /**
  * POST /api/fortune/score
  *

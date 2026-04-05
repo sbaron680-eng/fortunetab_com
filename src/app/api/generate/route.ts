@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import Anthropic from '@anthropic-ai/sdk';
 
-export const runtime = 'edge';
-
 // ─── 타입 ─────────────────────────────────────────────────────────────
 
 interface GenerateRequest {

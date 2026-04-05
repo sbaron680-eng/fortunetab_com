@@ -1,7 +1,10 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
+import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 const TOSS_SECRET_KEY = Deno.env.get('TOSS_SECRET_KEY') || '';
 const TOSS_PAYPAL_SECRET_KEY = Deno.env.get('TOSS_PAYPAL_SECRET_KEY') || '';
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -34,6 +37,29 @@ Deno.serve(async (req: Request) => {
 
     if (!paymentKey || !orderId || !amount) {
       return json({ ok: false, error: 'paymentKey, orderId, amount는 필수입니다.' }, 400);
+    }
+
+    // 결제 금액 서버 대조: DB 주문 금액과 요청 금액 비교
+    if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
+      const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-/.test(orderId);
+      const col = isUuid ? 'id' : 'order_number';
+      const { data: orderRow } = await sb
+        .from('orders')
+        .select('total, status')
+        .eq(col, orderId)
+        .single();
+
+      if (orderRow) {
+        if (orderRow.status !== 'pending') {
+          console.warn(`[confirm-payment] 이미 처리된 주문: ${orderId} (status=${orderRow.status})`);
+          return json({ ok: false, error: '이미 처리된 주문입니다.' }, 409);
+        }
+        if (orderRow.total !== amount) {
+          console.error(`[confirm-payment] 금액 불일치: DB=${orderRow.total}, 요청=${amount}`);
+          return json({ ok: false, error: '결제 금액이 일치하지 않습니다.' }, 400);
+        }
+      }
     }
 
     // PayPal은 별도 MID의 시크릿키 사용
@@ -69,6 +95,40 @@ Deno.serve(async (req: Request) => {
     }
 
     console.log(`[confirm-payment] 승인 성공: ${orderId} (${paymentType === 'PAYPAL' ? `$${amount}` : `${amount}원`})`);
+
+    // DB 주문 상태 업데이트: pending → paid
+    if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
+      try {
+        const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+        // orderId가 UUID면 id로, 아니면 order_number로 매칭
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-/.test(orderId);
+        const col = isUuid ? 'id' : 'order_number';
+        const { data: updatedOrder } = await sb
+          .from('orders')
+          .update({ status: 'paid', payment_key: paymentKey })
+          .eq(col, orderId)
+          .select('id')
+          .single();
+        console.log(`[confirm-payment] DB 상태 업데이트: ${col}=${orderId} → paid`);
+
+        // 이메일 발송 트리거 (비동기, 실패해도 결제 응답에 영향 없음)
+        if (updatedOrder?.id) {
+          fetch(`${SUPABASE_URL}/functions/v1/send-order-email`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+            },
+            body: JSON.stringify({ order_id: updatedOrder.id }),
+          }).catch(emailErr => {
+            console.error('[confirm-payment] 이메일 트리거 실패:', emailErr);
+          });
+        }
+      } catch (dbErr) {
+        console.error('[confirm-payment] DB 업데이트 실패 (결제는 성공):', dbErr);
+      }
+    }
+
     return json({ ok: true, data });
   } catch (e) {
     console.error('[confirm-payment] error:', e);

@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createCheckout, getVariantId, type FtPlanType } from '@/lib/lemonsqueezy';
 
-export const runtime = 'edge';
-
 export async function POST(request: NextRequest) {
   try {
     const { plan } = (await request.json()) as { plan: FtPlanType };

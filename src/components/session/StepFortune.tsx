@@ -2,27 +2,23 @@
 
 import { useEffect, useState } from 'react';
 import { useSessionStore } from '@/lib/stores/session';
+import { fortuneGradeToUnified, gradeClasses, type FortuneGradeKey } from '@/lib/grades';
 
-const GRADE_COLORS: Record<string, string> = {
-  '발굴 최적': 'bg-emerald-100 text-emerald-800 border-emerald-200',
-  '좋은 흐름': 'bg-blue-100 text-blue-800 border-blue-200',
-  '중립': 'bg-gray-100 text-gray-700 border-gray-200',
-  '충전': 'bg-amber-100 text-amber-800 border-amber-200',
-};
-
-const GRADE_STROKE: Record<string, string> = {
-  '발굴 최적': '#059669',
-  '좋은 흐름': '#2563eb',
-  '중립': '#6b7280',
-  '충전': '#d97706',
+const LABEL_TO_KEY: Record<string, FortuneGradeKey> = {
+  '발굴 최적': 'optimal',
+  '좋은 흐름': 'good',
+  '중립': 'neutral',
+  '충전': 'rest',
 };
 
 export default function StepFortune() {
   const { fortunePercent, daunPhase, gradeLabel, nextStep } = useSessionStore();
   const [animatedPercent, setAnimatedPercent] = useState(0);
 
-  const colorClass = gradeLabel ? GRADE_COLORS[gradeLabel] ?? GRADE_COLORS['중립'] : '';
-  const strokeColor = gradeLabel ? GRADE_STROKE[gradeLabel] ?? GRADE_STROKE['중립'] : '#111';
+  const gradeKey = gradeLabel ? LABEL_TO_KEY[gradeLabel] ?? 'neutral' : 'neutral';
+  const gradeStyle = fortuneGradeToUnified(gradeKey);
+  const colorClass = gradeClasses(gradeStyle);
+  const strokeColor = gradeStyle.strokeColor;
 
   // 숫자 카운트업 애니메이션
   useEffect(() => {

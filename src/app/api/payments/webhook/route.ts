@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { verifyWebhookSignature, type LsWebhookEvent } from '@/lib/lemonsqueezy';
 
-export const runtime = 'edge';
-
 export async function POST(request: NextRequest) {
   try {
     const rawBody = await request.text();
