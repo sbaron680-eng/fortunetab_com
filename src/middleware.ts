@@ -7,7 +7,29 @@
  */
 
 import { NextResponse, type NextRequest } from 'next/server';
-import { SUPPORTED_LOCALES, DEFAULT_LOCALE, isValidLocale, getLocaleFromHeader } from '@/lib/i18n/config';
+
+// ── i18n 인라인 (빌드 의존성 최소화) ──
+const SUPPORTED_LOCALES = ['ko', 'en'] as const;
+type Locale = (typeof SUPPORTED_LOCALES)[number];
+const DEFAULT_LOCALE: Locale = 'ko';
+
+function isValidLocale(locale: string): locale is Locale {
+  return SUPPORTED_LOCALES.includes(locale as Locale);
+}
+
+function getLocaleFromHeader(acceptLanguage: string | null): Locale {
+  if (!acceptLanguage) return DEFAULT_LOCALE;
+  const languages = acceptLanguage
+    .split(',')
+    .map(part => {
+      const [lang] = part.trim().split(';');
+      return lang.split('-')[0].toLowerCase();
+    });
+  for (const lang of languages) {
+    if (isValidLocale(lang)) return lang;
+  }
+  return DEFAULT_LOCALE;
+}
 
 const LOCALE_COOKIE = 'ft-locale';
 
