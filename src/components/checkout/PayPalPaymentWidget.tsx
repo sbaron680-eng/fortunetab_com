@@ -70,30 +70,12 @@ function loadV2Script(): Promise<void> {
 const PayPalPaymentWidget = forwardRef<PayPalPaymentWidgetHandle, Props>(
   function PayPalPaymentWidget({ clientKey, customerKey, amount, onReady, onError }, ref) {
     const widgetsRef = useRef<TossPaymentsWidgets | null>(null);
+    const onReadyRef = useRef(onReady);
+    const onErrorRef = useRef(onError);
     const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
 
-    const initWidget = useCallback(async () => {
-      try {
-        await loadV2Script();
-
-        const tp = window.TossPayments!(clientKey);
-        const widgets = tp.widgets({ customerKey });
-
-        await widgets.setAmount({ currency: 'USD', value: amount });
-
-        await Promise.all([
-          widgets.renderPaymentMethods({ selector: '#paypal-payment-method', variantKey: 'PAYPAL' }),
-          widgets.renderAgreement({ selector: '#paypal-agreement', variantKey: 'AGREEMENT' }),
-        ]);
-
-        widgetsRef.current = widgets;
-        setStatus('ready');
-        onReady?.();
-      } catch (err) {
-        setStatus('error');
-        onError?.(err instanceof Error ? err : new Error(String(err)));
-      }
-    }, [clientKey, customerKey, amount, onReady, onError]);
+    onReadyRef.current = onReady;
+    onErrorRef.current = onError;
 
     useImperativeHandle(ref, () => ({
       requestPayment: async (params: PayPalRequestPaymentParams) => {
@@ -120,8 +102,40 @@ const PayPalPaymentWidget = forwardRef<PayPalPaymentWidgetHandle, Props>(
     }));
 
     useEffect(() => {
+      let cancelled = false;
+
+      async function initWidget() {
+        try {
+          await loadV2Script();
+
+          if (cancelled) return;
+
+          const tp = window.TossPayments!(clientKey);
+          const widgets = tp.widgets({ customerKey });
+
+          await widgets.setAmount({ currency: 'USD', value: amount });
+
+          await Promise.all([
+            widgets.renderPaymentMethods({ selector: '#paypal-payment-method', variantKey: 'PAYPAL' }),
+            widgets.renderAgreement({ selector: '#paypal-agreement', variantKey: 'AGREEMENT' }),
+          ]);
+
+          if (cancelled) return;
+
+          widgetsRef.current = widgets;
+          setStatus('ready');
+          onReadyRef.current?.();
+        } catch (err) {
+          if (cancelled) return;
+          setStatus('error');
+          onErrorRef.current?.(err instanceof Error ? err : new Error(String(err)));
+        }
+      }
+
       initWidget();
-    }, [initWidget]);
+
+      return () => { cancelled = true; };
+    }, [clientKey, customerKey, amount]);
 
     return (
       <div>
