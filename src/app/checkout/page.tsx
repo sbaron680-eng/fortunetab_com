@@ -95,6 +95,7 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<'domestic' | 'paypal'>('domestic');
   const paypalWidgetRef = useRef<PayPalPaymentWidgetHandle>(null);
   const [paypalWidgetReady, setPaypalWidgetReady] = useState(false);
+  const [paymentError, setPaymentError] = useState('');
 
   const [form, setForm] = useState<OrderForm>({
     name: user?.name ?? '',
@@ -175,6 +176,7 @@ export default function CheckoutPage() {
       return;
     }
     setAgreeError('');
+    setPaymentError('');
 
     setIsSubmitting(true);
 
@@ -211,13 +213,19 @@ export default function CheckoutPage() {
       const orderName = items.map((i) => i.product.name).join(', ');
 
       if (paymentMethod === 'paypal') {
-        await paypalWidgetRef.current!.requestPayment({
+        if (!paypalWidgetRef.current) {
+          setPaymentError('PayPal 위젯이 준비되지 않았습니다. 페이지를 새로고침해 주세요.');
+          return;
+        }
+        console.log('[Checkout] PayPal requestPayment 호출 시작', { orderId, orderName, totalUsd });
+        await paypalWidgetRef.current.requestPayment({
           orderId,
           orderName,
           customerName: form.name,
           customerEmail: form.email,
           product: { name: orderName, unitAmount: totalUsd },
         });
+        console.log('[Checkout] PayPal requestPayment 완료 (리다이렉트 안됨)');
       } else {
         await paymentWidgetRef.current!.requestPayment({
           orderId,
@@ -229,6 +237,10 @@ export default function CheckoutPage() {
       }
       // requestPayment()는 페이지를 이동시키므로 아래 코드는 실행되지 않습니다
       return;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error('[Checkout] 결제 요청 실패:', msg, err);
+      setPaymentError(`결제 처리 중 오류: ${msg}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -242,6 +254,7 @@ export default function CheckoutPage() {
       return;
     }
     setAgreeError('');
+    setPaymentError('');
     setIsSubmitting(true);
     try {
       sessionStorage.setItem('fortune-checkout', JSON.stringify({
@@ -253,13 +266,19 @@ export default function CheckoutPage() {
       const orderId = `FORTUNE-${fortuneInfo.type.toUpperCase()}-${Date.now()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
 
       if (paymentMethod === 'paypal') {
-        await paypalWidgetRef.current!.requestPayment({
+        if (!paypalWidgetRef.current) {
+          setPaymentError('PayPal 위젯이 준비되지 않았습니다. 페이지를 새로고침해 주세요.');
+          return;
+        }
+        console.log('[Fortune] PayPal requestPayment 호출 시작', { orderId, fortuneInfo });
+        await paypalWidgetRef.current.requestPayment({
           orderId,
           orderName: fortuneInfo.nameEn,
           customerName: user?.name ?? 'User',
           customerEmail: user?.email ?? '',
           product: { name: fortuneInfo.nameEn, unitAmount: fortuneInfo.usdAmount },
         });
+        console.log('[Fortune] PayPal requestPayment 완료 (리다이렉트 안됨)');
       } else {
         await paymentWidgetRef.current!.requestPayment({
           orderId,
@@ -268,6 +287,10 @@ export default function CheckoutPage() {
           customerEmail: user?.email ?? '',
         });
       }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error('[Fortune] 결제 요청 실패:', msg, err);
+      setPaymentError(`결제 처리 중 오류: ${msg}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -387,6 +410,13 @@ export default function CheckoutPage() {
               </p>
             )}
           </div>
+
+          {paymentError && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-4 text-sm text-red-700">
+              <p className="font-medium mb-1">결제 오류</p>
+              <p>{paymentError}</p>
+            </div>
+          )}
 
           <button
             onClick={handleFortunePayment}
@@ -851,6 +881,13 @@ export default function CheckoutPage() {
                     </p>
                   )}
                 </div>
+
+                {paymentError && (
+                  <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-700">
+                    <p className="font-medium mb-1">결제 오류</p>
+                    <p>{paymentError}</p>
+                  </div>
+                )}
 
                 <button
                   onClick={handlePayment}

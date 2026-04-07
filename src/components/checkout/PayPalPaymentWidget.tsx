@@ -5,10 +5,6 @@
  *
  * 국내 결제(v1 SDK)와 독립적으로 동작합니다.
  * CDN 스크립트를 동적으로 로드하고, variantKey: "PAYPAL"로 위젯을 렌더합니다.
- *
- * 1. ref.requestPayment()를 호출하면 PayPal 로그인 페이지로 이동
- * 2. 성공 → /checkout/success?paymentType=PAYPAL&paymentKey=...&orderId=...&amount=...
- * 3. 실패 → /checkout/fail?code=...&message=...&orderId=...
  */
 
 import {
@@ -17,7 +13,6 @@ import {
   useRef,
   useImperativeHandle,
   forwardRef,
-  useCallback,
 } from 'react';
 
 const V2_SDK_URL = 'https://js.tosspayments.com/v2/standard';
@@ -67,12 +62,23 @@ function loadV2Script(): Promise<void> {
   });
 }
 
+/** 컨테이너 내부의 자식 노드를 안전하게 제거 */
+function clearContainer(id: string) {
+  const el = document.getElementById(id);
+  if (el) {
+    while (el.firstChild) {
+      el.removeChild(el.firstChild);
+    }
+  }
+}
+
 const PayPalPaymentWidget = forwardRef<PayPalPaymentWidgetHandle, Props>(
   function PayPalPaymentWidget({ clientKey, customerKey, amount, onReady, onError }, ref) {
     const widgetsRef = useRef<TossPaymentsWidgets | null>(null);
     const onReadyRef = useRef(onReady);
     const onErrorRef = useRef(onError);
     const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+    const [retryCount, setRetryCount] = useState(0);
 
     onReadyRef.current = onReady;
     onErrorRef.current = onError;
@@ -80,7 +86,7 @@ const PayPalPaymentWidget = forwardRef<PayPalPaymentWidgetHandle, Props>(
     useImperativeHandle(ref, () => ({
       requestPayment: async (params: PayPalRequestPaymentParams) => {
         if (!widgetsRef.current) throw new Error('PayPal 위젯이 준비되지 않았습니다');
-        await widgetsRef.current.requestPayment({
+        const payload = {
           orderId: params.orderId,
           orderName: params.orderName,
           customerEmail: params.customerEmail,
@@ -91,13 +97,22 @@ const PayPalPaymentWidget = forwardRef<PayPalPaymentWidgetHandle, Props>(
             country: 'US',
             products: [{
               name: params.product.name,
+              description: params.product.name,
               quantity: 1,
               unitAmount: params.product.unitAmount,
               currency: 'USD',
             }],
             shipping: { fullName: params.customerName },
           },
-        });
+        };
+        console.log('[PayPalWidget] requestPayment payload:', JSON.stringify(payload, null, 2));
+        try {
+          const result = await widgetsRef.current.requestPayment(payload);
+          console.log('[PayPalWidget] requestPayment result:', result);
+        } catch (err) {
+          console.error('[PayPalWidget] requestPayment error:', err);
+          throw err;
+        }
       },
     }));
 
@@ -106,6 +121,7 @@ const PayPalPaymentWidget = forwardRef<PayPalPaymentWidgetHandle, Props>(
 
       async function initWidget() {
         try {
+          setStatus('loading');
           await loadV2Script();
 
           if (cancelled) return;
@@ -114,6 +130,10 @@ const PayPalPaymentWidget = forwardRef<PayPalPaymentWidgetHandle, Props>(
           const widgets = tp.widgets({ customerKey });
 
           await widgets.setAmount({ currency: 'USD', value: amount });
+
+          // 렌더 전 기존 컨테이너 자식 제거 (재시도 시 중복 방지)
+          clearContainer('paypal-payment-method');
+          clearContainer('paypal-agreement');
 
           await Promise.all([
             widgets.renderPaymentMethods({ selector: '#paypal-payment-method', variantKey: 'PAYPAL' }),
@@ -127,6 +147,7 @@ const PayPalPaymentWidget = forwardRef<PayPalPaymentWidgetHandle, Props>(
           onReadyRef.current?.();
         } catch (err) {
           if (cancelled) return;
+          console.error('[PayPalWidget] init error:', err);
           setStatus('error');
           onErrorRef.current?.(err instanceof Error ? err : new Error(String(err)));
         }
@@ -135,7 +156,12 @@ const PayPalPaymentWidget = forwardRef<PayPalPaymentWidgetHandle, Props>(
       initWidget();
 
       return () => { cancelled = true; };
-    }, [clientKey, customerKey, amount]);
+    }, [clientKey, customerKey, amount, retryCount]);
+
+    const handleRetry = () => {
+      widgetsRef.current = null;
+      setRetryCount((c) => c + 1);
+    };
 
     return (
       <div>
@@ -150,8 +176,16 @@ const PayPalPaymentWidget = forwardRef<PayPalPaymentWidgetHandle, Props>(
         )}
 
         {status === 'error' && (
-          <div className="text-center py-6 text-sm text-red-500">
-            PayPal 결제 모듈을 불러올 수 없습니다. 새로고침 후 다시 시도해 주세요.
+          <div className="text-center py-6">
+            <p className="text-sm text-red-500 mb-3">
+              PayPal 결제 모듈을 불러올 수 없습니다.
+            </p>
+            <button
+              onClick={handleRetry}
+              className="px-4 py-2 text-sm font-medium text-white bg-[#0070ba] rounded-lg hover:bg-[#005ea6] transition-colors"
+            >
+              다시 시도
+            </button>
           </div>
         )}
 
