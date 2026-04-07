@@ -140,6 +140,7 @@ export default function CheckoutPage() {
     return promo.hasPromo ? promo.finalPrice : basePrice;
   };
   const total = items.reduce((sum, i) => sum + getItemPrice(i.product.slug, i.product.price) * i.qty, 0);
+  const totalUsd = Math.round(total / 1350 * 100) / 100; // KRW → USD 근사 환산
   const hasPaidItem = items.some((i) => getItemPrice(i.product.slug, i.product.price) > 0);
 
   const handleFormChange = (
@@ -207,13 +208,25 @@ export default function CheckoutPage() {
       sessionStorage.setItem('checkout-form', JSON.stringify(form));
 
       const orderId = `FT-${Date.now()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
-      await paymentWidgetRef.current!.requestPayment({
-        orderId,
-        orderName: items.map((i) => i.product.name).join(', '),
-        customerName: form.name,
-        customerEmail: form.email,
-        customerMobilePhone: form.phone.replace(/[^0-9]/g, '') || undefined,
-      });
+      const orderName = items.map((i) => i.product.name).join(', ');
+
+      if (paymentMethod === 'paypal') {
+        await paypalWidgetRef.current!.requestPayment({
+          orderId,
+          orderName,
+          customerName: form.name,
+          customerEmail: form.email,
+          product: { name: orderName, unitAmount: totalUsd },
+        });
+      } else {
+        await paymentWidgetRef.current!.requestPayment({
+          orderId,
+          orderName,
+          customerName: form.name,
+          customerEmail: form.email,
+          customerMobilePhone: form.phone.replace(/[^0-9]/g, '') || undefined,
+        });
+      }
       // requestPayment()는 페이지를 이동시키므로 아래 코드는 실행되지 않습니다
       return;
     } finally {
@@ -743,21 +756,59 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
+                {/* 결제수단 선택 (PayPal 키가 있을 때만 토글 표시) */}
+                {hasPaidItem && TOSS_PAYPAL_CLIENT_KEY && (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => { setPaymentMethod('domestic'); setWidgetReady(false); setPaypalWidgetReady(false); }}
+                      className={`flex-1 py-2.5 text-sm font-medium rounded-xl border transition-all ${
+                        paymentMethod === 'domestic'
+                          ? 'bg-ft-ink text-white border-ft-ink'
+                          : 'bg-white text-ft-muted border-ft-border hover:border-ft-ink'
+                      }`}
+                    >
+                      국내 결제 {formatPrice(total)}
+                    </button>
+                    <button
+                      onClick={() => { setPaymentMethod('paypal'); setWidgetReady(false); setPaypalWidgetReady(false); }}
+                      className={`flex-1 py-2.5 text-sm font-medium rounded-xl border transition-all ${
+                        paymentMethod === 'paypal'
+                          ? 'bg-[#0070ba] text-white border-[#0070ba]'
+                          : 'bg-white text-ft-muted border-ft-border hover:border-[#0070ba]'
+                      }`}
+                    >
+                      PayPal ${totalUsd}
+                    </button>
+                  </div>
+                )}
+
                 {/* 결제 방법 */}
                 <div className="bg-white rounded-2xl shadow-sm border border-ft-border p-5 sm:p-6">
-                  <h2 className="font-bold font-serif text-ft-ink mb-4">💳 결제 수단</h2>
+                  <h2 className="font-bold font-serif text-ft-ink mb-4">
+                    {paymentMethod === 'paypal' ? '🌐 PayPal' : '💳 결제 수단'}
+                  </h2>
 
                   {hasPaidItem ? (
-                    <div>
-                      <PaymentWidget
-                        ref={paymentWidgetRef}
-                        clientKey={TOSS_CLIENT_KEY}
-                        customerKey={user?.id}
-                        amount={total}
-                        onReady={() => setWidgetReady(true)}
-                        onError={(err) => console.error('[Checkout] 결제위젯 에러:', err)}
+                    paymentMethod === 'domestic' ? (
+                      <div>
+                        <PaymentWidget
+                          ref={paymentWidgetRef}
+                          clientKey={TOSS_CLIENT_KEY}
+                          customerKey={user?.id}
+                          amount={total}
+                          onReady={() => setWidgetReady(true)}
+                          onError={(err) => console.error('[Checkout] 결제위젯 에러:', err)}
+                        />
+                      </div>
+                    ) : (
+                      <PayPalPaymentWidget
+                        ref={paypalWidgetRef}
+                        clientKey={TOSS_PAYPAL_CLIENT_KEY}
+                        customerKey={user?.id ?? 'guest'}
+                        amount={totalUsd}
+                        onReady={() => setPaypalWidgetReady(true)}
                       />
-                    </div>
+                    )
                   ) : (
                     <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center">
                       <p className="text-emerald-700 font-medium">🎁 무료 상품 — 결제 없이 신청 가능합니다</p>
@@ -803,11 +854,13 @@ export default function CheckoutPage() {
 
                 <button
                   onClick={handlePayment}
-                  disabled={isSubmitting || (hasPaidItem && !widgetReady)}
-                  className={`w-full py-4 font-bold rounded-2xl transition-all shadow-lg flex items-center justify-center gap-2 ${
-                    hasPaidItem
-                      ? 'text-ft-navy bg-ft-gold hover:bg-ft-gold-h disabled:opacity-50 disabled:cursor-not-allowed'
-                      : 'text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed'
+                  disabled={isSubmitting || (hasPaidItem && (paymentMethod === 'domestic' ? !widgetReady : !paypalWidgetReady))}
+                  className={`w-full py-4 font-bold rounded-2xl transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+                    !hasPaidItem
+                      ? 'text-white bg-emerald-600 hover:bg-emerald-700'
+                      : paymentMethod === 'paypal'
+                      ? 'text-white bg-[#0070ba] hover:bg-[#005ea6]'
+                      : 'text-ft-navy bg-ft-gold hover:bg-ft-gold-h'
                   }`}
                 >
                   {isSubmitting && (
@@ -818,9 +871,11 @@ export default function CheckoutPage() {
                   )}
                   {isSubmitting
                     ? '처리 중...'
-                    : hasPaidItem
-                    ? `${formatPrice(total)} 결제하기`
-                    : '무료 신청 완료하기'}
+                    : !hasPaidItem
+                    ? '무료 신청 완료하기'
+                    : paymentMethod === 'paypal'
+                    ? `Pay $${totalUsd} with PayPal`
+                    : `${formatPrice(total)} 결제하기`}
                 </button>
               </div>
             )}
