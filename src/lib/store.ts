@@ -5,8 +5,12 @@ import type { SajuData } from '@/lib/pdf-generator';
 
 // ── Cart Store ────────────────────────────────────────────────────────────────
 
+// 장바구니 유효 시간 (밀리초) — 24시간 초과 시 자동 비움
+const CART_TTL_MS = 24 * 60 * 60 * 1000;
+
 interface CartStore {
   items: CartItem[];
+  updatedAt: number;   // 마지막 변경 시각 (Date.now())
   isOpen: boolean;
   addItem: (product: Product) => void;
   removeItem: (productId: string) => void;
@@ -22,6 +26,7 @@ export const useCartStore = create<CartStore>()(
   persist(
     (set, get) => ({
       items: [],
+      updatedAt: 0,
       isOpen: false,
 
       addItem: (product) => {
@@ -29,13 +34,14 @@ export const useCartStore = create<CartStore>()(
           // 디지털 상품: 이미 담겨 있으면 중복 추가하지 않음 (수량 항상 1)
           const existing = state.items.find((i) => i.product.id === product.id);
           if (existing) return state;
-          return { items: [...state.items, { product, qty: 1 }] };
+          return { items: [...state.items, { product, qty: 1 }], updatedAt: Date.now() };
         });
       },
 
       removeItem: (productId) => {
         set((state) => ({
           items: state.items.filter((i) => i.product.id !== productId),
+          updatedAt: Date.now(),
         }));
       },
 
@@ -48,10 +54,11 @@ export const useCartStore = create<CartStore>()(
           items: state.items.map((i) =>
             i.product.id === productId ? { ...i, qty } : i
           ),
+          updatedAt: Date.now(),
         }));
       },
 
-      clearCart: () => set({ items: [] }),
+      clearCart: () => set({ items: [], updatedAt: 0 }),
       openCart: () => set({ isOpen: true }),
       closeCart: () => set({ isOpen: false }),
 
@@ -61,8 +68,28 @@ export const useCartStore = create<CartStore>()(
     }),
     {
       name: 'fortunetab-cart',
-      // items만 persist, isOpen은 휘발성
-      partialize: (state) => ({ items: state.items }),
+      // version 1: 기존 v0 데이터(updatedAt 없음)를 자동 마이그레이션
+      version: 1,
+      migrate: (persisted, version) => {
+        if (version === 0) {
+          // v0 → v1: 기존 장바구니를 비워서 오래된 유령 아이템 제거
+          return { items: [], updatedAt: 0 };
+        }
+        return persisted as CartStore;
+      },
+      // items + updatedAt만 persist, isOpen은 휘발성
+      partialize: (state) => ({ items: state.items, updatedAt: state.updatedAt }),
+      // 리하이드레이션 후 TTL 체크 — 24시간 초과 시 자동 비움
+      onRehydrateStorage: () => (state) => {
+        if (!state) return;
+        if (state.items.length > 0 && state.updatedAt > 0) {
+          const age = Date.now() - state.updatedAt;
+          if (age > CART_TTL_MS) {
+            // setTimeout으로 hydration 완료 후 clearCart 호출 → localStorage도 동기화
+            setTimeout(() => useCartStore.getState().clearCart(), 0);
+          }
+        }
+      },
     }
   )
 );
