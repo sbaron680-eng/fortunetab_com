@@ -6,7 +6,7 @@
  * PDF 내용과 항상 일치합니다.
  */
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import PlannerPreviewCanvas from '@/components/planner/PlannerPreviewCanvas';
 import PreviewLightbox from '@/components/ui/PreviewLightbox';
 import { PLANNER_YEAR } from '@/lib/products';
@@ -31,6 +31,23 @@ export default function PlannerProductPreview({ year = PLANNER_YEAR, theme = 'ro
   const [activeIdx, setActiveIdx] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const active = PAGES[activeIdx];
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [canvasWidth, setCanvasWidth] = useState(320);
+
+  // 컨테이너 크기에 맞춰 캔버스 너비를 계산 (A4 비율 = 3:4.24)
+  useEffect(() => {
+    function updateWidth() {
+      if (!containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      // 패딩(32px*2)을 빼고, 컨테이너 높이 기준 A4 비율로 역산한 너비 중 작은 값
+      const maxW = rect.width - 64;
+      const maxFromH = (rect.height - 64) * (1240 / 1754);
+      setCanvasWidth(Math.floor(Math.min(maxW, maxFromH)));
+    }
+    updateWidth();
+    window.addEventListener('resize', updateWidth);
+    return () => window.removeEventListener('resize', updateWidth);
+  }, []);
 
   const prev = () => setActiveIdx((i) => (i === 0 ? PAGES.length - 1 : i - 1));
   const next = () => setActiveIdx((i) => (i === PAGES.length - 1 ? 0 : i + 1));
@@ -40,7 +57,8 @@ export default function PlannerProductPreview({ year = PLANNER_YEAR, theme = 'ro
   return (
     <div className="flex flex-col gap-4">
       {/* 메인 미리보기 */}
-      <div className="relative flex items-center justify-center rounded-2xl overflow-hidden bg-indigo-50 shadow-sm p-4"
+      <div ref={containerRef}
+           className="relative flex items-center justify-center rounded-2xl overflow-hidden bg-indigo-50 shadow-sm p-4"
            style={{ aspectRatio: '3/4' }}>
         {/* 좌우 화살표 */}
         <button
@@ -62,7 +80,7 @@ export default function PlannerProductPreview({ year = PLANNER_YEAR, theme = 'ro
             pageType={active.type}
             pageIdx={active.idx}
             opts={opts}
-            displayWidth={220}
+            displayWidth={canvasWidth}
             className="mx-auto"
           />
         </button>

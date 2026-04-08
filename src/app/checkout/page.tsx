@@ -36,6 +36,10 @@ const FORTUNE_PRODUCTS: Record<string, {
 
 const TOSS_PAYPAL_CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_PAYPAL_CLIENT_KEY ?? '';
 
+// ── 국내 결제(Toss) 활성화 플래그 ─────────────────────────────────────
+// 토스 승인 완료 후 true로 변경하면 국내 결제가 다시 노출됩니다.
+const DOMESTIC_PAYMENT_ENABLED = false;
+
 type Step = 'info' | 'payment' | 'complete';
 
 interface OrderForm {
@@ -92,7 +96,7 @@ export default function CheckoutPage() {
   const fortuneInfo = fortuneProduct ? FORTUNE_PRODUCTS[fortuneProduct] : null;
 
   // PayPal 결제
-  const [paymentMethod, setPaymentMethod] = useState<'domestic' | 'paypal'>('domestic');
+  const [paymentMethod, setPaymentMethod] = useState<'domestic' | 'paypal'>(DOMESTIC_PAYMENT_ENABLED ? 'domestic' : 'paypal');
   const paypalWidgetRef = useRef<PayPalPaymentWidgetHandle>(null);
   const [paypalWidgetReady, setPaypalWidgetReady] = useState(false);
   const [paymentError, setPaymentError] = useState('');
@@ -327,7 +331,7 @@ export default function CheckoutPage() {
                 <p className="font-bold text-ft-ink">
                   {paymentMethod === 'paypal' ? fortuneInfo.nameEn : fortuneInfo.name}
                 </p>
-                <p className="text-xs text-ft-muted">1회 이용권 · Claude AI 심층 분석</p>
+                <p className="text-xs text-ft-muted">1회 이용권 · AI(인공지능) 기반 사주 분석</p>
               </div>
               <p className="text-lg font-black text-ft-ink">
                 {paymentMethod === 'paypal' ? `$${fortuneInfo.usdAmount}` : formatPrice(fortuneInfo.amount)}
@@ -335,8 +339,8 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          {/* 결제수단 선택 (PayPal 키가 있을 때만 토글 표시) */}
-          {TOSS_PAYPAL_CLIENT_KEY && (
+          {/* 결제수단 선택 (PayPal 키가 있고 국내 결제 활성화 시 토글 표시) */}
+          {TOSS_PAYPAL_CLIENT_KEY && DOMESTIC_PAYMENT_ENABLED && (
             <div className="flex gap-2 mb-4">
               <button
                 onClick={() => { setPaymentMethod('domestic'); setWidgetReady(false); setPaypalWidgetReady(false); }}
@@ -366,7 +370,7 @@ export default function CheckoutPage() {
             <h2 className="font-bold font-serif text-ft-ink mb-4">
               {paymentMethod === 'paypal' ? '🌐 PayPal' : '💳 결제 수단'}
             </h2>
-            {paymentMethod === 'domestic' ? (
+            {paymentMethod === 'domestic' && DOMESTIC_PAYMENT_ENABLED ? (
               <PaymentWidget
                 ref={paymentWidgetRef}
                 clientKey={TOSS_CLIENT_KEY}
@@ -786,8 +790,8 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                {/* 결제수단 선택 (PayPal 키가 있을 때만 토글 표시) */}
-                {hasPaidItem && TOSS_PAYPAL_CLIENT_KEY && (
+                {/* 결제수단 선택 (PayPal 키가 있고 국내 결제 활성화 시 토글 표시) */}
+                {hasPaidItem && TOSS_PAYPAL_CLIENT_KEY && DOMESTIC_PAYMENT_ENABLED && (
                   <div className="flex gap-2">
                     <button
                       onClick={() => { setPaymentMethod('domestic'); setWidgetReady(false); setPaypalWidgetReady(false); }}
@@ -819,7 +823,7 @@ export default function CheckoutPage() {
                   </h2>
 
                   {hasPaidItem ? (
-                    paymentMethod === 'domestic' ? (
+                    paymentMethod === 'domestic' && DOMESTIC_PAYMENT_ENABLED ? (
                       <div>
                         <PaymentWidget
                           ref={paymentWidgetRef}

@@ -136,6 +136,20 @@ export default async function ProductDetailPage({ params }: Props) {
               {product.description}
             </div>
 
+            {/* AI 사주 분석 고지 — 사주 관련 상품에만 표시 */}
+            {product.slug.includes('saju') && (
+              <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
+                <span className="text-lg flex-shrink-0">🤖</span>
+                <div>
+                  <p className="text-sm font-medium text-blue-900">AI 기반 사주 분석</p>
+                  <p className="text-xs text-blue-700 mt-1 leading-relaxed">
+                    본 서비스의 사주 분석은 AI(인공지능)를 통해 제공됩니다.
+                    AI 분석은 참고 용도이며 전문 상담을 대체하지 않습니다.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* 특징 */}
             <h2 className="text-lg font-bold text-ft-ink mt-8 mb-4">주요 특징</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

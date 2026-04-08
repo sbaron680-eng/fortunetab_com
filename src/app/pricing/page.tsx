@@ -202,7 +202,8 @@ export default function PricingPage() {
 
         {/* 하단 안내 */}
         <div className="mt-12 text-center text-xs text-ft-muted space-y-1">
-          <p>결제는 토스페이먼츠(국내) 및 Lemon Squeezy(글로벌)를 통해 안전하게 처리됩니다.</p>
+          <p>모든 사주 분석은 AI(인공지능)를 통해 제공됩니다. 참고 용도이며 전문 상담을 대체하지 않습니다.</p>
+          <p>결제는 Lemon Squeezy를 통해 안전하게 처리됩니다.</p>
           <p>구독은 언제든 해지할 수 있으며, 해지 후에도 현재 결제 기간까지 이용 가능합니다.</p>
           <p>
             <Link href="/refund" className="underline">환불 정책</Link>

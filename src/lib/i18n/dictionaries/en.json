@@ -1,0 +1,119 @@
+{
+  "common": {
+    "appName": "FortuneTab",
+    "tagline": "Where Eastern Wisdom Meets Western Stars",
+    "login": "Log In",
+    "register": "Sign Up",
+    "logout": "Log Out",
+    "settings": "Settings",
+    "dashboard": "Dashboard",
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "retry": "Try Again",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "back": "Back",
+    "next": "Next",
+    "close": "Close"
+  },
+  "nav": {
+    "chat": "AI Chat",
+    "credits": "Credits",
+    "pricing": "Pricing",
+    "history": "History"
+  },
+  "landing": {
+    "heroTitle": "AI Reads Your\nDestiny Story",
+    "heroSubtitle": "An AI that fuses Eastern Four Pillars of Destiny with Western Astrology explores life's direction through conversation",
+    "ctaStart": "Start Free",
+    "ctaLearnMore": "Learn More",
+    "features": {
+      "chat": {
+        "title": "AI Chat Session",
+        "description": "Explore your fortune's flow through real-time conversation"
+      },
+      "report": {
+        "title": "AI Comprehensive Report",
+        "description": "Deep analysis covering life, career, and relationships"
+      },
+      "coaching": {
+        "title": "AI Coaching Journey",
+        "description": "An ongoing relationship guiding you toward your goals"
+      },
+      "decision": {
+        "title": "AI Decision Tool",
+        "description": "Add fortune timing to your important decisions"
+      }
+    },
+    "freeCredits": "5 free credits on sign up",
+    "disclaimer": "AI analysis is for reference only and does not replace professional consultation"
+  },
+  "chat": {
+    "newSession": "Start New Chat",
+    "placeholder": "Type your message...",
+    "send": "Send",
+    "thinking": "Thinking...",
+    "sessionEnded": "Session completed",
+    "messagesLeft": "{count} messages remaining",
+    "needCredits": "Insufficient credits",
+    "startCost": "This session requires 5 credits",
+    "extraMessages": "Extra 10 messages: 2 credits"
+  },
+  "fortune": {
+    "birthData": {
+      "title": "Enter Birth Information",
+      "date": "Date of Birth",
+      "time": "Time of Birth",
+      "timeUnknown": "Unknown",
+      "gender": "Gender",
+      "male": "Male",
+      "female": "Female",
+      "location": "Place of Birth",
+      "locationPlaceholder": "Enter city name"
+    },
+    "score": {
+      "title": "Fortune Score",
+      "optimal": "Optimal",
+      "good": "Good Flow",
+      "neutral": "Neutral",
+      "rest": "Recharge"
+    },
+    "eastern": "Four Pillars Analysis",
+    "western": "Astrology Analysis",
+    "composite": "Composite Score"
+  },
+  "credits": {
+    "title": "Credits",
+    "balance": "Credit Balance",
+    "buy": "Buy Credits",
+    "history": "Transaction History",
+    "packages": {
+      "starter": "Starter",
+      "standard": "Standard",
+      "plus": "Plus",
+      "proMonthly": "Pro Monthly",
+      "proYearly": "Pro Yearly"
+    },
+    "perCredit": "per credit",
+    "expires": "Expires: {date}",
+    "noExpiry": "Subscription credits reset monthly"
+  },
+  "auth": {
+    "loginTitle": "Log In",
+    "registerTitle": "Sign Up",
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Forgot Password",
+    "orContinueWith": "or",
+    "google": "Continue with Google",
+    "kakao": "Continue with Kakao"
+  },
+  "legal": {
+    "disclaimer": "AI analysis is for reference only and does not replace professional consultation",
+    "aiNotice": "All fortune analysis in this service is powered by AI (Artificial Intelligence). For reference only and does not replace professional consultation.",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service",
+    "refund": "Refund Policy"
+  }
+}

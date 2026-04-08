@@ -234,7 +234,7 @@ export default function CartPage() {
                 </li>
                 <li className="flex items-start gap-1.5">
                   <span className="text-emerald-500 flex-shrink-0">✓</span>
-                  안전한 Toss Payments 결제
+                  안전한 결제 시스템
                 </li>
               </ul>
             </div>
