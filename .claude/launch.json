@@ -5,7 +5,7 @@
       "name": "fortunetab-dev",
       "runtimeExecutable": "npx",
       "runtimeArgs": ["next", "dev"],
-      "cwd": "C:\\Users\\박성준\\Desktop\\Project\\fortunetab_com",
+      "cwd": "C:\\Project\\fortunetab_com",
       "port": 3000,
       "autoPort": true
     }

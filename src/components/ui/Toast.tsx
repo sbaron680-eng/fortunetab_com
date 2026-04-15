@@ -11,8 +11,7 @@ export default function Toast() {
 
   return (
     <div
-      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[200] flex items-center gap-3 px-5 py-3 rounded-2xl shadow-2xl text-sm font-medium"
-      style={{ background: '#1e1b4b', border: '1px solid rgba(240,192,64,0.3)' }}
+      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[200] flex items-center gap-3 px-5 py-3 rounded-2xl shadow-2xl text-sm font-medium bg-ft-ink border border-ft-gold/30"
     >
       <span className="text-green-400 text-base">✓</span>
       <span className="text-white">{message}</span>

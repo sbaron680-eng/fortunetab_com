@@ -38,7 +38,7 @@ const TOSS_PAYPAL_CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_PAYPAL_CLIENT_KEY ??
 
 // ── 국내 결제(Toss) 활성화 플래그 ─────────────────────────────────────
 // 토스 승인 완료 후 true로 변경하면 국내 결제가 다시 노출됩니다.
-const DOMESTIC_PAYMENT_ENABLED = false;
+const DOMESTIC_PAYMENT_ENABLED = true;
 
 type Step = 'info' | 'payment' | 'complete';
 

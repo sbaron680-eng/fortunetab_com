@@ -27,3 +27,14 @@ pdf-planner/*.png
 
 # Claude Preview MCP 로그/스크린샷
 .playwright-mcp/
+tmp-screenshots/
+
+# Vercel
+.vercel/
+
+# TypeScript 빌드 캐시
+tsconfig.tsbuildinfo
+
+# 임시 파일
+env_tmp.txt
+*.tmp.txt

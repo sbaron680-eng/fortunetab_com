@@ -1,4 +1,12 @@
+/**
+ * Supabase Browser Client + Shared Types
+ *
+ * This file is safe to import from client components.
+ * For server-only operations (service_role key), use supabase-server.ts.
+ */
+
 import { createClient } from '@supabase/supabase-js';
+import type { SajuResult, WesternProfile, FortuneGrade } from '@/lib/fortune/types';
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -15,49 +23,28 @@ export interface ProfileRow {
   name: string;
   is_admin: boolean;
   created_at: string;
-  birth_date: string | null;              // 'YYYY-MM-DD'
-  birth_hour: string | null;              // '자시'~'해시' 또는 '모름'
-  gender: string | null;                  // 'male' | 'female'
-  birth_data_expires_at: string | null;   // 만료 시각 (입력일 + 1년)
-  mode: UserMode;                         // 'biz' | 'gen'
-  daun_phase: DaunPhase;                  // 현재 대운 단계
+  birth_date: string | null;
+  birth_hour: string | null;
+  gender: string | null;
+  birth_data_expires_at: string | null;
+  mode: UserMode;
+  daun_phase: DaunPhase;
 }
+
+// ── v1 Legacy (유지) ─────────────────────────────────────────────────────────
 
 export interface OrderRow {
   id: string;
   user_id: string;
   order_number: string;
   status: 'pending' | 'paid' | 'processing' | 'completed' | 'cancelled';
-  total: number; // 원 단위 정수
+  total: number;
   created_at: string;
-  // 다운로드 추적
-  download_opened_at: string | null; // 최초 링크 열람 시각 (null = 미열람)
-  download_count: number;            // 총 열람 횟수
-  file_url: string | null;           // 관리자가 설정하는 실제 파일 URL
-  access_token: string;              // 추적 URL용 보안 토큰 (UUID)
+  download_opened_at: string | null;
+  download_count: number;
+  file_url: string | null;
+  access_token: string;
 }
-
-export interface OrderItemRow {
-  id: string;
-  order_id: string;
-  product_id: string;
-  product_name: string;
-  price: number;
-  qty: number;
-}
-
-export interface FortunePurchaseRow {
-  id: string;
-  user_id: string;
-  type: 'saju' | 'astrology' | 'couple';
-  order_id: string;
-  used_at: string | null;
-  created_at: string;
-}
-
-// ── Phase 1: 명발굴 세션 ────────────────────────────────────────────────────
-
-export type PaymentType = 'single' | 'credit' | 'subscription';
 
 export interface FtSessionRow {
   id: string;
@@ -65,12 +52,14 @@ export interface FtSessionRow {
   mode: UserMode;
   fortune_score: number | null;
   daun_phase: DaunPhase | null;
-  answers: Record<string, unknown>;       // step0~step6 답변
-  result: Record<string, unknown> | null; // Claude API 결과 (story, actions, brake)
-  payment_type: PaymentType;
+  answers: Record<string, string | number | boolean>;
+  result: Record<string, string | number | boolean | null> | null;
+  payment_type: 'single' | 'credit' | 'subscription';
   created_at: string;
   updated_at: string;
 }
+
+// ── v2: Credits (기존 테이블 재활용) ─────────────────────────────────────────
 
 export type ServiceType = 'ft' | 'sd';
 
@@ -98,4 +87,109 @@ export interface SubscriptionRow {
   current_period_end: string | null;
   created_at: string;
   updated_at: string;
+}
+
+// ── v2: Fortune Profile (운세 캐시) ──────────────────────────────────────────
+
+export interface FortuneProfileRow {
+  id: string;
+  user_id: string;
+  birth_date: string;
+  birth_hour: number | null;
+  birth_minute: number | null;
+  birth_location: string | null;
+  birth_lat: number | null;
+  birth_lng: number | null;
+  gender: 'male' | 'female';
+  saju_data: SajuResult;
+  western_data: WesternProfile;
+  composite_score: {
+    bioScore: number;
+    daunBonus: number;
+    westernBonus: number;
+    fortuneScore: number;
+    fortunePercent: number;
+    grade: FortuneGrade;
+  };
+  calculated_at: string;
+  expires_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// ── v2: Chat Session ─────────────────────────────────────────────────────────
+
+export type ChatSessionType = 'conversation' | 'report' | 'coaching' | 'decision';
+export type ChatSessionStatus = 'active' | 'completed' | 'archived';
+
+export interface ChatSessionRow {
+  id: string;
+  user_id: string;
+  session_type: ChatSessionType;
+  title: string | null;
+  status: ChatSessionStatus;
+  fortune_snapshot: {
+    saju: SajuResult;
+    western: WesternProfile;
+    composite: { fortuneScore: number; fortunePercent: number; grade: FortuneGrade };
+  } | null;
+  credits_spent: number;
+  locale: string;
+  message_count: number;
+  max_messages: number;
+  last_message_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// ── v2: Chat Message ─────────────────────────────────────────────────────────
+
+export type ChatRole = 'user' | 'assistant' | 'system';
+
+export interface ChatMessageRow {
+  id: string;
+  session_id: string;
+  role: ChatRole;
+  content: string;
+  metadata: Record<string, string | number | boolean | null>;
+  created_at: string;
+}
+
+// ── v2: Credit Transaction (감사추적) ────────────────────────────────────────
+
+export type CreditReason =
+  | 'purchase'
+  | 'session_start'
+  | 'extra_messages'
+  | 'bonus'
+  | 'refund'
+  | 'expiry'
+  | 'subscription_reset';
+
+export interface CreditTransactionRow {
+  id: string;
+  user_id: string;
+  amount: number;
+  balance_after: number;
+  reason: CreditReason;
+  reference_id: string | null;
+  reference_type: string | null;
+  created_at: string;
+}
+
+// ── v2: RPC Return Types ─────────────────────────────────────────────────────
+
+export interface SpendCreditsResult {
+  ok: boolean;
+  error?: string;
+  balance?: number;
+  spent?: number;
+  required?: number;
+}
+
+export interface AddCreditsResult {
+  ok: boolean;
+  error?: string;
+  balance?: number;
+  added?: number;
 }

@@ -27,12 +27,25 @@ function getStoreId(): string {
 
 // ─── 타입 ─────────────────────────────────────────────────────────────
 
+// v1 (레거시)
 export type FtPlanType = 'single' | 'points' | 'monthly' | 'yearly';
+
+// v2 크레딧 패키지
+export type CreditPackage = 'starter' | 'standard' | 'plus' | 'pro_monthly' | 'pro_yearly';
+
+export const CREDIT_PACKAGES: Record<CreditPackage, { credits: number; isSubscription: boolean }> = {
+  starter:     { credits: 10,  isSubscription: false },
+  standard:    { credits: 30,  isSubscription: false },
+  plus:        { credits: 80,  isSubscription: false },
+  pro_monthly: { credits: 100, isSubscription: true },
+  pro_yearly:  { credits: 100, isSubscription: true },
+};
 
 interface CheckoutOptions {
   variantId: string;
   userId: string;
   userEmail: string;
+  redirectUrl?: string;
   customData?: Record<string, string>;
 }
 
@@ -49,11 +62,31 @@ const VARIANT_ENV_MAP: Record<FtPlanType, string> = {
   yearly: 'LS_VARIANT_FT_SUB_YEARLY',
 };
 
+// v2 패키지 → 환경변수 매핑
+const PACKAGE_ENV_MAP: Record<CreditPackage, string> = {
+  starter: 'LS_VARIANT_CREDIT_STARTER',
+  standard: 'LS_VARIANT_CREDIT_STANDARD',
+  plus: 'LS_VARIANT_CREDIT_PLUS',
+  pro_monthly: 'LS_VARIANT_CREDIT_PRO_MONTHLY',
+  pro_yearly: 'LS_VARIANT_CREDIT_PRO_YEARLY',
+};
+
 export function getVariantId(plan: FtPlanType): string {
   const envKey = VARIANT_ENV_MAP[plan];
   const id = process.env[envKey];
   if (!id) throw new Error(`${envKey} is not set`);
   return id;
+}
+
+export function getPackageVariantId(pkg: CreditPackage): string {
+  const envKey = PACKAGE_ENV_MAP[pkg];
+  const id = process.env[envKey];
+  if (!id) throw new Error(`${envKey} is not set`);
+  return id;
+}
+
+export function isValidPackage(pkg: string): pkg is CreditPackage {
+  return pkg in CREDIT_PACKAGES;
 }
 
 // ─── Checkout 생성 ────────────────────────────────────────────────────
@@ -78,7 +111,7 @@ export async function createCheckout(options: CheckoutOptions): Promise<Checkout
             },
           },
           product_options: {
-            redirect_url: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://fortunetab.com'}/session/result`,
+            redirect_url: options.redirectUrl ?? `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://fortunetab.com'}/credits`,
           },
         },
         relationships: {

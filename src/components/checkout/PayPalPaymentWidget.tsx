@@ -105,14 +105,7 @@ const PayPalPaymentWidget = forwardRef<PayPalPaymentWidgetHandle, Props>(
             shipping: { fullName: params.customerName },
           },
         };
-        console.log('[PayPalWidget] requestPayment payload:', JSON.stringify(payload, null, 2));
-        try {
-          const result = await widgetsRef.current.requestPayment(payload);
-          console.log('[PayPalWidget] requestPayment result:', result);
-        } catch (err) {
-          console.error('[PayPalWidget] requestPayment error:', err);
-          throw err;
-        }
+        await widgetsRef.current.requestPayment(payload);
       },
     }));
 
@@ -147,7 +140,6 @@ const PayPalPaymentWidget = forwardRef<PayPalPaymentWidgetHandle, Props>(
           onReadyRef.current?.();
         } catch (err) {
           if (cancelled) return;
-          console.error('[PayPalWidget] init error:', err);
           setStatus('error');
           onErrorRef.current?.(err instanceof Error ? err : new Error(String(err)));
         }

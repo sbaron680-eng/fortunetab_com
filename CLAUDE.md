@@ -1,391 +1,193 @@
-# FortuneTab — Claude 작업 가이드
+# FortuneTab 2.0 — Claude 작업 가이드
 
 ## 프로젝트 개요
-사주·운세 기반 **PDF 플래너 판매 + 명발굴(命發掘) 세션** 융합 서비스.
-기존 PDF 플래너 이커머스에 바이오리듬×사주 Fortune Score 기반 발굴 세션을 추가.
+AI가 동양 사주명리와 서양 점성술을 융합 해석하여, 대화를 통해 삶의 방향을 탐색하는 **글로벌 플랫폼**.
 
 - **URL**: fortunetab.com (Cloudflare Pages 배포)
 - **GitHub**: sbaron680-eng/fortunetab_com (main 브랜치 → 자동 배포)
 - **팀**: 1인 개발 (박성준)
-- **슬로건**: 막혔을 때, 내 안의 답을 꺼냅니다
-
-> **세부 가이드 문서**
-> - [`docs/CLAUDE-planner.md`](docs/CLAUDE-planner.md) — PDF 생성기, 테마, fortune/practice 모드
-> - [`docs/CLAUDE-products.md`](docs/CLAUDE-products.md) — 상품 카탈로그, PLANNER_YEAR, 추가 체크리스트
-> - [`docs/CLAUDE-philosophy.md`](docs/CLAUDE-philosophy.md) — 4가지 철학 원문, 페이지별 적용 위치
+- **슬로건**: Where Eastern Wisdom Meets Western Stars
 
 ---
 
-## 두 축 융합
+## 핵심 전환 (v1 → v2)
 
-### 축 1: PDF 플래너 (구현 완료)
-- 사주 기반 PDF 플래너 생성/판매 (7테마, 4철학, fortune/practice 모드)
-- jsPDF + HTML5 Canvas 2D API (브라우저 전용)
-- 4가지 상품: 무료 공통 / 사주 기본 / 사주 프리미엄 / 실천 플래너
+| 항목 | v1 | v2 |
+|------|----|----|
+| 경험 | 7단계 위저드 | AI 대화형 세션 |
+| 시장 | 국내 전용 | 글로벌 퍼스트 (한/영) |
+| 엔진 | 사주 단독 | 사주 + 서양 점성술 융합 |
+| 수익 | 건당 결제 | 크레딧/토큰 시스템 |
+| AI | 3역할 병렬 JSON | 실시간 스트리밍 대화 |
 
-### 축 2: 명발굴 세션 (Phase 1 구현 예정)
-- 바이오리듬 × 사주 대운 Fortune Score + 7단계 발굴 위저드
-- Claude Sonnet 4.6 API 3역할 병렬 호출
-- biz(1인 사업가) / gen(일반인) 모드 자동 분기
-- GROW 4법 행동 프레임워크
+---
+
+## 4가지 AI 서비스
+
+| 서비스 | Phase | 크레딧 | 상태 |
+|--------|-------|--------|------|
+| AI Chat Session | 1 (MVP) | 5 | 구현 중 |
+| AI Auto Report | 2 | 15~25 | 계획 |
+| AI Coaching Journey | 3 | 구독 | 계획 |
+| AI Decision Tool | 4 | 8 | 계획 |
 
 ---
 
 ## 기술 스택
 
-| 항목 | 현재 (구현됨) | Phase 1 추가 |
-|------|-------------|-------------|
-| Framework | Next.js 16 (App Router, SSG/Static Export) | Edge Runtime 전환 (@cloudflare/next-on-pages) |
-| Language | TypeScript | — |
-| CSS | Tailwind CSS v4 | — |
-| PDF (플래너) | jsPDF + HTML5 Canvas 2D API | — |
-| PDF (세션 결과) | — | @react-pdf/renderer (클라이언트, 서버비 0원) |
-| 결제 (국내) | 토스페이먼츠 | — |
-| 결제 (글로벌) | — | Lemon Squeezy (MoR, 사업자 심사 없음) |
-| AI | — | Claude Sonnet 4.6 (Edge Runtime) |
-| 인증/DB | Supabase (Auth + PostgreSQL) | — |
-| 배포 | Cloudflare Pages (Static Export) | @cloudflare/next-on-pages (Edge) |
-| 상태관리 | Zustand | — |
+| 항목 | 선택 |
+|------|------|
+| Framework | Next.js 16 (App Router) |
+| Language | TypeScript (strict) |
+| CSS | Tailwind CSS v4 |
+| DB/Auth | Supabase (PostgreSQL + Auth + RLS) |
+| AI | Claude Sonnet 4.6 (대화) / Haiku (Phase 4) |
+| 결제 | 토스페이먼츠 (국내) + Lemon Squeezy (글로벌, 계획) |
+| 배포 | Cloudflare Pages (@opennextjs/cloudflare) |
+| 상태관리 | Zustand |
+| PDF | jsPDF (플래너) + @react-pdf/renderer (세션 리포트) |
 
 ---
 
-## 파일 구조
+## 프로젝트 구조
 
-### 현재 (구현됨)
 ```
 src/
 ├── app/
-│   ├── auth/                     ← 로그인/회원가입/콜백
-│   ├── checkout/                 ← 결제 + 완료 콜백
-│   ├── dashboard/page.tsx        ← 사용자 대시보드
-│   ├── download/page.tsx         ← PDF 생성 UI
-│   ├── fortune/page.tsx          ← 월별 운세 조회
-│   ├── products/[slug]/page.tsx  ← 상품 상세
-│   └── saju/page.tsx             ← 사주 계산기
+│   ├── page.tsx            # 랜딩
+│   ├── layout.tsx          # 루트 레이아웃
+│   ├── admin/              # 관리자
+│   ├── auth/               # 인증
+│   ├── cart/               # 장바구니
+│   ├── checkout/           # 결제 (success, fail 페이지)
+│   ├── contact/            # 문의
+│   ├── dashboard/          # 대시보드
+│   ├── download/           # PDF 다운로드
+│   ├── fortune/            # 운세 결과
+│   ├── history/            # 히스토리
+│   ├── pricing/            # 가격 페이지
+│   ├── products/           # 상품 목록
+│   ├── saju/               # 사주 입력
+│   ├── session/            # AI 세션
+│   ├── settings/           # 설정
+│   ├── api/
+│   │   ├── credits/        # 크레딧 조회
+│   │   └── payments/       # 결제 (+ credits 하위)
+│   └── (정적 페이지)       # privacy, terms, refund
 ├── components/
-│   ├── planner/
-│   │   └── PlannerPreviewCanvas.tsx  ← 범용 캔버스 미리보기
-│   └── product/
-│       └── PlannerProductPreview.tsx ← 상품 페이지 5페이지 갤러리
+│   ├── cart/               # CartDrawer
+│   ├── chat/               # ChatWindow, MessageBubble, ChatInput
+│   ├── checkout/           # PaymentWidget, PayPalPaymentWidget
+│   ├── credits/            # CreditBalance, CreditPackages
+│   ├── fortune/            # BirthDataForm, FortuneSnapshot
+│   ├── home/               # PlannerPreviewSection, SansuBackground
+│   ├── layout/             # Header, Footer, Disclaimer
+│   ├── planner/            # PlannerPreviewCanvas
+│   ├── product/            # ProductCard, ProductGallery
+│   ├── session/            # SessionResultPDF
+│   └── ui/                 # Button, Card, Input, Modal, Toast
 ├── lib/
-│   ├── pdf-generator.ts          ← PDF/미리보기 핵심 엔진 (v4)
-│   ├── pdf-themes.ts             ← 7가지 컬러 테마
-│   ├── planner-philosophy.ts     ← 4가지 플래너 철학 데이터
-│   ├── korean-holidays.ts        ← 공휴일 2025-2027
-│   ├── products.ts               ← 상품 카탈로그 + PLANNER_YEAR
-│   ├── saju.ts                   ← 사주팔자 엔진 (천간/지지/오행/용신/십신/대운)
-│   ├── zodiac-fortune.ts         ← 12동물 띠 + 월별 Fortune Score
-│   ├── fortune-text.ts           ← 운세 텍스트 템플릿
-│   ├── store.ts                  ← Zustand (cart/auth/saju)
-│   └── supabase.ts               ← Supabase 클라이언트
-docs/
-├── CLAUDE-planner.md
-├── CLAUDE-products.md
-└── CLAUDE-philosophy.md
-```
-
-### Phase 1 추가 (목표 구조)
-```
-src/
-├── app/
-│   ├── session/
-│   │   ├── page.tsx              ← 세션 시작 (모드 선택 biz/gen)
-│   │   ├── [step]/page.tsx       ← 7단계 위저드
-│   │   └── result/[id]/page.tsx  ← 결과 페이지
-│   ├── history/page.tsx          ← 세션 히스토리
-│   ├── pricing/page.tsx          ← 요금제 (플래너 + 세션)
-│   └── api/
-│       ├── generate/route.ts     ← Claude API 3역할 호출 (Edge)
-│       ├── fortune/
-│       │   └── score/route.ts    ← Fortune Score (Solodesk도 호출)
-│       ├── saju/route.ts         ← 사주 대운 계산
-│       └── payments/
-│           ├── checkout/route.ts ← Lemon Squeezy Checkout URL
-│           └── webhook/route.ts  ← Lemon Squeezy Webhook
-├── lib/
-│   ├── biorhythm.ts              ← 바이오리듬 4사이클
-│   └── lemonsqueezy.ts           ← Lemon Squeezy 헬퍼
+│   ├── fortune/            # ★ Fortune Engine v2
+│   │   ├── types.ts        # 공통 타입
+│   │   ├── constants.ts    # 천간/지지/오행/점성술 상수
+│   │   ├── saju-core.ts    # 4주8자 계산 (JDN, 절기 테이블)
+│   │   ├── saju-advanced.ts # 십신/신살/대운
+│   │   ├── western-astrology.ts # Sun/Moon/Rising Sign
+│   │   ├── composite-score.ts   # 통합 Fortune Score
+│   │   └── engine.ts       # 엔트리포인트
+│   ├── ai/                 # Claude API + 프롬프트
+│   ├── i18n/               # 다국어 (config, server, client, dictionaries)
+│   ├── credits/            # 크레딧 서비스
+│   ├── stores/             # Zustand 스토어
+│   ├── __tests__/          # 테스트
+│   ├── pdf-generator.ts    # PDF 생성 코어
+│   ├── pdf-pages.ts        # PDF 페이지 레이아웃
+│   ├── pdf-pages-extras.ts # 추가 페이지
+│   ├── pdf-themes.ts       # PDF 테마 (7종)
+│   ├── pdf-utils.ts        # PDF 유틸리티
+│   ├── products.ts         # 상품 카탈로그
+│   ├── promotions.ts       # 프로모션
+│   ├── tier-gate.ts        # 티어 게이트
+│   ├── biorhythm.ts        # 바이오리듬 (v1 재사용)
+│   ├── supabase.ts         # DB 클라이언트
+│   ├── supabase-server.ts  # 서버 클라이언트
+│   ├── rate-limit.ts       # Rate limiting
+│   ├── analytics.ts        # 분석
+│   └── lemonsqueezy.ts     # Lemon Squeezy API (글로벌 결제)
+pdf_server/                 # PDF 생성 서버 (NAS Docker)
+pdf-planner/                # PDF 플래너 로직
+supabase/                   # 마이그레이션 + RLS
 ```
 
 ---
 
-## 명발굴(命發掘) 세션
+## Fortune Engine v2
 
-### 방법론
-FortuneTab 독자 개발. 논리로 풀리지 않는 막힘 앞에서 잠재의식 스토리로 돌파구 발굴.
+동양 사주 + 서양 점성술 융합. `BirthData → CompositeFortuneProfile`.
 
-### 타겟 2종 (모드 자동 분기)
-| 모드 | 타겟 | 진입 맥락 |
-|------|------|----------|
-| `biz` | 1인 사업가·프리랜서·부업 | "사업에서 막혔을 때" |
-| `gen` | 직장인·학생·취준생·퇴직자 | "이 길이 맞는지 모르겠을 때" |
-
-### 발굴 세션 7단계
 ```
-Step 0  Fortune Score 타이밍 진단 (바이오리듬 × 사주 대운)
-Step 1  막힘 진단      (지금 어디서 막혔는가)
-Step 2  수확 장면      (이 막힘이 해결된 미래 묘사)
-Step 3  지금 목소리    (현재 솔직한 감정·불안)
-Step 4  운명 흐름      (AI가 3구간 스토리 생성)
-Step 5  실행 브레이크  (성장목표/브레이크행동/숨겨진이유/핵심믿음)
-Step 6  뿌리 행동      (GROW 4법 행동 + 첫 싹 선언)
+Birth Data (date, time, location, gender)
+    ├── Eastern Engine (saju-core + saju-advanced)
+    │   → SajuResult, SipsinMap, Sinsal, Daeun
+    ├── Western Engine (western-astrology)
+    │   → SunSign, MoonSign, RisingSign
+    └── Composite (biorhythm + daun + western)
+        → FortuneScore (-1~1), Grade, Percent
 ```
 
-### GROW 4법 (독자 행동 프레임워크)
-```
-G (Ground) — 지금 바로 땅에 심을 수 있는 행동
-R (Root)   — 뿌리를 내리는 꾸준한 행동
-O (Open)   — 새로운 가능성을 여는 행동
-W (Water)  — 지속적으로 물주는 습관
-```
-
-### 질문 세트 (모드별 분기)
-
-**막힘 진단**
-- biz: "사업에서 지금 어느 부분이 보이지 않나요?"
-- gen: "요즘 혼자 있을 때 자꾸 머릿속을 맴도는 생각이 있나요?"
-
-**수확 장면**
-- biz: "이 막힘이 해결된 후, 사업은 어떤 모습일까요?"
-- gen: "이 고민이 해결됐을 때, 나는 어디서 무엇을 하고 있나요?"
-
-**지금 목소리**
-- biz: "사업하면서 밤에 혼자 있을 때 문득 나오는 두려움은?"
-- gen: "아무도 없을 때 혼자 중얼거리는 걱정이나 불안의 말은?"
-
-**실행 브레이크**
-- biz: "해야 한다는 걸 알면서도 계속 미루는 것은?"
-- gen: "하고 싶은데 시작하지 못한 것은?"
+**v1 대비 개선:**
+- 태양절기 테이블 (입춘 날짜 연도별 정확도 향상)
+- 시간 입력: 숫자(0~23) 통일 (기존 '자시'~'해시' 문자열 제거)
+- null 사용 (기존 stemIdx=-1 센티널 제거)
+- 영문 라벨 포함 (글로벌 대응)
+- 서양 점성술 3종 (Sun + Moon + Rising) 추가
 
 ---
 
-## 핵심 알고리즘
+## 크레딧 시스템
 
-### 바이오리듬 (`src/lib/biorhythm.ts` — Phase 1 구현)
-```ts
-value = Math.sin(2 * Math.PI * elapsedDays / period)
+| 패키지 | 크레딧 | KRW | USD |
+|--------|--------|-----|-----|
+| Starter | 10 | 4,900 | $3.99 |
+| Standard | 30 | 9,900 | $7.99 |
+| Plus | 80 | 19,900 | $15.99 |
+| Pro Monthly | 100/월 | 14,900/월 | $11.99/월 |
+| Pro Yearly | 100/월 | 119,000/년 | $99.99/년 |
 
-// 4사이클
-신체: period=23, weight=0.30
-감성: period=28, weight=0.30
-지성: period=33, weight=0.20
-직관: period=38, weight=0.20
-
-bioScore = Σ(cycleValue × weight)  // -1 ~ 1
-toPercent = (score + 1) / 2 * 100  // 0 ~ 100%
-```
-
-### Fortune Score (`src/lib/saju.ts` — Phase 1 확장)
-```ts
-daunBonus = { 상승기: +0.22, 안정기: +0.05, 전환기: -0.08, 하강기: -0.18 }
-fortuneScore = clamp(bioScore + daunBonus, -1, 1)
-
-// 발굴 추천 등급
-> 0.40  → optimal  "발굴 최적"
-> 0.10  → good     "좋은 흐름"
-> -0.15 → neutral  "중립"
-≤ -0.15 → rest     "충전"
-```
-
-### 기존 Fortune Score (`src/lib/zodiac-fortune.ts` — 구현됨)
-- 12동물 띠 + 오행 관계 점수 (0~100)
-- 등급: 대길(75+) / 길(60+) / 평(45+) / 주의(30+) / 어려움(0-29)
-
-### Claude API (`src/app/api/generate/route.ts` — Phase 1 구현)
-```ts
-export const runtime = 'edge'
-
-const [story, actions, brake] = await Promise.all([
-  generateStory(body),    // ① 수확 묘사 + 3구간 스토리
-  generateActions(body),  // ② GROW 4법 기반 행동
-  generateBrake(body),    // ③ 실행 브레이크 진단
-])
-
-// 모델: claude-sonnet-4-6
-// System: "반드시 순수 JSON만 응답, 마크다운 코드블록 금지"
-// 건당 비용: ~$0.003
-```
+- 신규 가입: 무료 5크레딧
+- 일회성: 6개월 만료 / 구독: 매월 리셋
 
 ---
 
-## 요금제
+## 코딩 규칙
 
-### PDF 플래너 (기존)
-- 무료 공통 플래너: ₩0
-- 사주 기본 / 프리미엄 / 실천 플래너: 토스페이먼츠 결제
+### 필수
+- Git: **main 브랜치만 사용** (새 브랜치 생성 금지)
+- 결론 먼저 / 불확실하면 추측 금지
+- 코드에 테스트법 + 예상오류 3개 포함
+- AI 면책조항 항상 표시: "AI 분석은 참고 용도이며 전문 상담을 대체하지 않습니다"
 
-### 명발굴 세션 (Phase 1 추가)
-| 타입 | 가격 | 내용 |
-|------|------|------|
-| 단건 | 3,900원/1세션 | PDF 다운로드, 히스토리 없음 |
-| 포인트 | 9,900원/5포인트 | 유효 6개월, 히스토리 30일 |
-| 구독 월 | 9,900원/월 | 무제한, 사주 연간 리포트 |
-| 구독 연 | 79,000원/연 | 위 동일 + 2개월 무료 |
-
----
-
-## Supabase 스키마
-
-### 기존 (구현됨)
-- `orders`: 주문 (user_id, product_id, payment_key, status)
-- `profiles`: 사용자 프로필
-
-### Phase 1 추가
-```sql
-users (
-  id uuid PK, email text UNIQUE, mode text DEFAULT 'gen',
-  birth_date date, birth_time text, daun_phase text DEFAULT '안정기'
-)
-
-credits (
-  user_id uuid FK, service text, balance int, expires_at timestamptz
-)
-
-subscriptions (
-  user_id uuid FK, service text, plan text,
-  status text, ls_subscription_id text UNIQUE, current_period_end timestamptz
-)
-
-ft_sessions (
-  user_id uuid FK, mode text, fortune_score float, daun_phase text,
-  answers jsonb, result jsonb, payment_type text
-)
-```
-
-MCP 서버: `.mcp.json` → `cwnzezlgtcqkmnyojhbd` 프로젝트
-
----
-
-## Solodesk 연동
-- `/api/fortune/score` 엔드포인트를 Solodesk가 호출
-- 공통 Supabase DB + Auth (SSO)
-- Solodesk 결정 세션에 타이밍 진단 자동 포함
-
----
-
-## 배포
-
-```bash
-git push origin main   # → Cloudflare Pages 자동 빌드/배포
-```
-
-### 현재 (SSG)
-```bash
-npx tsc --noEmit        # 타입 오류 확인
-npx next build          # static export → out/
-```
-
-### Phase 1 이후 (Edge)
-```
-Build command    : npx @cloudflare/next-on-pages@1
-Output directory : .vercel/output/static
-```
-
-### Cloudflare Pages 환경변수
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-
----
-
-## 환경변수 (.env.local)
-
-```bash
-# 기존
-NEXT_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
-SUPABASE_SERVICE_ROLE_KEY=eyJ...
-
-# Phase 1 추가
-ANTHROPIC_API_KEY=sk-ant-...
-
-# Lemon Squeezy (Phase 1)
-LS_API_KEY=...
-LS_STORE_ID=...
-LS_WEBHOOK_SECRET=...
-LS_VARIANT_FT_SINGLE=...
-LS_VARIANT_FT_POINTS=...
-LS_VARIANT_FT_SUB_MONTHLY=...
-LS_VARIANT_FT_SUB_YEARLY=...
-```
-
----
-
-## 이커머스 흐름 (기존)
-```
-상품 선택 → AddToCartButton → Zustand 카트 스토어
-→ /checkout → 토스페이먼츠 결제창
-→ 결제 완료 콜백 → Supabase orders 테이블 저장
-→ 무료: /download 직접 링크 | 유료: 이메일 발송
-```
-
----
-
-## 저작권 규칙
-
-### 절대 사용 금지 (코드·UI·주석 모두)
+### 저작권 — 절대 사용 금지
 - "퓨처매핑" / "Future Mapping"
 - "면역맵" / "Immunity Map"
 - "120% 행복" / "120% happy"
 - STEP 1~6 (원저작물 표현)
 
 ### FortuneTab 독자 용어 (사용 가능)
-- 명발굴(命發掘) / 발굴 세션 / 수확 장면 / 지금 목소리 / 운명 흐름
-- 실행 브레이크 진단 / Fortune Score / GROW 4법 / 첫 싹(First Sprout)
+- Fortune Score, GROW 4법, 발굴 세션, 운명 흐름
+- 수확 장면, 지금 목소리, 실행 브레이크, 첫 싹(First Sprout)
+
+### 전문가 프레임 — 내부 로직에서만 (UI 노출 금지)
+- 간다 마사노리, 필립 코틀러, 러셀 브런슨 등
 
 ---
 
-## 적용 전문가 프레임
+## 공통 작업
 
-> UI에 전문가 이름·프레임 명칭 절대 노출 금지.
-> 프레임은 내부 로직(Claude API 프롬프트)에서만 사용.
-
-| 전문가 | 프레임 | 적용 위치 |
-|--------|--------|-----------|
-| 간다 마사노리 | 스토리씽킹·PASONA·BTRNUTSS | FT 전체 |
-| 세스 고딘 | 차별화 관점 | 질문 언어에 흡수 |
-
----
-
-## Phase 로드맵
-
-### Phase 1 — 명발굴 MVP (2주)
-- [ ] Supabase Auth 확장 (users 테이블 + 모드 분기)
-- [ ] 바이오리듬 엔진 (biorhythm.ts)
-- [ ] Fortune Score 통합 (바이오리듬 + 대운)
-- [ ] 발굴 세션 7단계 위저드 (biz/gen)
-- [ ] Claude Sonnet API 3역할 병렬 호출
-- [ ] Edge Runtime 전환 (@cloudflare/next-on-pages)
-- [ ] Lemon Squeezy 단건 결제 (3,900원)
-- [ ] /api/fortune/score 엔드포인트 (Solodesk 연동용)
-
-### Phase 2 — 요금제 완성 (1개월)
-- [ ] Credits 포인트 시스템
-- [ ] Lemon Squeezy Subscriptions + Webhook
-- [ ] 세션 히스토리 저장·조회
-- [ ] Resend 이메일 자동화
-
----
-
-## 코딩 컨벤션
-
-- **TypeScript strict**: 모든 타입 명시, `any` 금지
-- **Client/Server 경계**: PDF/캔버스/Zustand 코드는 `'use client'` 필수
-- **Dynamic import**: `jsPDF`, `renderPreviewPage` 는 SSR 방지를 위해 `import()` 사용
-- **폰트**: 제목/강조 = `Noto Serif KR` (SERIF 상수), 본문 = `Noto Sans KR` (SANS 상수)
-- **에러 처리**: PDF 생성 실패는 `try/catch` + 사용자 에러 메시지 표시
-
----
-
-## 자주 하는 작업
-
-### 공휴일 추가/수정
-`src/lib/korean-holidays.ts` → `HOLIDAYS` 객체에 `'YYYY-MM-DD': { name, type }` 추가
-
-### 새 테마 추가
-`src/lib/pdf-themes.ts` → `THEMES` 배열에 `ColorTheme` 객체 추가
-
-### 상품 정보 수정
-`src/lib/products.ts` → `PRODUCTS` 배열 직접 수정. 체크리스트: `docs/CLAUDE-products.md`
-
-### PDF 페이지 수정
-draw 함수 상세 규칙: `docs/CLAUDE-planner.md`
+```bash
+npm run dev          # 개발 서버
+npm run build        # 빌드
+npm test             # 테스트 (vitest)
+npm run test:watch   # 테스트 감시 모드
+npm run deploy       # Cloudflare 배포
+```

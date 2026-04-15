@@ -19,6 +19,19 @@ import { generatePersonalizedFortune, type GeneratedFortuneResult } from '@/lib/
 // ── 타입 ──────────────────────────────────────────────────────
 type FortuneTab = 'saju' | 'zodiac' | 'couple';
 
+interface SajuFormState {
+  name: string; year: string; month: string; day: string; time: string; gender: 'male' | 'female';
+}
+
+interface ZodiacFormState {
+  name: string; birthDate: string;
+}
+
+interface CoupleFormState {
+  name1: string; birthDate1: string; gender1: 'male' | 'female';
+  name2: string; birthDate2: string; gender2: 'male' | 'female';
+}
+
 interface FortuneResult {
   summary: string;
   yearly_fortune: string;
@@ -90,9 +103,7 @@ function FortunePage() {
   }, [user, tab]);
 
   // 사주 폼
-  const [sajuForm, setSajuForm] = useState<{
-    name: string; year: string; month: string; day: string; time: string; gender: 'male' | 'female';
-  }>({
+  const [sajuForm, setSajuForm] = useState<SajuFormState>({
     name: '', year: '1990', month: '1', day: '1', time: '모름', gender: 'male',
   });
 
@@ -100,10 +111,7 @@ function FortunePage() {
   const [zodiacForm, setZodiacForm] = useState({ name: '', birthDate: '' });
 
   // 궁합 폼
-  const [coupleForm, setCoupleForm] = useState<{
-    name1: string; birthDate1: string; gender1: 'male' | 'female';
-    name2: string; birthDate2: string; gender2: 'male' | 'female';
-  }>({
+  const [coupleForm, setCoupleForm] = useState<CoupleFormState>({
     name1: '', birthDate1: '', gender1: 'female',
     name2: '', birthDate2: '', gender2: 'male',
   });
@@ -544,7 +552,7 @@ function FortunePage() {
 }
 
 // ── 사주 폼 ───────────────────────────────────────────────────
-function SajuForm({ form, setForm }: { form: any; setForm: (f: any) => void }) {
+function SajuForm({ form, setForm }: { form: SajuFormState; setForm: (f: SajuFormState) => void }) {
   const u = (k: string, v: string) => setForm({ ...form, [k]: v });
   return (
     <>
@@ -584,7 +592,7 @@ function SajuForm({ form, setForm }: { form: any; setForm: (f: any) => void }) {
 }
 
 // ── 별자리 폼 ─────────────────────────────────────────────────
-function ZodiacForm({ form, setForm }: { form: any; setForm: (f: any) => void }) {
+function ZodiacForm({ form, setForm }: { form: ZodiacFormState; setForm: (f: ZodiacFormState) => void }) {
   const u = (k: string, v: string) => setForm({ ...form, [k]: v });
   const detected = form.birthDate ? (() => {
     const [, m, d] = form.birthDate.split('-').map(Number);
@@ -608,7 +616,7 @@ function ZodiacForm({ form, setForm }: { form: any; setForm: (f: any) => void })
 }
 
 // ── 궁합 폼 ──────────────────────────────────────────────────
-function CoupleForm({ form, setForm }: { form: any; setForm: (f: any) => void }) {
+function CoupleForm({ form, setForm }: { form: CoupleFormState; setForm: (f: CoupleFormState) => void }) {
   const u = (k: string, v: string) => setForm({ ...form, [k]: v });
   return (
     <div className="grid grid-cols-2 gap-4">

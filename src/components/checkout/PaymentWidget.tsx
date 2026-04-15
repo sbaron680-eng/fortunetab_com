@@ -107,7 +107,6 @@ const PaymentWidget = forwardRef<PaymentWidgetHandle, Props>(function PaymentWid
       } catch (err) {
         if (!cancelled) {
           const error = err instanceof Error ? err : new Error(String(err));
-          console.error('[PaymentWidget] 결제 위젯 초기화 실패:', error);
           setStatus('error');
           setErrorMessage(error.message);
           onError?.(error);
