@@ -3,7 +3,9 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') || '';
-const API_KEY = 'sk-ant-ap' + 'i03-y6HLHLtU-znqVwffkr8OH1mkNDwPCkYKUkoHqjPSIG4od7K5p2buBOUa1isyC8Z8r2YA8Qz4ByG46DI9QqAQQQ-XoprgwAA';
+// API 키는 반드시 Supabase Edge Function Secret(ANTHROPIC_API_KEY)로 주입.
+// 소스 코드에 하드코딩 금지 (이전 버전 git 히스토리에 노출되었던 키는 Anthropic 콘솔에서 revoke 완료 가정).
+const API_KEY = Deno.env.get('ANTHROPIC_API_KEY') || '';
 const MODEL = 'claude-sonnet-4-6';
 const MAX_TOKENS = 1024;
 
