@@ -50,7 +50,7 @@ export function renderPreviewPage(
   else if (pageType === 'year-index') drawYearIndex(ctx, W, H, opts);
   else if (pageType === 'monthly')    drawMonthly(ctx, W, H, opts, pageIdx);
   else if (pageType === 'weekly')     drawWeekly(ctx, W, H, opts, pageIdx || 1);
-  else if (pageType === 'daily')      drawDaily(ctx, W, H, opts);
+  else if (pageType === 'daily')      drawDaily(ctx, W, H, opts, pageIdx);
   else drawExtraPage(ctx, W, H, opts, pageType as ExtraPageType);
 }
 
@@ -92,7 +92,20 @@ export async function generatePlannerPDF(opts: PlannerOptions): Promise<Blob | v
       for (let w = 1; w <= maxWeek; w++)
         expandedPages.push({ type: 'weekly', label: `${w}주차`, idx: w });
     } else if (p === 'daily') {
-      expandedPages.push({ type: 'daily', label: '일간 플래너 샘플' });
+      if (opts.dailyFull) {
+        // 365일 풀 일간 스케줄 (유료 사주 플래너)
+        const daysInYear = ((opts.year % 4 === 0 && opts.year % 100 !== 0) || opts.year % 400 === 0) ? 366 : 365;
+        for (let d = 0; d < daysInYear; d++) {
+          const date = new Date(opts.year, 0, 1 + d);
+          expandedPages.push({
+            type: 'daily',
+            label: `${date.getMonth() + 1}.${date.getDate()} 일간`,
+            idx: d,  // 0 = Jan 1, ..., 364 = Dec 31
+          });
+        }
+      } else {
+        expandedPages.push({ type: 'daily', label: '일간 플래너 샘플' });
+      }
     } else if (p === 'cover') {
       expandedPages.push({ type: 'cover', label: '커버 페이지' });
     } else if (p === 'year-index') {
@@ -130,7 +143,7 @@ export async function generatePlannerPDF(opts: PlannerOptions): Promise<Blob | v
     } else if (page.type === 'weekly') {
       drawWeekly(ctx, CW, CH, opts, page.idx!);
     } else if (page.type === 'daily') {
-      drawDaily(ctx, CW, CH, opts);
+      drawDaily(ctx, CW, CH, opts, page.idx);
     } else {
       // 부록 페이지
       drawExtraPage(ctx, CW, CH, opts, page.type as ExtraPageType);

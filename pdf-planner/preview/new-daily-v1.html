@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<title>FortuneTab PDF 플래너 — 새 일간 페이지 시안 v1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;600;900&family=Noto+Sans+KR:wght@300;400;700&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,700;1,400&display=swap" rel="stylesheet" />
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#e8e3d8;font-family:'Noto Sans KR',sans-serif;padding:48px 24px;color:#2a271f}
+  h1{font-family:'Playfair Display',serif;font-weight:900;font-size:40px;letter-spacing:-.5px;margin-bottom:4px}
+  .lead{color:#6a645a;font-size:15px;margin-bottom:20px;max-width:920px;line-height:1.55}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:#6a645a;margin-bottom:32px}
+  .legend span{padding:4px 10px;background:#fff;border:1px solid #d8d2c4;border-radius:14px}
+  .controls{max-width:920px;margin:0 auto 24px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+  .controls label{font-size:13px;color:#4a463d}
+  .controls input{padding:6px 10px;border:1px solid #d8d2c4;border-radius:4px;background:#fff;font-family:inherit}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:28px;max-width:1600px;margin:0 auto}
+  .card{display:flex;flex-direction:column;gap:10px}
+  .card .meta{display:flex;justify-content:space-between;font-size:13px;color:#4a463d;padding:0 4px}
+  .card .meta b{font-family:'Playfair Display',serif;font-weight:700;letter-spacing:.5px}
+  .swatch{display:inline-block;width:10px;height:10px;border-radius:50%;margin-left:6px;vertical-align:middle}
+  canvas{width:100%;height:auto;box-shadow:0 10px 24px -10px rgba(20,15,5,.25),0 2px 6px rgba(20,15,5,.08);background:#faf6ee;border-radius:2px}
+  .note{margin:42px auto 0;max-width:920px;background:#fff;border:1px solid #e0d9c8;padding:20px 24px;border-radius:6px;font-size:13.5px;line-height:1.65;color:#413d34}
+  .note b{color:#1a1814}
+  .note ul{margin-top:8px;padding-left:18px}
+</style>
+</head>
+<body>
+
+<h1>FortuneTab Planner — Daily v1</h1>
+<p class="lead">
+  사주 일간 1페이지. 큰 일자 · 일진 간지(甲子日) · 12시진 타임라인(子~亥) · TOP3 · 회고.
+</p>
+
+<div class="controls">
+  <label>날짜:</label>
+  <input id="date" type="date" value="2026-05-15" />
+  <label>생년월일:</label>
+  <input id="birth" type="date" value="1990-05-15" />
+</div>
+
+<div class="legend">
+  <span>A4 세로</span>
+  <span>상단 히어로 · 중단 12시진/메모 2단 · 하단 회고 3블록</span>
+  <span>일진 기반 오늘의 기운 표기</span>
+</div>
+
+<div id="grid" class="grid"></div>
+
+<div class="note">
+  <b>시안 평가 포인트</b>
+  <ul>
+    <li>12시진(자시·축시~해시) vs 24시간 타임라인 — 현재: 12시진</li>
+    <li>상단 히어로의 "오늘 · 일간/일지 관계" 영역 무게</li>
+    <li>하단 3블록 "TOP3 · 감사 · 내일 의도" — 주간과 구분되는가</li>
+    <li>좌측 12시진 블록 각각 메모 쓸 공간(약 50px)</li>
+  </ul>
+</div>
+
+<script>
+const A4W = 1240, A4H = 1754;
+
+const THEMES = [
+  {id:'rose',   name:'로즈',     accent:'#9a3055', accentDeep:'#6a1a38'},
+  {id:'navy',   name:'네이비',   accent:'#1a2a6c', accentDeep:'#0f1a4a'},
+  {id:'black',  name:'블랙',     accent:'#222222', accentDeep:'#000000'},
+  {id:'blue',   name:'블루',     accent:'#2a5280', accentDeep:'#102040'},
+  {id:'forest', name:'포레스트', accent:'#1e5040', accentDeep:'#0b2a1c'},
+  {id:'orange', name:'오렌지',   accent:'#b04020', accentDeep:'#6a1e08'},
+  {id:'gold',   name:'골드',     accent:'#a07020', accentDeep:'#5a3808'},
+];
+
+const PAPER = '#faf6ee';
+const INK = '#1a1814';
+const INK_FAINT = '#8b857a';
+const SEAL = '#b8322a';
+
+const DAYS_EN = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+const DAYS_KO = ['일','월','화','수','목','금','토'];
+const DAYS_KANJI = ['日','月','火','水','木','金','土'];
+
+// 12시진 (23시 자정부터 시작, 한국 표준)
+const SHICHEN = [
+  { kanji:'子', name:'자시', range:'23:00 — 01:00', glyph:'鼠' },
+  { kanji:'丑', name:'축시', range:'01:00 — 03:00', glyph:'牛' },
+  { kanji:'寅', name:'인시', range:'03:00 — 05:00', glyph:'虎' },
+  { kanji:'卯', name:'묘시', range:'05:00 — 07:00', glyph:'兔' },
+  { kanji:'辰', name:'진시', range:'07:00 — 09:00', glyph:'龍' },
+  { kanji:'巳', name:'사시', range:'09:00 — 11:00', glyph:'蛇' },
+  { kanji:'午', name:'오시', range:'11:00 — 13:00', glyph:'馬' },
+  { kanji:'未', name:'미시', range:'13:00 — 15:00', glyph:'羊' },
+  { kanji:'申', name:'신시', range:'15:00 — 17:00', glyph:'猴' },
+  { kanji:'酉', name:'유시', range:'17:00 — 19:00', glyph:'鷄' },
+  { kanji:'戌', name:'술시', range:'19:00 — 21:00', glyph:'狗' },
+  { kanji:'亥', name:'해시', range:'21:00 — 23:00', glyph:'豬' },
+];
+
+const GANZHI_60 = ['甲子','乙丑','丙寅','丁卯','戊辰','己巳','庚午','辛未','壬申','癸酉',
+                   '甲戌','乙亥','丙子','丁丑','戊寅','己卯','庚辰','辛巳','壬午','癸未',
+                   '甲申','乙酉','丙戌','丁亥','戊子','己丑','庚寅','辛卯','壬辰','癸巳',
+                   '甲午','乙未','丙申','丁酉','戊戌','己亥','庚子','辛丑','壬寅','癸卯',
+                   '甲辰','乙巳','丙午','丁未','戊申','己酉','庚戌','辛亥','壬子','癸丑',
+                   '甲寅','乙卯','丙辰','丁巳','戊午','己未','庚申','辛酉','壬戌','癸亥'];
+
+function dayGanzhi(year, month, day){
+  const base = new Date(2026, 0, 1);
+  const baseIdx = 6; // 庚午
+  const target = new Date(year, month - 1, day);
+  const diff = Math.floor((target - base) / 86400000);
+  const idx = ((baseIdx + diff) % 60 + 60) % 60;
+  return GANZHI_60[idx];
+}
+function biorhythm(birth, target, period){
+  const days = Math.floor((target - birth) / 86400000);
+  return Math.sin(2 * Math.PI * days / period);
+}
+
+function drawPaper(ctx, W, H){
+  ctx.fillStyle = PAPER;
+  ctx.fillRect(0, 0, W, H);
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0,   'rgba(244, 236, 218, 0.55)');
+  g.addColorStop(0.5, 'rgba(250, 246, 238, 0)');
+  g.addColorStop(1,   'rgba(238, 230, 210, 0.35)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  ctx.save();
+  ctx.globalAlpha = 0.04;
+  for(let i = 0; i < 1200; i++){
+    const x = Math.random() * W, y = Math.random() * H;
+    ctx.fillStyle = Math.random() > .5 ? '#3a342a' : '#b8ae95';
+    ctx.fillRect(x, y, 1, 1);
+  }
+  ctx.restore();
+}
+
+function drawHeader(ctx, W, PAD, theme){
+  ctx.strokeStyle = INK; ctx.globalAlpha = 0.85; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(PAD, PAD); ctx.lineTo(W - PAD, PAD); ctx.stroke();
+  ctx.globalAlpha = 1;
+  ctx.save();
+  ctx.font = '400 18px "Playfair Display", serif';
+  ctx.fillStyle = INK;
+  if(ctx.letterSpacing !== undefined) ctx.letterSpacing = '6px';
+  ctx.fillText('FORTUNETAB', PAD, PAD - 18);
+  ctx.restore();
+  ctx.font = '300 13px "Playfair Display", serif';
+  ctx.fillStyle = INK_FAINT;
+  const est = 'EST · MMXXVI';
+  const estW = ctx.measureText(est).width;
+  ctx.fillText(est, W - PAD - estW, PAD - 22);
+  ctx.fillStyle = theme.accent;
+  ctx.beginPath(); ctx.arc(W - PAD - estW - 20, PAD - 26, 4, 0, Math.PI*2); ctx.fill();
+}
+
+function drawFooter(ctx, W, H, PAD, label){
+  ctx.strokeStyle = INK; ctx.globalAlpha = 0.85; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(PAD, H - PAD); ctx.lineTo(W - PAD, H - PAD); ctx.stroke();
+  ctx.globalAlpha = 1;
+  ctx.save();
+  ctx.font = '300 12px "Playfair Display", serif';
+  ctx.fillStyle = INK_FAINT;
+  if(ctx.letterSpacing !== undefined) ctx.letterSpacing = '4px';
+  ctx.fillText('FORTUNETAB  ·  EASTERN WISDOM  ·  WESTERN STARS', PAD, H - PAD + 22);
+  ctx.restore();
+  ctx.font = '300 11px "Playfair Display", serif';
+  ctx.fillStyle = INK_FAINT;
+  const pgW = ctx.measureText(label).width;
+  ctx.fillText(label, W - PAD - pgW, H - PAD + 22);
+}
+
+function renderDaily(canvas, theme, opts){
+  const W = A4W, H = A4H;
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  drawPaper(ctx, W, H);
+  const PAD = 84;
+  drawHeader(ctx, W, PAD, theme);
+
+  const d = opts.date;
+  const dow = d.getDay();
+  const gz = dayGanzhi(d.getFullYear(), d.getMonth() + 1, d.getDate());
+
+  /* ── 상단 히어로 ───────────────────────────── */
+  const HERO_Y = PAD + 14;
+  const HERO_H = 220;
+
+  // 좌: 거대한 일자
+  ctx.font = '900 200px "Playfair Display", serif';
+  ctx.fillStyle = theme.accent;
+  const dayStr = String(d.getDate()).padStart(2, '0');
+  ctx.fillText(dayStr, PAD, HERO_Y + 192);
+
+  const dayW = ctx.measureText(dayStr).width;
+
+  // 일자 옆: 년/월 + 요일
+  const x2 = PAD + dayW + 32;
+  ctx.font = '300 22px "Playfair Display", serif';
+  ctx.fillStyle = INK_FAINT;
+  ctx.save();
+  if(ctx.letterSpacing !== undefined) ctx.letterSpacing = '3px';
+  ctx.fillText(`${d.getFullYear()} · ${String(d.getMonth()+1).padStart(2,'0')}`, x2, HERO_Y + 56);
+  ctx.restore();
+
+  ctx.font = '600 54px "Noto Serif KR", serif';
+  ctx.fillStyle = INK;
+  ctx.fillText(DAYS_KO[dow] + '요일', x2, HERO_Y + 118);
+
+  ctx.font = '400 20px "Noto Serif KR", serif';
+  ctx.fillStyle = INK_FAINT;
+  ctx.fillText(`${DAYS_KANJI[dow]}曜日 · ${DAYS_EN[dow]}DAY`, x2, HERO_Y + 148);
+
+  // 우측: 일진 박스
+  const boxW = 280;
+  const boxX = W - PAD - boxW;
+  const boxY = HERO_Y + 24;
+  const boxH = 168;
+
+  ctx.strokeStyle = INK; ctx.globalAlpha = 0.45; ctx.lineWidth = 0.9;
+  ctx.strokeRect(boxX, boxY, boxW, boxH);
+  ctx.globalAlpha = 1;
+
+  // 박스 상단 라벨
+  ctx.fillStyle = theme.accent;
+  ctx.fillRect(boxX, boxY, boxW, 28);
+  ctx.font = '400 12px "Playfair Display", serif';
+  ctx.fillStyle = '#faf6ee';
+  ctx.save();
+  if(ctx.letterSpacing !== undefined) ctx.letterSpacing = '3px';
+  ctx.fillText('DAY QI · 오늘의 기운', boxX + 14, boxY + 18);
+  ctx.restore();
+
+  // 큰 간지
+  ctx.font = '400 64px "Noto Serif KR", serif';
+  ctx.fillStyle = INK;
+  ctx.fillText(gz, boxX + 18, boxY + 104);
+
+  ctx.font = '300 16px "Noto Serif KR", serif';
+  ctx.fillStyle = INK_FAINT;
+  ctx.fillText('日', boxX + 18 + ctx.measureText(gz).width * 1.6, boxY + 104);
+
+  // 일진 요약 (데모)
+  ctx.font = '300 13px "Noto Serif KR", serif';
+  ctx.fillStyle = INK;
+  ctx.fillText('오행 · ' + ['木','火','土','金','水'][gz.charCodeAt(0) % 5], boxX + 18, boxY + 136);
+  ctx.fillStyle = SEAL;
+  ctx.fillText('기운 · 전진', boxX + 150, boxY + 136);
+
+  // 바이오리듬 mini
+  if(opts.birth){
+    const phys = biorhythm(opts.birth, d, 23);
+    const emo = biorhythm(opts.birth, d, 28);
+    const intl = biorhythm(opts.birth, d, 33);
+    drawBioStrip(ctx, boxX + 18, boxY + 152, boxW - 36, phys, emo, intl, theme);
+  }
+
+  // 히어로 하단 먹선
+  ctx.strokeStyle = INK; ctx.globalAlpha = 0.55; ctx.lineWidth = 0.9;
+  ctx.beginPath(); ctx.moveTo(PAD, HERO_Y + HERO_H + 16); ctx.lineTo(W - PAD, HERO_Y + HERO_H + 16); ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  /* ── 중단: 12시진(좌) + 메모(우) ──────────── */
+  const MID_Y = HERO_Y + HERO_H + 40;
+  const MID_BOT = H - PAD - 340;
+  const MID_H = MID_BOT - MID_Y;
+  const SHI_W = 420;
+  const MEMO_X = PAD + SHI_W + 24;
+  const MEMO_W = W - PAD - MEMO_X;
+
+  drawShichen(ctx, PAD, MID_Y, SHI_W, MID_H, theme);
+  drawMemo(ctx, MEMO_X, MID_Y, MEMO_W, MID_H, theme);
+
+  /* ── 하단: 3블록 ──────────────────────────── */
+  const BOT_Y = MID_BOT + 20;
+  const BOT_H = H - PAD - BOT_Y - 40;
+  drawBottom(ctx, PAD, BOT_Y, W - PAD * 2, BOT_H, theme);
+
+  drawFooter(ctx, W, H, PAD, `— ${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${dayStr} · DAILY —`);
+}
+
+function drawShichen(ctx, x, y, w, h, theme){
+  // 상단 섹션 라벨
+  drawSectionHead(ctx, x, y, w, theme, '12', 'SHICHEN', '십이시진');
+
+  const startY = y + 56;
+  const rowH = (h - 56) / 12;
+
+  SHICHEN.forEach((s, i) => {
+    const ry = startY + i * rowH;
+    // 행 구분선
+    if(i > 0){
+      ctx.strokeStyle = INK; ctx.globalAlpha = 0.12; ctx.lineWidth = 0.5;
+      ctx.beginPath(); ctx.moveTo(x, ry); ctx.lineTo(x + w, ry); ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+
+    // 좌측 큰 한자
+    ctx.font = '400 28px "Noto Serif KR", serif';
+    ctx.fillStyle = theme.accent;
+    ctx.fillText(s.kanji, x + 6, ry + rowH * 0.68);
+
+    // 이름 · 시간
+    ctx.font = '400 12px "Noto Serif KR", serif';
+    ctx.fillStyle = INK;
+    ctx.fillText(s.name, x + 42, ry + rowH * 0.48);
+    ctx.font = '300 11px "Playfair Display", serif';
+    ctx.fillStyle = INK_FAINT;
+    ctx.fillText(s.range, x + 42, ry + rowH * 0.78);
+
+    // 띠 글자 (우측 세로 경계 안쪽)
+    ctx.font = '300 14px "Noto Serif KR", serif';
+    ctx.fillStyle = INK_FAINT;
+    ctx.globalAlpha = 0.45;
+    ctx.fillText(s.glyph, x + 148, ry + rowH * 0.68);
+    ctx.globalAlpha = 1;
+
+    // 우측 얇은 메모 라인
+    ctx.strokeStyle = INK; ctx.globalAlpha = 0.28; ctx.lineWidth = 0.55;
+    ctx.beginPath(); ctx.moveTo(x + 180, ry + rowH * 0.72); ctx.lineTo(x + w - 6, ry + rowH * 0.72); ctx.stroke();
+    ctx.globalAlpha = 1;
+  });
+
+  // 좌측 세로 프레임
+  ctx.strokeStyle = INK; ctx.globalAlpha = 0.2; ctx.lineWidth = 0.6;
+  ctx.beginPath(); ctx.moveTo(x + 172, startY); ctx.lineTo(x + 172, startY + 12 * rowH); ctx.stroke();
+  ctx.globalAlpha = 1;
+}
+
+function drawMemo(ctx, x, y, w, h, theme){
+  drawSectionHead(ctx, x, y, w, theme, '—', 'TASKS & NOTES', '할 일 · 메모');
+
+  // 체크박스 + 라인 (18줄)
+  const startY = y + 72;
+  const lineStep = (h - 72) / 18;
+  ctx.strokeStyle = INK; ctx.globalAlpha = 0.28; ctx.lineWidth = 0.55;
+  for(let i = 0; i < 18; i++){
+    const ly = startY + i * lineStep;
+    // 체크박스
+    ctx.strokeRect(x + 2, ly - 11, 10, 10);
+    // 라인
+    ctx.beginPath(); ctx.moveTo(x + 20, ly); ctx.lineTo(x + w, ly); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawBottom(ctx, x, y, w, h, theme){
+  ctx.strokeStyle = INK; ctx.globalAlpha = 0.55; ctx.lineWidth = 0.9;
+  ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + w, y); ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  const colW = w / 3;
+  const GAP = 20;
+  drawBottomBlock(ctx, x,             y + 16, colW - GAP, h - 16, theme, '01', 'TOP 3',     '오늘 핵심',   3);
+  drawBottomBlock(ctx, x + colW,      y + 16, colW - GAP, h - 16, theme, '02', 'GRATITUDE', '감사',       3);
+  drawBottomBlock(ctx, x + colW * 2,  y + 16, colW - GAP, h - 16, theme, '03', 'TOMORROW',  '내일 의도',  3);
+}
+
+function drawBottomBlock(ctx, x, y, w, h, theme, num, en, ko, lines){
+  ctx.font = '700 28px "Playfair Display", serif';
+  ctx.fillStyle = theme.accent;
+  ctx.fillText(num, x, y + 24);
+
+  ctx.font = '300 10px "Playfair Display", serif';
+  ctx.fillStyle = INK_FAINT;
+  ctx.save();
+  if(ctx.letterSpacing !== undefined) ctx.letterSpacing = '2px';
+  ctx.fillText(en, x + 46, y + 12);
+  ctx.restore();
+
+  ctx.font = '600 15px "Noto Serif KR", serif';
+  ctx.fillStyle = INK;
+  ctx.fillText(ko, x + 46, y + 28);
+
+  ctx.strokeStyle = INK; ctx.globalAlpha = 0.35; ctx.lineWidth = 0.7;
+  ctx.beginPath(); ctx.moveTo(x, y + 42); ctx.lineTo(x + w, y + 42); ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  let cy = y + 76;
+  const step = (h - 50) / lines;
+  for(let i = 0; i < lines; i++){
+    ctx.fillStyle = theme.accent; ctx.globalAlpha = 0.55;
+    ctx.beginPath(); ctx.arc(x + 2, cy - 6, 2, 0, Math.PI*2); ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = INK; ctx.globalAlpha = 0.3; ctx.lineWidth = 0.55;
+    ctx.beginPath(); ctx.moveTo(x + 12, cy); ctx.lineTo(x + w, cy); ctx.stroke();
+    ctx.globalAlpha = 1;
+    cy += step;
+  }
+}
+
+function drawSectionHead(ctx, x, y, w, theme, num, en, ko){
+  ctx.font = '700 28px "Playfair Display", serif';
+  ctx.fillStyle = theme.accent;
+  ctx.fillText(num, x, y + 24);
+
+  ctx.font = '300 10px "Playfair Display", serif';
+  ctx.fillStyle = INK_FAINT;
+  ctx.save();
+  if(ctx.letterSpacing !== undefined) ctx.letterSpacing = '2px';
+  ctx.fillText(en, x + 46, y + 12);
+  ctx.restore();
+
+  ctx.font = '600 15px "Noto Serif KR", serif';
+  ctx.fillStyle = INK;
+  ctx.fillText(ko, x + 46, y + 28);
+
+  ctx.strokeStyle = INK; ctx.globalAlpha = 0.35; ctx.lineWidth = 0.7;
+  ctx.beginPath(); ctx.moveTo(x, y + 42); ctx.lineTo(x + w, y + 42); ctx.stroke();
+  ctx.globalAlpha = 1;
+}
+
+function drawBioStrip(ctx, x, y, w, p, e, i, theme){
+  const labels = ['體','情','智'];
+  const values = [p, e, i];
+  const colors = [theme.accent, SEAL, INK];
+  const colW = w / 3;
+  for(let k = 0; k < 3; k++){
+    const cx = x + k * colW;
+    ctx.font = '300 11px "Noto Serif KR", serif';
+    ctx.fillStyle = INK_FAINT;
+    ctx.fillText(labels[k], cx, y + 8);
+    const barY = y + 14;
+    const barW = colW - 24;
+    ctx.strokeStyle = INK; ctx.globalAlpha = 0.2;
+    ctx.beginPath(); ctx.moveTo(cx + 18, barY); ctx.lineTo(cx + 18 + barW, barY); ctx.stroke();
+    ctx.globalAlpha = 1;
+    const pos = cx + 18 + (values[k] + 1) / 2 * barW;
+    ctx.fillStyle = colors[k];
+    ctx.beginPath(); ctx.arc(pos, barY, 3, 0, Math.PI*2); ctx.fill();
+  }
+}
+
+/* ── 렌더 ─────────────────────────────────── */
+function renderAll(dateStr, birthStr){
+  const grid = document.getElementById('grid');
+  grid.textContent = '';
+  const d = new Date(dateStr);
+  const b = new Date(birthStr);
+
+  THEMES.forEach(theme => {
+    const card = document.createElement('div');
+    card.className = 'card';
+
+    const canvas = document.createElement('canvas');
+    card.appendChild(canvas);
+
+    const meta = document.createElement('div');
+    meta.className = 'meta';
+    const left = document.createElement('span');
+    left.textContent = theme.name + ' ';
+    const sw = document.createElement('span');
+    sw.className = 'swatch';
+    sw.style.background = theme.accent;
+    left.appendChild(sw);
+    const right = document.createElement('b');
+    right.textContent = '#' + theme.id.toUpperCase();
+    meta.appendChild(left);
+    meta.appendChild(right);
+    card.appendChild(meta);
+
+    grid.appendChild(card);
+
+    renderDaily(canvas, theme, { date: d, birth: b });
+  });
+}
+renderAll(document.getElementById('date').value, document.getElementById('birth').value);
+document.getElementById('date').addEventListener('change', () => {
+  renderAll(document.getElementById('date').value, document.getElementById('birth').value);
+});
+document.getElementById('birth').addEventListener('change', () => {
+  renderAll(document.getElementById('date').value, document.getElementById('birth').value);
+});
+</script>
+</body>
+</html>

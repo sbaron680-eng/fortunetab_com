@@ -71,7 +71,7 @@ export default function PlannerPreviewCanvas({
 
     return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pageType, idx, opts.theme, opts.year, opts.orientation, opts.name, opts.mode, opts.coverStyle ?? '', opts.fortuneData?.type ?? '', opts.fortuneData?.yearSummary ?? '', cw, ch]);
+  }, [pageType, idx, opts.theme, opts.year, opts.orientation, opts.name, opts.mode, opts.coverStyle ?? '', opts.fortuneData?.type ?? '', opts.fortuneData?.yearSummary ?? '', opts.saju?.yearPillar ?? '', opts.saju?.dayPillar ?? '', cw, ch]);
 
   return (
     <div

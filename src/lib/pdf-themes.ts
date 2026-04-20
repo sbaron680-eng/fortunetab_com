@@ -1,5 +1,8 @@
 /**
  * FortuneTab PDF 플래너 컬러 테마 (7종)
+ *
+ * v2 "New Eastern Editorial" 디자인 언어에서는 accent / accentDeep / kanji 3개 필드만 사용.
+ * 기존 필드(coverDeep ~ navB)는 부록 28페이지(pdf-pages-extras.ts)가 계속 사용.
  */
 
 export interface ColorTheme {
@@ -8,6 +11,12 @@ export interface ColorTheme {
   emoji: string;
   swatch: string;          // UI 스와치 색상
 
+  // v2 디자인 언어 (메인 5페이지) ────────────────────────────────
+  accent: string;          // 주 악센트 (연도·섹션 번호·헤더 도트)
+  accentDeep: string;      // 깊은 톤 (세로 한자·그림자)
+  kanji: string;           // 테마 고유 낙관 글자
+
+  // ↓ 기존 필드 — 부록 28페이지에서 계속 사용 ─────────────────────
   // 표지 그라디언트
   coverDeep: string;
   coverMid: string;
@@ -53,6 +62,7 @@ export const THEMES: ColorTheme[] = [
   // ── 🌸 로즈 (핑크작약) ────────────────────────────────────────────────────
   {
     id: 'rose', name: '로즈', emoji: '🌸', swatch: '#c2567a',
+    accent: '#9a3055', accentDeep: '#6a1a38', kanji: '燃',
     coverDeep: '#6a1a38', coverMid: '#c2567a', coverLight: '#f0d0dc',
     headerA: '#9a3055', headerB: '#c2567a',
     weeklyA: '#9a3055', weeklyB: '#c2567a',
@@ -68,6 +78,7 @@ export const THEMES: ColorTheme[] = [
   // ── ⚓ 네이비 (인디고) ────────────────────────────────────────────────────
   {
     id: 'navy', name: '네이비', emoji: '⚓', swatch: '#1a2a6c',
+    accent: '#1a2a6c', accentDeep: '#0f1a4a', kanji: '靜',
     coverDeep: '#0f1a4a', coverMid: '#1a2a6c', coverLight: '#c8d0e8',
     headerA: '#1a2a6c', headerB: '#2a3a8c',
     weeklyA: '#1a2a6c', weeklyB: '#2a3a8c',
@@ -83,6 +94,7 @@ export const THEMES: ColorTheme[] = [
   // ── 🖤 블랙 (먹물) ────────────────────────────────────────────────────────
   {
     id: 'black', name: '블랙', emoji: '🖤', swatch: '#222222',
+    accent: '#222222', accentDeep: '#000000', kanji: '玄',
     coverDeep: '#111111', coverMid: '#333333', coverLight: '#cccccc',
     headerA: '#222222', headerB: '#444444',
     weeklyA: '#222222', weeklyB: '#444444',
@@ -98,6 +110,7 @@ export const THEMES: ColorTheme[] = [
   // ── 💙 블루 (청화백자) ──────────────────────────────────────────────────
   {
     id: 'blue', name: '블루', emoji: '💙', swatch: '#2a5280',
+    accent: '#2a5280', accentDeep: '#102040', kanji: '淸',
     coverDeep: '#102040', coverMid: '#2a5280', coverLight: '#c0d0e8',
     headerA: '#1a3a6a', headerB: '#2a5280',
     weeklyA: '#1a3a6a', weeklyB: '#2a5280',
@@ -113,6 +126,7 @@ export const THEMES: ColorTheme[] = [
   // ── 🌿 포레스트 (청자색) ────────────────────────────────────────────────
   {
     id: 'forest', name: '포레스트', emoji: '🌿', swatch: '#2a6c5a',
+    accent: '#1e5040', accentDeep: '#0b2a1c', kanji: '綠',
     coverDeep: '#143a2a', coverMid: '#2a6c5a', coverLight: '#b8d8cc',
     headerA: '#1e5040', headerB: '#2a6c5a',
     weeklyA: '#1e5040', weeklyB: '#2a6c5a',
@@ -128,6 +142,7 @@ export const THEMES: ColorTheme[] = [
   // ── 🧡 오렌지 (홍살구) ──────────────────────────────────────────────────
   {
     id: 'orange', name: '오렌지', emoji: '🧡', swatch: '#d4622a',
+    accent: '#b04020', accentDeep: '#6a1e08', kanji: '陽',
     coverDeep: '#8c3010', coverMid: '#d4622a', coverLight: '#f4d0b8',
     headerA: '#b04020', headerB: '#d4622a',
     weeklyA: '#b04020', weeklyB: '#d4622a',
@@ -143,6 +158,7 @@ export const THEMES: ColorTheme[] = [
   // ── ✨ 골드 (한국 금색) ──────────────────────────────────────────────────
   {
     id: 'gold', name: '골드', emoji: '✨', swatch: '#c8972a',
+    accent: '#a07020', accentDeep: '#5a3808', kanji: '曜',
     coverDeep: '#7a5010', coverMid: '#c8972a', coverLight: '#f0e0b0',
     headerA: '#a07020', headerB: '#c8972a',
     weeklyA: '#a07020', weeklyB: '#c8972a',

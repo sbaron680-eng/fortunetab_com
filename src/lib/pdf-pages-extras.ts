@@ -12,30 +12,38 @@
 
 import {
   F, SERIF, SANS, PAGE_PAD, NAV_H_RATIO,
+  PAD_V2, LH, SECTION_HEAD_H,
+  PAPER_V2, INK_V2, INK_FAINT_V2, SEAL_V2,
   C as BaseC, themeHolder, roundRect,
+  drawPaperV2, drawHeaderV2, drawFooterV2,
   type PlannerOptions,
 } from './pdf-utils';
 
-// ── 테마 연동 색상 ─────────────────────────────────────────────
-// themeHolder.T 를 통해 선택된 테마 색상을 사용합니다.
-
+// ── v2 디자인으로 통일된 테마 색상 (부록 28p) ─────────────────────
+// v2 "New Eastern Editorial" 디자인 언어 적용:
+//   배경 PAPER_V2 · 텍스트 INK_V2 · 악센트 T.accent · 인주 SEAL_V2
+// 기존 헤더 그라디언트 · sectionBg 블록 배경은 v2 미색 + 먹선 + 얇은 경계로 대체.
 function TC() {
   const T = themeHolder.T;
   return {
-    bgPage:    BaseC.bgPage,
-    bgCard:    BaseC.bgCard,
-    textDark:  BaseC.textDark,
-    textMid:   BaseC.textMid,
-    textLight: BaseC.textLight,
-    ruleColor: BaseC.ruleColor,
-    ruleFaint: BaseC.ruleFaint,
-    // 테마 연동 색상
-    headerA:   T.headerA,
-    headerB:   T.headerB,
-    headerFg:  BaseC.goldFaint,
-    sectionBg: T.dayBgMid,       // 섹션 헤더 배경 → 테마 평일 배경
-    accentText: T.weeklyAccent,   // 서브 텍스트 악센트
-    headerBg:  T.dayBgMid,        // 테이블 헤더/교대 줄 배경
+    bgPage:     PAPER_V2,
+    bgCard:     '#ffffff',
+    textDark:   INK_V2,
+    textMid:    '#3a362e',
+    textLight:  INK_FAINT_V2,
+    ruleColor:  '#d8d2c4',
+    ruleFaint:  '#ebe5d3',
+    // 테마 악센트 (v2에서는 accent 단일)
+    accent:     T.accent,
+    accentDeep: T.accentDeep,
+    seal:       SEAL_V2,
+    // 호환용 — 기존 레이아웃 함수가 참조. 모두 v2 톤으로 매핑.
+    headerA:    T.accent,
+    headerB:    T.accentDeep,
+    headerFg:   '#faf6ee',
+    sectionBg:  '#f3ede0',        // 매우 옅은 미색 (테이블 헤더/교대 행)
+    accentText: INK_V2,
+    headerBg:   '#f3ede0',
   };
 }
 
@@ -98,43 +106,46 @@ export const EXTRA_PAGES: ExtraPageConfig[] = [
   { type: 'notes-grid', title: 'NOTES', titleKo: '모눈 노트', category: 'notes', categoryKo: '노트', icon: '📐', free: false },
 ];
 
-// ── 공통 유틸 ──────────────────────────────────────────────────
+// ── 공통 유틸 (v2 "New Eastern Editorial") ────────────────────────
 function drawPageHeader(
   ctx: CanvasRenderingContext2D, W: number, H: number,
   title: string, subtitle?: string,
-  useSerif = true,
+  _useSerif = true,  // 시그니처 유지 — v2에서는 Playfair+Serif 고정
 ) {
-  const c = TC();
+  const T = themeHolder.T;
   const NAV_H = Math.round(H * NAV_H_RATIO);
   const CH = H - NAV_H;
-  const PAD = PAGE_PAD;
+  const PAD = PAD_V2;
 
-  // 페이지 배경
-  ctx.fillStyle = c.bgPage;
-  ctx.fillRect(0, 0, W, CH);
+  // v2 미색 종이 + 그레인 + 상단 먹선 + FORTUNETAB 모노라인
+  drawPaperV2(ctx, W, CH);
+  drawHeaderV2(ctx, W);
 
-  // 테마 그라디언트 헤더 바 (기본 플래너와 동일)
-  const BAR_H = Math.round(CH * 0.045);
-  const hg = ctx.createLinearGradient(0, 0, W, 0);
-  hg.addColorStop(0, c.headerA);
-  hg.addColorStop(1, c.headerB);
-  ctx.fillStyle = hg;
-  ctx.fillRect(0, 0, W, BAR_H);
+  // 타이틀 블록: 왼쪽 Playfair 대형 영문 타이틀 + 한글 부제
+  ctx.font = '900 48px "Playfair Display", "Noto Serif KR", serif';
+  ctx.fillStyle = T.accent;
+  ctx.fillText(title, PAD, PAD + 66);
 
-  // 제목 (헤더 바 위)
-  ctx.font = F(BAR_H * 0.52, true, useSerif);
-  ctx.fillStyle = c.headerFg;
-  ctx.fillText(title, PAD, BAR_H * 0.70);
-
-  // 부제 (헤더 바 우측)
   if (subtitle) {
-    ctx.font = F(BAR_H * 0.28, false, false);
-    ctx.fillStyle = 'rgba(255,225,235,0.75)';
-    const sw = ctx.measureText(subtitle).width;
-    ctx.fillText(subtitle, W - PAD - sw, BAR_H * 0.68);
+    ctx.font = '300 15px "Noto Serif KR", serif';
+    ctx.fillStyle = INK_FAINT_V2;
+    ctx.fillText(subtitle, PAD, PAD + 96);
   }
 
-  return { CH, PAD, startY: BAR_H + 12 };
+  // 타이틀 아래 얇은 먹선
+  const dividerY = PAD + 118;
+  ctx.strokeStyle = INK_V2; ctx.globalAlpha = 0.55; ctx.lineWidth = 0.9;
+  ctx.beginPath(); ctx.moveTo(PAD, dividerY); ctx.lineTo(W - PAD, dividerY); ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  return { CH, PAD, startY: dividerY + 20 };
+}
+
+/** v2 스타일 푸터 — 각 부록 페이지 렌더 마지막에 호출 */
+function drawExtraFooter(ctx: CanvasRenderingContext2D, W: number, H: number, label: string) {
+  const NAV_H = Math.round(H * NAV_H_RATIO);
+  const CH = H - NAV_H;
+  drawFooterV2(ctx, W, CH, label);
 }
 
 function drawCheckbox(ctx: CanvasRenderingContext2D, x: number, y: number, size = 14) {
@@ -157,14 +168,16 @@ function drawCircleCheck(ctx: CanvasRenderingContext2D, x: number, y: number, r 
 }
 
 function drawSectionHeader(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, label: string) {
-  const c = TC();
-  // 테마 색상의 연한 배경
-  ctx.fillStyle = c.sectionBg;
-  ctx.fillRect(x, y, w, h);
-  ctx.font = F(12, true, false);
-  ctx.fillStyle = c.headerA;
+  const T = themeHolder.T;
+  // v2: 배경 블록 제거 → 상·하 얇은 먹선 + 가운데 accent 라벨
+  ctx.strokeStyle = INK_V2; ctx.globalAlpha = 0.25; ctx.lineWidth = 0.6;
+  ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + w, y); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x, y + h); ctx.lineTo(x + w, y + h); ctx.stroke();
+  ctx.globalAlpha = 1;
+  ctx.font = '600 13px "Noto Serif KR", serif';
+  ctx.fillStyle = T.accent;
   const tw = ctx.measureText(label).width;
-  ctx.fillText(label, x + (w - tw) / 2, y + h * 0.68);
+  ctx.fillText(label, x + (w - tw) / 2, y + h * 0.66);
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -718,4 +731,8 @@ export function drawExtraPage(
       drawSimplePage(ctx, W, H, 'YEARLY GOALS', 'YEAR: ________', 'goals', 20, useSerif);
       break;
   }
+
+  // v2 공통 푸터 — 모든 부록 페이지 하단
+  const config = EXTRA_PAGES.find(e => e.type === pageType);
+  drawExtraFooter(ctx, W, H, `— ${config?.title ?? pageType.toUpperCase()} —`);
 }

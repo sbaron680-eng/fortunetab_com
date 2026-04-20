@@ -11,9 +11,10 @@ import PlannerPreviewCanvas from '@/components/planner/PlannerPreviewCanvas';
 import PreviewLightbox from '@/components/ui/PreviewLightbox';
 import { PLANNER_YEAR } from '@/lib/products';
 import type { PageType } from '@/lib/pdf-generator';
-import type { CoverStyle } from '@/lib/pdf-utils';
+import type { CoverStyle, SajuData } from '@/lib/pdf-utils';
+import type { PreviewPageConfig } from '@/types';
 
-const PAGES: { type: PageType; label: string; icon: string; idx: number }[] = [
+const DEFAULT_PAGES: PreviewPageConfig[] = [
   { type: 'cover',      label: '커버',    icon: '🌙', idx: 0 },
   { type: 'year-index', label: '연간',    icon: '📅', idx: 0 },
   { type: 'monthly',    label: '월간',    icon: '🗓️', idx: 0 },
@@ -25,12 +26,27 @@ interface Props {
   year?: number;
   theme?: string;
   coverStyle?: CoverStyle;
+  saju?: SajuData;
+  sampleName?: string;
+  /** 상품별 특성에 맞는 미리보기 페이지 목록 — products.ts의 previewPages 전달 */
+  pages?: PreviewPageConfig[];
+  /** 플래너 모드 (fortune | practice) — 실천 상품은 'practice' */
+  mode?: 'fortune' | 'practice';
 }
 
-export default function PlannerProductPreview({ year = PLANNER_YEAR, theme = 'rose', coverStyle }: Props) {
+export default function PlannerProductPreview({
+  year = PLANNER_YEAR,
+  theme = 'rose',
+  coverStyle,
+  saju,
+  sampleName,
+  pages = DEFAULT_PAGES,
+  mode,
+}: Props) {
   const [activeIdx, setActiveIdx] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
-  const active = PAGES[activeIdx];
+  const active = pages[activeIdx] ?? pages[0];
+  const PAGES = pages;
   const containerRef = useRef<HTMLDivElement>(null);
   const [canvasWidth, setCanvasWidth] = useState(320);
 
@@ -52,7 +68,15 @@ export default function PlannerProductPreview({ year = PLANNER_YEAR, theme = 'ro
   const prev = () => setActiveIdx((i) => (i === 0 ? PAGES.length - 1 : i - 1));
   const next = () => setActiveIdx((i) => (i === PAGES.length - 1 ? 0 : i + 1));
 
-  const opts = { orientation: 'portrait' as const, year, theme, coverStyle, name: '나의 플래너' };
+  const opts = {
+    orientation: 'portrait' as const,
+    year,
+    theme,
+    coverStyle,
+    mode,
+    name: sampleName ?? (saju ? '홍길동' : '나의 플래너'),
+    saju,
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -77,7 +101,7 @@ export default function PlannerProductPreview({ year = PLANNER_YEAR, theme = 'ro
           aria-label={`${active.label} 크게 보기`}
         >
           <PlannerPreviewCanvas
-            pageType={active.type}
+            pageType={active.type as PageType}
             pageIdx={active.idx}
             opts={opts}
             displayWidth={canvasWidth}
@@ -113,7 +137,7 @@ export default function PlannerProductPreview({ year = PLANNER_YEAR, theme = 'ro
         label={`${active.icon} ${active.label} 미리보기`}
       >
         <PlannerPreviewCanvas
-          pageType={active.type}
+          pageType={active.type as PageType}
           pageIdx={active.idx}
           opts={opts}
           displayWidth={400}
@@ -135,7 +159,7 @@ export default function PlannerProductPreview({ year = PLANNER_YEAR, theme = 'ro
             aria-label={`${label} 미리보기`}
           >
             <PlannerPreviewCanvas
-              pageType={type}
+              pageType={type as PageType}
               pageIdx={idx}
               opts={opts}
               displayWidth={56}

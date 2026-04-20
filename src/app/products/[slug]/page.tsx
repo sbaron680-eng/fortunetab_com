@@ -2,8 +2,22 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { PRODUCTS, getProductBySlug, formatPrice, PLANNER_YEAR } from '@/lib/products';
 import PlannerProductPreview from '@/components/product/PlannerProductPreview';
+import ProductComparisonTable from '@/components/product/ProductComparisonTable';
 import AddToCartButton from './AddToCartButton';
 import ProductPrice from './ProductPrice';
+import type { SajuData } from '@/lib/pdf-utils';
+
+// 사주 상품 프리뷰 — 실제 고객 사주 자리를 보여주는 샘플 데이터
+const SAMPLE_SAJU: SajuData = {
+  ganzhi: '丙午',
+  dayElem: '丙火',
+  yongsin: '水',
+  yearPillar: '丙午',
+  monthPillar: '甲辰',
+  dayPillar: '戊寅',
+  hourPillar: '壬子',
+  elemSummary: '화2 목1 토1 수1 금0',
+};
 
 // 정적 사이트 내보내기: 빌드 시 모든 slug를 사전 렌더링
 export function generateStaticParams() {
@@ -53,12 +67,15 @@ export default async function ProductDetailPage({ params }: Props) {
 
         {/* 메인 컨텐츠: 갤러리 + 구매 영역 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mb-12">
-          {/* 갤러리 — 실시간 캔버스 미리보기 */}
+          {/* 갤러리 — 실시간 캔버스 미리보기 (상품별 특성 반영) */}
           <div>
             <PlannerProductPreview
               year={PLANNER_YEAR}
               theme={product.previewTheme ?? 'rose'}
               coverStyle={product.coverStyle}
+              saju={product.slug.startsWith('saju-') ? SAMPLE_SAJU : undefined}
+              pages={product.previewPages}
+              mode={product.coverStyle === 'practice' ? 'practice' : 'fortune'}
             />
           </div>
 
@@ -95,6 +112,21 @@ export default async function ProductDetailPage({ params }: Props) {
               {product.shortDescription}
             </p>
 
+            {/* 차별점 배지 — 이 상품이 다른 상품과 구별되는 핵심 3~4개 */}
+            <div className="mt-5">
+              <p className="text-[11px] font-bold text-ft-muted tracking-wider uppercase mb-2">
+                이 상품만의 가치
+              </p>
+              <ul className="space-y-1.5">
+                {product.differentiators.map((d) => (
+                  <li key={d} className="flex items-start gap-2 text-sm text-ft-ink">
+                    <span className="text-ft-gold font-bold mt-[2px] flex-shrink-0">◆</span>
+                    <span className="leading-snug">{d}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
             {/* 주요 스펙 요약 */}
             <div className="mt-6 bg-white rounded-xl p-6 border border-ft-border space-y-2">
               {product.specs.slice(0, 3).map(({ label, value }) => (
@@ -126,6 +158,70 @@ export default async function ProductDetailPage({ params }: Props) {
             )}
           </div>
         </div>
+
+        {/* 포함 페이지 체크리스트 — 이 상품에 정확히 무엇이 들어가는지 */}
+        <section className="mb-8 bg-white rounded-2xl p-6 shadow-sm border border-ft-border">
+          <div className="flex items-baseline justify-between mb-4">
+            <h2 className="text-lg font-bold text-ft-ink">이 상품에 포함된 것</h2>
+            <span className="text-xs text-ft-muted">
+              {product.includedPages.length}종 · {product.includedPages.filter((p) => p.highlight).length}개 고유 페이지
+            </span>
+          </div>
+          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {product.includedPages.map((page) => (
+              <li
+                key={page.label}
+                className={`flex items-start gap-3 rounded-xl p-4 border ${
+                  page.highlight
+                    ? 'border-ft-gold bg-amber-50/50'
+                    : 'border-ft-border bg-white'
+                }`}
+              >
+                <span className="text-xl flex-shrink-0">{page.icon}</span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline gap-2">
+                    <p className={`text-sm font-bold truncate ${page.highlight ? 'text-ft-ink' : 'text-ft-body'}`}>
+                      {page.label}
+                    </p>
+                    <span className="text-xs text-ft-muted flex-shrink-0">{page.count}</span>
+                  </div>
+                  {page.note && (
+                    <p className="text-xs text-ft-muted mt-0.5 leading-snug">{page.note}</p>
+                  )}
+                </div>
+                {page.highlight && (
+                  <span className="text-[10px] font-bold text-ft-gold flex-shrink-0 mt-1">
+                    고유
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+
+          {product.notIncluded && product.notIncluded.length > 0 && (
+            <div className="mt-5 pt-5 border-t border-ft-border">
+              <p className="text-[11px] font-bold text-ft-muted tracking-wider uppercase mb-2">
+                이 상품에 없는 것
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {product.notIncluded.map((item) => (
+                  <span
+                    key={item}
+                    className="inline-flex items-center gap-1 text-xs text-ft-muted bg-ft-paper-alt px-2.5 py-1 rounded-full border border-ft-border"
+                  >
+                    <span className="text-ft-muted">×</span>
+                    {item}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
+
+        {/* 상품 비교표 */}
+        <section className="mb-8">
+          <ProductComparisonTable currentSlug={product.slug} />
+        </section>
 
         {/* 탭 섹션: 상세설명 / 특징 / 스펙 */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

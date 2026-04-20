@@ -37,14 +37,13 @@ export default function AddToCartButton({ product }: Props) {
   }
 
   if (product.price === 0) {
-    // 상품별 다운로드 모드: common → fortune, practice → practice, extras → extras
-    const modeMap: Record<string, string> = {
-      'common-planner': 'fortune',
-      'practice-planner': 'practice',
-      'extras-free': 'extras',
+    // 각 무료 플래너는 개별 독립 라우트로 이동
+    const pathMap: Record<string, string> = {
+      'common-planner':   '/download',
+      'practice-planner': '/download/practice',
+      'extras-free':      '/download/extras',
     };
-    const mode = modeMap[product.slug] || '';
-    const downloadUrl = mode ? `/download?mode=${mode}` : '/download';
+    const downloadUrl = pathMap[product.slug] || '/download';
 
     return (
       <div className="space-y-3">

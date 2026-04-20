@@ -161,6 +161,12 @@ export default function StepPaywall() {
       downloadUrl: null,
       category: 'basic',
       inStock: true,
+      includedPages: [],
+      differentiators: [],
+      compareRow: {
+        core4: '미포함', dailyCount: '미포함', sajuCustom: false, sajuReport: false, practiceKit: false,
+        extrasCount: 0, repeat: false, delivery: '즉시',
+      },
       seo: { title: '', description: '', keywords: [] },
     };
 

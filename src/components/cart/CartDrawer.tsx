@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
+import ProductMiniThumbnail from '@/components/product/ProductMiniThumbnail';
 import { useCartStore } from '@/lib/store';
 import { formatPrice } from '@/lib/products';
 import { usePromotions } from '@/lib/usePromotions';
@@ -82,15 +82,9 @@ export default function CartDrawer() {
           ) : (
             items.map(({ product, qty }) => (
               <div key={product.id} className="flex gap-3 py-3 border-b border-gray-50">
-                {/* 썸네일 */}
-                <div className="relative w-16 h-16 flex-shrink-0 rounded-xl overflow-hidden bg-indigo-50">
-                  <Image
-                    src={product.thumbnailImage}
-                    alt={product.name}
-                    fill
-                    className="object-cover"
-                    sizes="64px"
-                  />
+                {/* 썸네일 — 상품 상세의 미리보기와 동일한 실시간 캔버스 렌더 */}
+                <div className="flex-shrink-0 rounded-xl overflow-hidden bg-indigo-50" style={{ width: 64 }}>
+                  <ProductMiniThumbnail product={product} size={64} />
                 </div>
 
                 {/* 정보 */}

@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<title>FortuneTab PDF 플래너 — 새 커버 시안 v1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;600;900&family=Noto+Sans+KR:wght@300;400;700&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,700;1,400&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --paper:#faf6ee;
+    --paper2:#f4eedf;
+    --ink:#1a1814;
+    --ink2:#3a362e;
+    --ink-faint:#8b857a;
+    --seal:#b8322a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#e8e3d8;font-family:'Noto Sans KR',sans-serif;padding:48px 24px;color:#2a271f}
+  h1{font-family:'Playfair Display',serif;font-weight:900;font-size:40px;letter-spacing:-.5px;margin-bottom:4px}
+  .lead{color:#6a645a;font-size:15px;margin-bottom:28px;max-width:920px;line-height:1.55}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:#6a645a;margin-bottom:32px}
+  .legend span{padding:4px 10px;background:#fff;border:1px solid #d8d2c4;border-radius:14px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:28px;max-width:1600px;margin:0 auto}
+  .card{display:flex;flex-direction:column;gap:10px}
+  .card .meta{display:flex;justify-content:space-between;font-size:13px;color:#4a463d;padding:0 4px}
+  .card .meta b{font-family:'Playfair Display',serif;font-weight:700;letter-spacing:.5px}
+  .swatch{display:inline-block;width:10px;height:10px;border-radius:50%;margin-left:6px;vertical-align:middle}
+  canvas{width:100%;height:auto;box-shadow:0 10px 24px -10px rgba(20,15,5,.25),0 2px 6px rgba(20,15,5,.08);background:var(--paper);border-radius:2px}
+  .note{margin:42px auto 0;max-width:920px;background:#fff;border:1px solid #e0d9c8;padding:20px 24px;border-radius:6px;font-size:13.5px;line-height:1.65;color:#413d34}
+  .note b{color:#1a1814}
+  .note ul{margin-top:8px;padding-left:18px}
+</style>
+</head>
+<body>
+
+<h1>FortuneTab Planner — Cover v1 "New Eastern Editorial"</h1>
+<p class="lead">
+  종이 바탕 · 먹선 · 큰 Serif 연도 숫자 · 낙관(인장) · 세로 한자 조판.
+  테마 7종은 <b>액센트</b>로만 작용합니다(연도 · 낙관 · 세로 한자).
+  커버 스타일 5종(fortune/practice/extras/allinone/premium)의 공통 디자인 언어입니다.
+</p>
+<div class="legend">
+  <span>A4 세로 · 210×297mm</span>
+  <span>Scale 1:2 (프리뷰)</span>
+  <span>폰트: Playfair Display · Noto Serif KR</span>
+  <span>색: 종이 #faf6ee · 먹 #1a1814 · 인주 #b8322a</span>
+</div>
+
+<div id="grid" class="grid"></div>
+
+<div class="note">
+  <b>시안 평가 포인트</b>
+  <ul>
+    <li>연도 숫자 크기·무게가 압도적인가, 아니면 과한가</li>
+    <li>세로 한자 "運命之曆"(운명의 달력) 사용 vs 제거 vs 교체</li>
+    <li>낙관 위치(우하단) · 크기 · 빨강 선명도</li>
+    <li>테마 7종의 시각적 차이가 충분히 구분되는가 (악센트만으로)</li>
+    <li>상하단 먹선 · "EST. MMXXVI" 모노라인 간격</li>
+  </ul>
+</div>
+
+<script>
+/* ==========================================================================
+   FortuneTab — Cover v1 Renderer (Canvas 2D, pdf-pages.ts 이식 가능)
+   A4 @ 150dpi  → 1240 × 1754 px. 프리뷰 표시는 CSS 스케일로 축소.
+   ========================================================================== */
+const A4W = 1240, A4H = 1754;
+
+const THEMES = [
+  {id:'rose',   name:'로즈',     kanji:'燃', accent:'#9a3055', accentDeep:'#6a1a38'},
+  {id:'navy',   name:'네이비',   kanji:'靜', accent:'#1a2a6c', accentDeep:'#0f1a4a'},
+  {id:'black',  name:'블랙',     kanji:'玄', accent:'#222222', accentDeep:'#000000'},
+  {id:'blue',   name:'블루',     kanji:'淸', accent:'#2a5280', accentDeep:'#102040'},
+  {id:'forest', name:'포레스트', kanji:'綠', accent:'#1e5040', accentDeep:'#0b2a1c'},
+  {id:'orange', name:'오렌지',   kanji:'陽', accent:'#b04020', accentDeep:'#6a1e08'},
+  {id:'gold',   name:'골드',     kanji:'曜', accent:'#a07020', accentDeep:'#5a3808'},
+];
+
+const PAPER = '#faf6ee';
+const INK = '#1a1814';
+const INK_FAINT = '#8b857a';
+const SEAL = '#b8322a';
+
+function renderCover(canvas, theme, opts){
+  const W = A4W, H = A4H;
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  /* ── 1. 종이 바탕 ─────────────────────────────────────── */
+  ctx.fillStyle = PAPER;
+  ctx.fillRect(0, 0, W, H);
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0,   'rgba(244, 236, 218, 0.55)');
+  g.addColorStop(0.5, 'rgba(250, 246, 238, 0)');
+  g.addColorStop(1,   'rgba(238, 230, 210, 0.35)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+
+  // 그레인 노이즈
+  ctx.save();
+  ctx.globalAlpha = 0.04;
+  for(let i = 0; i < 1200; i++){
+    const x = Math.random() * W, y = Math.random() * H;
+    ctx.fillStyle = Math.random() > .5 ? '#3a342a' : '#b8ae95';
+    ctx.fillRect(x, y, 1, 1);
+  }
+  ctx.restore();
+
+  const PAD = 92;
+
+  /* ── 2. 상단 헤더: 얇은 먹선 + 브랜드 모노라인 ─────────── */
+  ctx.strokeStyle = INK; ctx.globalAlpha = 0.85; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(PAD, PAD); ctx.lineTo(W - PAD, PAD); ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  ctx.font = '400 20px "Playfair Display", serif';
+  ctx.fillStyle = INK;
+  ctx.textBaseline = 'alphabetic';
+  ctx.save();
+  if(ctx.letterSpacing !== undefined) ctx.letterSpacing = '6px';
+  ctx.fillText('FORTUNETAB', PAD, PAD - 18);
+  if(ctx.letterSpacing !== undefined) ctx.letterSpacing = '2px';
+  ctx.font = '300 13px "Playfair Display", serif';
+  ctx.fillStyle = INK_FAINT;
+  const estText = 'EST · MMXXVI';
+  const estW = ctx.measureText(estText).width;
+  ctx.fillText(estText, W - PAD - estW, PAD - 22);
+  ctx.restore();
+
+  // 우측 상단 테마 점
+  ctx.fillStyle = theme.accent;
+  ctx.beginPath(); ctx.arc(W - PAD - estW - 20, PAD - 26, 4, 0, Math.PI*2); ctx.fill();
+
+  /* ── 3. 좌측 세로 한자 조판 ─────────────────────────────── */
+  const kanjiCol = ['運','命','之','曆'];
+  ctx.save();
+  ctx.font = '300 54px "Noto Serif KR", serif';
+  ctx.fillStyle = theme.accentDeep;
+  ctx.globalAlpha = 0.82;
+  let ky = PAD + 210;
+  kanjiCol.forEach(ch => {
+    ctx.fillText(ch, PAD + 8, ky);
+    ky += 82;
+  });
+  ctx.restore();
+
+  ctx.strokeStyle = theme.accent; ctx.globalAlpha = 0.35; ctx.lineWidth = 0.8;
+  ctx.beginPath();
+  ctx.moveTo(PAD + 62, PAD + 170);
+  ctx.lineTo(PAD + 62, ky + 20);
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  /* ── 4. 우측 중앙: 큰 연도 숫자 (히어로) ────────────────── */
+  const year = String(opts.year ?? 2026);
+  ctx.font = '900 360px "Playfair Display", serif';
+  ctx.fillStyle = theme.accent;
+  ctx.textBaseline = 'alphabetic';
+  const yearW = ctx.measureText(year).width;
+  const yearX = W - PAD - yearW + 20;
+  const yearY = H * 0.52;
+  ctx.save();
+  ctx.globalAlpha = 0.10;
+  ctx.fillStyle = theme.accentDeep;
+  ctx.fillText(year, yearX + 2, yearY + 3);
+  ctx.restore();
+  ctx.fillStyle = theme.accent;
+  ctx.globalAlpha = 0.95;
+  ctx.fillText(year, yearX, yearY);
+  ctx.globalAlpha = 1;
+
+  // 연도 아래 얇은 먹선 + 연도 간지
+  const ganzhi = '丙午年';
+  ctx.strokeStyle = INK; ctx.lineWidth = 0.8; ctx.globalAlpha = 0.5;
+  ctx.beginPath(); ctx.moveTo(yearX + 20, yearY + 24); ctx.lineTo(W - PAD, yearY + 24); ctx.stroke();
+  ctx.globalAlpha = 1;
+  ctx.font = '400 22px "Noto Serif KR", serif';
+  ctx.fillStyle = INK;
+  ctx.globalAlpha = 0.72;
+  const gzW = ctx.measureText(ganzhi).width;
+  ctx.fillText(ganzhi, W - PAD - gzW, yearY + 58);
+  ctx.globalAlpha = 1;
+
+  /* ── 5. 중앙 하단: 제목 블록 ────────────────────────────── */
+  const titleY = H * 0.70;
+  ctx.font = '700 62px "Noto Serif KR", serif';
+  ctx.fillStyle = INK;
+  const title = opts.title ?? '사주로 쓰는 365일';
+  const tW = ctx.measureText(title).width;
+  ctx.fillText(title, (W - tW) / 2, titleY);
+
+  ctx.fillStyle = theme.accent;
+  ctx.beginPath(); ctx.arc(W/2, titleY + 28, 3.5, 0, Math.PI*2); ctx.fill();
+
+  ctx.font = '300 24px "Noto Serif KR", serif';
+  ctx.fillStyle = INK_FAINT;
+  const sub = opts.subtitle ?? '동양의 지혜 · 서양의 별을 만나다';
+  const sW = ctx.measureText(sub).width;
+  ctx.fillText(sub, (W - sW) / 2, titleY + 66);
+
+  ctx.font = 'italic 300 18px "Cormorant Garamond", serif';
+  ctx.fillStyle = INK_FAINT;
+  const en = 'Where Eastern Wisdom Meets Western Stars';
+  const enW = ctx.measureText(en).width;
+  ctx.fillText(en, (W - enW) / 2, titleY + 100);
+
+  /* ── 6. 이름 라인 ──────────────────────────────────────── */
+  const nameY = H * 0.86;
+  ctx.font = '300 14px "Noto Serif KR", serif';
+  ctx.fillStyle = INK_FAINT;
+  ctx.fillText('姓名', W/2 - 200, nameY - 18);
+
+  ctx.strokeStyle = INK; ctx.globalAlpha = 0.45; ctx.lineWidth = 0.8;
+  ctx.beginPath(); ctx.moveTo(W/2 - 200, nameY); ctx.lineTo(W/2 + 200, nameY); ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  if(opts.name){
+    ctx.font = '400 26px "Noto Serif KR", serif';
+    ctx.fillStyle = INK;
+    const nW = ctx.measureText(opts.name).width;
+    ctx.fillText(opts.name, (W - nW) / 2, nameY - 6);
+  }
+
+  /* ── 7. 하단 먹선 + 낙관(인장) ──────────────────────────── */
+  ctx.strokeStyle = INK; ctx.globalAlpha = 0.85; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(PAD, H - PAD); ctx.lineTo(W - PAD, H - PAD); ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  const sealSize = 92;
+  const sealX = W - PAD - sealSize;
+  const sealY = H - PAD - sealSize - 32;
+  ctx.fillStyle = SEAL; ctx.globalAlpha = 0.92;
+  ctx.fillRect(sealX, sealY, sealSize, sealSize);
+  ctx.globalAlpha = 1;
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 2.5;
+  ctx.strokeRect(sealX + 5, sealY + 5, sealSize - 10, sealSize - 10);
+  ctx.font = '900 58px "Noto Serif KR", serif';
+  ctx.fillStyle = '#fff8f0';
+  const sealKanji = theme.kanji;
+  const skW = ctx.measureText(sealKanji).width;
+  ctx.fillText(sealKanji, sealX + (sealSize - skW)/2, sealY + sealSize - 20);
+
+  ctx.font = '300 12px "Playfair Display", serif';
+  ctx.fillStyle = INK_FAINT;
+  ctx.save();
+  if(ctx.letterSpacing !== undefined) ctx.letterSpacing = '4px';
+  ctx.fillText('FORTUNETAB  ·  EASTERN WISDOM  ·  WESTERN STARS', PAD, H - PAD + 22);
+  ctx.restore();
+
+  ctx.font = '300 11px "Playfair Display", serif';
+  ctx.fillStyle = INK_FAINT;
+  const pgText = '— COVER —';
+  const pgW = ctx.measureText(pgText).width;
+  ctx.fillText(pgText, W - PAD - pgW - sealSize - 16, H - PAD + 22);
+}
+
+/* ── 그리드 렌더 ──────────────────────────────────────────── */
+const grid = document.getElementById('grid');
+THEMES.forEach(theme => {
+  const card = document.createElement('div');
+  card.className = 'card';
+
+  const canvas = document.createElement('canvas');
+  card.appendChild(canvas);
+
+  const meta = document.createElement('div');
+  meta.className = 'meta';
+  const left = document.createElement('span');
+  left.textContent = theme.name + ' ';
+  const sw = document.createElement('span');
+  sw.className = 'swatch';
+  sw.style.background = theme.accent;
+  left.appendChild(sw);
+  const right = document.createElement('b');
+  right.textContent = '#' + theme.id.toUpperCase();
+  meta.appendChild(left);
+  meta.appendChild(right);
+  card.appendChild(meta);
+
+  grid.appendChild(card);
+
+  renderCover(canvas, theme, {
+    year: 2026,
+    name: '박성준',
+    title: '사주로 쓰는 365일',
+    subtitle: '동양의 지혜 · 서양의 별을 만나다',
+  });
+});
+</script>
+</body>
+</html>

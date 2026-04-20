@@ -47,6 +47,8 @@ export interface PlannerOptions {
   mode?: 'fortune' | 'practice'; // 'fortune'(기본): 사주·운세 플래너 | 'practice': 목표달성·실천 플래너
   coverStyle?: CoverStyle;       // 커버 시각 스타일 (상품별 차별화)
   saju?: SajuData;
+  /** true면 일간 페이지를 365일치로 생성 (유료 사주 플래너용). false/미지정 시 샘플 1p. */
+  dailyFull?: boolean;
   fortuneData?: PlannerFortuneData;  // 운세 텍스트 (맞춤/띠/없음)
   onProgress?: (current: number, total: number, label: string) => void;
   returnBlob?: boolean;  // true면 다운로드 대신 Blob 반환 (서버 사이드용)
@@ -101,7 +103,21 @@ export function F(size: number, bold = false, serif = false): string {
 export const NAV_H_RATIO = 0.028;
 
 // ── 페이지 여백 (상하좌우 공통) ────────────────────────────────────────────────
-export const PAGE_PAD = 52; // px — A4 150dpi 기준 약 4.2% (≈ 8.8mm)
+export const PAGE_PAD = 52; // px — A4 150dpi 기준 약 4.2% (≈ 8.8mm) · 부록 페이지용
+
+// ── v2 "New Eastern Editorial" 디자인 토큰 ────────────────────────────────────
+// 메인 5페이지(cover, year-index, monthly, weekly, daily)에서 사용
+export const PAD_V2 = 88;              // 메인 5페이지 외부 여백
+export const LH = 32;                  // 메모 라인 간격
+export const LH_TIGHT = 24;            // 촘촘한 라인
+export const SECTION_HEAD_H = 56;      // 섹션 헤드 고정 높이
+export const TITLE_ZONE_H = 200;       // 타이틀 영역 높이 (PAD_V2 + 14부터 시작)
+
+// v2 중립 팔레트 (테마 무관)
+export const PAPER_V2 = '#faf6ee';
+export const INK_V2 = '#1a1814';
+export const INK_FAINT_V2 = '#8b857a';
+export const SEAL_V2 = '#b8322a';
 
 export const NAV_SECTIONS: { type: PageType; label: string }[] = [
   { type: 'cover',      label: '표지' },
@@ -297,6 +313,178 @@ export function drawRule(
     ctx.moveTo(W/2, y-d); ctx.lineTo(W/2+d, y);
     ctx.lineTo(W/2, y+d); ctx.lineTo(W/2-d, y);
     ctx.closePath(); ctx.fillStyle = color; ctx.fill();
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  v2 "New Eastern Editorial" 공통 드로잉 유틸
+//  메인 5페이지(cover, year-index, monthly, weekly, daily)에서만 사용
+//  모든 함수는 content-area [0, CH] 안에서 그림 (CH = H - NAV_H)
+// ══════════════════════════════════════════════════════════════════════════
+
+function _setLS(ctx: CanvasRenderingContext2D, v: string) {
+  const c = ctx as CanvasRenderingContext2D & { letterSpacing?: string };
+  if (c.letterSpacing !== undefined) c.letterSpacing = v;
+}
+
+/** 미색 종이 배경 + 미세 그레인 노이즈 */
+export function drawPaperV2(ctx: CanvasRenderingContext2D, W: number, CH: number) {
+  ctx.fillStyle = PAPER_V2;
+  ctx.fillRect(0, 0, W, CH);
+  const g = ctx.createLinearGradient(0, 0, 0, CH);
+  g.addColorStop(0,   'rgba(244, 236, 218, 0.55)');
+  g.addColorStop(0.5, 'rgba(250, 246, 238, 0)');
+  g.addColorStop(1,   'rgba(238, 230, 210, 0.35)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, CH);
+  ctx.save();
+  ctx.globalAlpha = 0.04;
+  for (let i = 0; i < 1200; i++) {
+    const x = Math.random() * W, y = Math.random() * CH;
+    ctx.fillStyle = Math.random() > 0.5 ? '#3a342a' : '#b8ae95';
+    ctx.fillRect(x, y, 1, 1);
+  }
+  ctx.restore();
+}
+
+/** 상단 먹선 + "FORTUNETAB" / "EST · MMXXVI" 모노라인 + 테마 도트 */
+export function drawHeaderV2(ctx: CanvasRenderingContext2D, W: number) {
+  const T = themeHolder.T;
+  ctx.strokeStyle = INK_V2; ctx.globalAlpha = 0.85; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(PAD_V2, PAD_V2); ctx.lineTo(W - PAD_V2, PAD_V2); ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  ctx.save();
+  ctx.font = '400 18px "Playfair Display", "Noto Serif KR", serif';
+  ctx.fillStyle = INK_V2; _setLS(ctx, '6px');
+  ctx.fillText('FORTUNETAB', PAD_V2, PAD_V2 - 18);
+  ctx.restore();
+
+  ctx.font = '300 13px "Playfair Display", "Noto Serif KR", serif';
+  ctx.fillStyle = INK_FAINT_V2;
+  const est = 'EST · MMXXVI';
+  const estW = ctx.measureText(est).width;
+  ctx.fillText(est, W - PAD_V2 - estW, PAD_V2 - 22);
+
+  ctx.fillStyle = T.accent;
+  ctx.beginPath(); ctx.arc(W - PAD_V2 - estW - 20, PAD_V2 - 26, 4, 0, Math.PI * 2); ctx.fill();
+}
+
+/** 하단 먹선 + 모노라인 태그라인 + 우측 페이지 라벨 */
+export function drawFooterV2(
+  ctx: CanvasRenderingContext2D, W: number, CH: number, label: string,
+) {
+  ctx.strokeStyle = INK_V2; ctx.globalAlpha = 0.85; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(PAD_V2, CH - PAD_V2); ctx.lineTo(W - PAD_V2, CH - PAD_V2); ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  ctx.save();
+  ctx.font = '300 12px "Playfair Display", "Noto Serif KR", serif';
+  ctx.fillStyle = INK_FAINT_V2; _setLS(ctx, '4px');
+  ctx.fillText('FORTUNETAB  ·  EASTERN WISDOM  ·  WESTERN STARS', PAD_V2, CH - PAD_V2 + 22);
+  ctx.restore();
+
+  ctx.font = '300 11px "Playfair Display", "Noto Serif KR", serif';
+  ctx.fillStyle = INK_FAINT_V2;
+  const pgW = ctx.measureText(label).width;
+  ctx.fillText(label, W - PAD_V2 - pgW, CH - PAD_V2 + 22);
+}
+
+/** 타이틀 영역 아래 얇은 먹선 (모든 메인 페이지 공통 Y 위치) */
+export function drawTitleDividerV2(ctx: CanvasRenderingContext2D, W: number) {
+  const y = PAD_V2 + 14 + TITLE_ZONE_H; // = PAD_V2 + 214
+  ctx.strokeStyle = INK_V2; ctx.globalAlpha = 0.55; ctx.lineWidth = 0.9;
+  ctx.beginPath(); ctx.moveTo(PAD_V2, y); ctx.lineTo(W - PAD_V2, y); ctx.stroke();
+  ctx.globalAlpha = 1;
+}
+
+/**
+ * 섹션 헤드 — 고정 56px 높이.
+ * 레이아웃: num(y+24) + en(y+12) + ko(y+28) + 구분선(y+42)
+ * @returns 본문 시작 Y (y + SECTION_HEAD_H)
+ */
+export function drawSectionHeadV2(
+  ctx: CanvasRenderingContext2D,
+  x: number, y: number, w: number,
+  num: string, en: string, ko: string,
+): number {
+  const T = themeHolder.T;
+  ctx.font = '700 28px "Playfair Display", "Noto Serif KR", serif';
+  ctx.fillStyle = T.accent;
+  ctx.fillText(num, x, y + 24);
+
+  ctx.save();
+  ctx.font = '300 10px "Playfair Display", "Noto Serif KR", serif';
+  ctx.fillStyle = INK_FAINT_V2; _setLS(ctx, '2px');
+  ctx.fillText(en, x + 46, y + 12);
+  ctx.restore();
+
+  ctx.font = `600 15px ${SERIF}`;
+  ctx.fillStyle = INK_V2;
+  ctx.fillText(ko, x + 46, y + 28);
+
+  ctx.strokeStyle = INK_V2; ctx.globalAlpha = 0.35; ctx.lineWidth = 0.7;
+  ctx.beginPath(); ctx.moveTo(x, y + 42); ctx.lineTo(x + w, y + 42); ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  return y + SECTION_HEAD_H;
+}
+
+/**
+ * 메모 라인 n줄 (LH=32 고정 간격).
+ * 첫 라인은 y+LH에 (글씨 쓸 공간 확보).
+ * @returns y + (n + 1) * LH  (다음 섹션 시작 Y)
+ */
+export function drawMemoLinesV2(
+  ctx: CanvasRenderingContext2D,
+  x: number, y: number, w: number, n: number,
+  bullet: 'dot' | 'check' | 'none' = 'dot',
+): number {
+  const T = themeHolder.T;
+  for (let i = 0; i < n; i++) {
+    const ly = y + LH + i * LH;
+    if (bullet === 'dot') {
+      ctx.fillStyle = T.accent; ctx.globalAlpha = 0.55;
+      ctx.beginPath(); ctx.arc(x + 2, ly - 6, 2, 0, Math.PI * 2); ctx.fill();
+      ctx.globalAlpha = 1;
+    } else if (bullet === 'check') {
+      ctx.strokeStyle = INK_V2; ctx.globalAlpha = 0.45; ctx.lineWidth = 0.8;
+      ctx.strokeRect(x, ly - 11, 10, 10);
+      ctx.globalAlpha = 1;
+    }
+    ctx.strokeStyle = INK_V2; ctx.globalAlpha = 0.3; ctx.lineWidth = 0.55;
+    ctx.beginPath();
+    ctx.moveTo(x + (bullet === 'check' ? 18 : 12), ly);
+    ctx.lineTo(x + w, ly);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+  return y + (n + 1) * LH;
+}
+
+/** 바이오리듬 3선 스트립 (신체 體 / 감정 情 / 지성 智) */
+export function drawBioStripV2(
+  ctx: CanvasRenderingContext2D,
+  x: number, y: number, w: number,
+  physical: number, emotional: number, intellectual: number,
+) {
+  const T = themeHolder.T;
+  const labels = ['體', '情', '智'];
+  const vals = [physical, emotional, intellectual];
+  const colors = [T.accent, SEAL_V2, INK_V2];
+  const colW = w / 3;
+  for (let k = 0; k < 3; k++) {
+    const cx = x + k * colW;
+    ctx.font = `300 11px ${SERIF}`;
+    ctx.fillStyle = INK_FAINT_V2;
+    ctx.fillText(labels[k], cx, y + 8);
+    const barY = y + 14, barW = colW - 24;
+    ctx.strokeStyle = INK_V2; ctx.globalAlpha = 0.2; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(cx + 18, barY); ctx.lineTo(cx + 18 + barW, barY); ctx.stroke();
+    ctx.globalAlpha = 1;
+    const pos = cx + 18 + ((vals[k] + 1) / 2) * barW;
+    ctx.fillStyle = colors[k];
+    ctx.beginPath(); ctx.arc(pos, barY, 3, 0, Math.PI * 2); ctx.fill();
   }
 }
 

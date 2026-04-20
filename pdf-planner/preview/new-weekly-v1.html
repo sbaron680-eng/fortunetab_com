@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<title>FortuneTab PDF 플래너 — 새 주간 페이지 시안 v1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;600;900&family=Noto+Sans+KR:wght@300;400;700&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,700;1,400&display=swap" rel="stylesheet" />
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#e8e3d8;font-family:'Noto Sans KR',sans-serif;padding:48px 24px;color:#2a271f}
+  h1{font-family:'Playfair Display',serif;font-weight:900;font-size:40px;letter-spacing:-.5px;margin-bottom:4px}
+  .lead{color:#6a645a;font-size:15px;margin-bottom:20px;max-width:920px;line-height:1.55}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:#6a645a;margin-bottom:32px}
+  .legend span{padding:4px 10px;background:#fff;border:1px solid #d8d2c4;border-radius:14px}
+  .controls{max-width:920px;margin:0 auto 24px;display:flex;gap:12px;align-items:center}
+  .controls label{font-size:13px;color:#4a463d}
+  .controls select,.controls input{padding:6px 10px;border:1px solid #d8d2c4;border-radius:4px;background:#fff;font-family:inherit}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:28px;max-width:1600px;margin:0 auto}
+  .card{display:flex;flex-direction:column;gap:10px}
+  .card .meta{display:flex;justify-content:space-between;font-size:13px;color:#4a463d;padding:0 4px}
+  .card .meta b{font-family:'Playfair Display',serif;font-weight:700;letter-spacing:.5px}
+  .swatch{display:inline-block;width:10px;height:10px;border-radius:50%;margin-left:6px;vertical-align:middle}
+  canvas{width:100%;height:auto;box-shadow:0 10px 24px -10px rgba(20,15,5,.25),0 2px 6px rgba(20,15,5,.08);background:#faf6ee;border-radius:2px}
+  .note{margin:42px auto 0;max-width:920px;background:#fff;border:1px solid #e0d9c8;padding:20px 24px;border-radius:6px;font-size:13.5px;line-height:1.65;color:#413d34}
+  .note b{color:#1a1814}
+  .note ul{margin-top:8px;padding-left:18px}
+</style>
+</head>
+<body>
+
+<h1>FortuneTab Planner — Weekly v1</h1>
+<p class="lead">
+  7일 × 행 레이아웃. 각 날 좌측에 큰 Playfair 일자 · 일진 간지 · 바이오리듬 3선(신체·감정·지성).
+  우측은 시간/작업 메모 라인. 상단 헤더: Week # · 기간 · 주 테마. 하단: 주간 TOP3 · 회고.
+</p>
+
+<div class="controls">
+  <label for="week">미리보기 주:</label>
+  <input id="week" type="number" min="1" max="52" value="20" step="1" />
+  <span style="font-size:12px;color:#6a645a" id="weekLabel"></span>
+</div>
+
+<div class="legend">
+  <span>A4 세로 · 7일 행</span>
+  <span>각 일 높이 ≈ 150px</span>
+  <span>일진 간지 + 바이오리듬 도트</span>
+  <span>주말 · 일요일 악센트</span>
+</div>
+
+<div id="grid" class="grid"></div>
+
+<div class="note">
+  <b>시안 평가 포인트</b>
+  <ul>
+    <li>한 날당 쓸 공간(약 25mm 높이) 적절성</li>
+    <li>일진 간지(甲子日) 표기 유지 — 사주 플래너 고유 정체성</li>
+    <li>바이오리듬 3선(신체·감정·지성) 시각 방해되지 않는가</li>
+    <li>하단 "주간 TOP3 · 감사 · 회고" 3블록 구성</li>
+  </ul>
+</div>
+
+<script>
+const A4W = 1240, A4H = 1754;
+
+const THEMES = [
+  {id:'rose',   name:'로즈',     accent:'#9a3055', accentDeep:'#6a1a38'},
+  {id:'navy',   name:'네이비',   accent:'#1a2a6c', accentDeep:'#0f1a4a'},
+  {id:'black',  name:'블랙',     accent:'#222222', accentDeep:'#000000'},
+  {id:'blue',   name:'블루',     accent:'#2a5280', accentDeep:'#102040'},
+  {id:'forest', name:'포레스트', accent:'#1e5040', accentDeep:'#0b2a1c'},
+  {id:'orange', name:'오렌지',   accent:'#b04020', accentDeep:'#6a1e08'},
+  {id:'gold',   name:'골드',     accent:'#a07020', accentDeep:'#5a3808'},
+];
+
+const PAPER = '#faf6ee';
+const INK = '#1a1814';
+const INK_FAINT = '#8b857a';
+const SEAL = '#b8322a';
+
+const DAYS_EN = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+const DAYS_KO = ['일','월','화','수','목','금','토'];
+const DAYS_KANJI = ['日','月','火','水','木','金','土'];
+
+// 일진 간지 60갑자 — 실제는 사주 엔진에서 계산. 데모용 샘플
+const GANZHI_60 = ['甲子','乙丑','丙寅','丁卯','戊辰','己巳','庚午','辛未','壬申','癸酉',
+                   '甲戌','乙亥','丙子','丁丑','戊寅','己卯','庚辰','辛巳','壬午','癸未',
+                   '甲申','乙酉','丙戌','丁亥','戊子','己丑','庚寅','辛卯','壬辰','癸巳',
+                   '甲午','乙未','丙申','丁酉','戊戌','己亥','庚子','辛丑','壬寅','癸卯',
+                   '甲辰','乙巳','丙午','丁未','戊申','己酉','庚戌','辛亥','壬子','癸丑',
+                   '甲寅','乙卯','丙辰','丁巳','戊午','己未','庚申','辛酉','壬戌','癸亥'];
+
+// 2026-01-01은 일진 庚午 (예시, 실제는 엔진 계산)
+function dayGanzhi(year, month, day){
+  const base = new Date(2026, 0, 1); // Jan 1 2026 → 庚午 (index 6)
+  const baseIdx = 6;
+  const target = new Date(year, month - 1, day);
+  const diff = Math.floor((target - base) / 86400000);
+  const idx = ((baseIdx + diff) % 60 + 60) % 60;
+  return GANZHI_60[idx];
+}
+
+// 바이오리듬 (생년월일 기준)
+function biorhythm(birth, target, period){
+  const days = Math.floor((target - birth) / 86400000);
+  return Math.sin(2 * Math.PI * days / period);
+}
+
+function weekStart(year, weekNo){
+  const jan1 = new Date(year, 0, 1);
+  const dayOfWeek = jan1.getDay();
+  const firstSunday = new Date(year, 0, 1 - dayOfWeek);
+  return new Date(firstSunday.getTime() + (weekNo - 1) * 7 * 86400000);
+}
+
+function drawPaper(ctx, W, H){
+  ctx.fillStyle = PAPER;
+  ctx.fillRect(0, 0, W, H);
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0,   'rgba(244, 236, 218, 0.55)');
+  g.addColorStop(0.5, 'rgba(250, 246, 238, 0)');
+  g.addColorStop(1,   'rgba(238, 230, 210, 0.35)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  ctx.save();
+  ctx.globalAlpha = 0.04;
+  for(let i = 0; i < 1200; i++){
+    const x = Math.random() * W, y = Math.random() * H;
+    ctx.fillStyle = Math.random() > .5 ? '#3a342a' : '#b8ae95';
+    ctx.fillRect(x, y, 1, 1);
+  }
+  ctx.restore();
+}
+
+function drawHeader(ctx, W, PAD, theme){
+  ctx.strokeStyle = INK; ctx.globalAlpha = 0.85; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(PAD, PAD); ctx.lineTo(W - PAD, PAD); ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  ctx.save();
+  ctx.font = '400 18px "Playfair Display", serif';
+  ctx.fillStyle = INK;
+  if(ctx.letterSpacing !== undefined) ctx.letterSpacing = '6px';
+  ctx.fillText('FORTUNETAB', PAD, PAD - 18);
+  ctx.restore();
+
+  ctx.font = '300 13px "Playfair Display", serif';
+  ctx.fillStyle = INK_FAINT;
+  const est = 'EST · MMXXVI';
+  const estW = ctx.measureText(est).width;
+  ctx.fillText(est, W - PAD - estW, PAD - 22);
+  ctx.fillStyle = theme.accent;
+  ctx.beginPath(); ctx.arc(W - PAD - estW - 20, PAD - 26, 4, 0, Math.PI*2); ctx.fill();
+}
+
+function drawFooter(ctx, W, H, PAD, label){
+  ctx.strokeStyle = INK; ctx.globalAlpha = 0.85; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(PAD, H - PAD); ctx.lineTo(W - PAD, H - PAD); ctx.stroke();
+  ctx.globalAlpha = 1;
+  ctx.save();
+  ctx.font = '300 12px "Playfair Display", serif';
+  ctx.fillStyle = INK_FAINT;
+  if(ctx.letterSpacing !== undefined) ctx.letterSpacing = '4px';
+  ctx.fillText('FORTUNETAB  ·  EASTERN WISDOM  ·  WESTERN STARS', PAD, H - PAD + 22);
+  ctx.restore();
+  ctx.font = '300 11px "Playfair Display", serif';
+  ctx.fillStyle = INK_FAINT;
+  const pgW = ctx.measureText(label).width;
+  ctx.fillText(label, W - PAD - pgW, H - PAD + 22);
+}
+
+function renderWeek(canvas, theme, opts){
+  const W = A4W, H = A4H;
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  drawPaper(ctx, W, H);
+  const PAD = 84;
+  drawHeader(ctx, W, PAD, theme);
+
+  const start = weekStart(opts.year, opts.weekNo);
+  const end = new Date(start.getTime() + 6 * 86400000);
+
+  /* ── 타이틀 ─────────────────────────────────── */
+  // 좌: WEEK 번호 (Playfair)
+  ctx.font = '300 22px "Playfair Display", serif';
+  ctx.fillStyle = INK_FAINT;
+  ctx.save();
+  if(ctx.letterSpacing !== undefined) ctx.letterSpacing = '6px';
+  ctx.fillText('WEEK', PAD, PAD + 46);
+  ctx.restore();
+
+  ctx.font = '900 112px "Playfair Display", serif';
+  ctx.fillStyle = theme.accent;
+  const wkStr = String(opts.weekNo).padStart(2, '0');
+  ctx.fillText(wkStr, PAD, PAD + 148);
+
+  // 우: 기간 + 월/연도
+  const range = `${start.getMonth()+1}.${String(start.getDate()).padStart(2,'0')}  —  ${end.getMonth()+1}.${String(end.getDate()).padStart(2,'0')}`;
+  ctx.font = '400 28px "Playfair Display", serif';
+  ctx.fillStyle = INK;
+  const rangeW = ctx.measureText(range).width;
+  ctx.fillText(range, W - PAD - rangeW, PAD + 66);
+
+  ctx.font = '300 14px "Noto Serif KR", serif';
+  ctx.fillStyle = INK_FAINT;
+  const metaStr = `${opts.year}년 · 第${opts.weekNo}週`;
+  const metaW = ctx.measureText(metaStr).width;
+  ctx.fillText(metaStr, W - PAD - metaW, PAD + 94);
+
+  // 주 테마 / 인용
+  ctx.font = 'italic 300 16px "Cormorant Garamond", serif';
+  ctx.fillStyle = INK_FAINT;
+  const quoteW = ctx.measureText('"The rhythm of the week is the rhythm of a life."').width;
+  ctx.fillText('"The rhythm of the week is the rhythm of a life."', W - PAD - quoteW, PAD + 130);
+
+  // 타이틀 아래 먹선
+  ctx.strokeStyle = INK; ctx.globalAlpha = 0.55; ctx.lineWidth = 0.9;
+  ctx.beginPath(); ctx.moveTo(PAD, PAD + 180); ctx.lineTo(W - PAD, PAD + 180); ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  /* ── 7일 행 ────────────────────────────────── */
+  const DAY_TOP = PAD + 210;
+  const FOOTER_H = 260; // 하단 블록 공간
+  const DAYS_BOT = H - PAD - FOOTER_H;
+  const DAY_H = (DAYS_BOT - DAY_TOP) / 7;
+
+  // 월요일 시작으로 배치할지 일요일 시작할지 — 일요일 시작 (한국 표준)
+  for(let i = 0; i < 7; i++){
+    const d = new Date(start.getTime() + i * 86400000);
+    drawDayRow(ctx, PAD, DAY_TOP + i * DAY_H, W - PAD * 2, DAY_H, d, theme, opts.birth);
+  }
+
+  // 마지막 행 하단선
+  ctx.strokeStyle = INK; ctx.globalAlpha = 0.15; ctx.lineWidth = 0.5;
+  ctx.beginPath(); ctx.moveTo(PAD, DAY_TOP + 7 * DAY_H); ctx.lineTo(W - PAD, DAY_TOP + 7 * DAY_H); ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  /* ── 하단 3블록 ────────────────────────────── */
+  const BOT_Y = DAYS_BOT + 20;
+  const BOT_H = FOOTER_H - 60;
+  drawWeekFooter(ctx, PAD, BOT_Y, W - PAD * 2, BOT_H, theme);
+
+  drawFooter(ctx, W, H, PAD, `— WK ${wkStr} · WEEKLY —`);
+}
+
+function drawDayRow(ctx, x, y, w, h, d, theme, birth){
+  const dow = d.getDay();
+  const isSun = dow === 0;
+  const isSat = dow === 6;
+
+  // 상단 구분선
+  ctx.strokeStyle = INK; ctx.globalAlpha = 0.15; ctx.lineWidth = 0.5;
+  ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + w, y); ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  // 일요일/토요일 배경 옅게
+  if(isSun){
+    ctx.fillStyle = theme.accent; ctx.globalAlpha = 0.035;
+    ctx.fillRect(x, y, w, h); ctx.globalAlpha = 1;
+  }
+
+  /* 좌측 컬럼 (180px) */
+  const LEFT_W = 180;
+  // 큰 일자
+  ctx.font = '300 64px "Playfair Display", serif';
+  ctx.fillStyle = isSun ? theme.accent : INK;
+  const day = String(d.getDate()).padStart(2, '0');
+  ctx.fillText(day, x + 10, y + 58);
+
+  // 요일 (영문)
+  ctx.font = '400 13px "Playfair Display", serif';
+  ctx.fillStyle = isSun ? theme.accent : INK_FAINT;
+  ctx.save();
+  if(ctx.letterSpacing !== undefined) ctx.letterSpacing = '3px';
+  ctx.fillText(DAYS_EN[dow], x + 92, y + 30);
+  ctx.restore();
+
+  // 요일 한자
+  ctx.font = '400 20px "Noto Serif KR", serif';
+  ctx.fillStyle = isSun ? theme.accent : INK;
+  ctx.fillText(DAYS_KANJI[dow] + '曜', x + 92, y + 58);
+
+  // 일진 간지
+  const gz = dayGanzhi(d.getFullYear(), d.getMonth() + 1, d.getDate());
+  ctx.font = '300 13px "Noto Serif KR", serif';
+  ctx.fillStyle = INK_FAINT;
+  ctx.fillText('일진 · ' + gz + '日', x + 10, y + 88);
+
+  // 음력 placeholder
+  ctx.font = '300 12px "Playfair Display", serif';
+  ctx.fillStyle = INK_FAINT;
+  ctx.fillText('lunar ' + ((d.getDate() % 30) || 30).toString().padStart(2, '0'), x + 10, y + 108);
+
+  // 바이오리듬 3점 (좌측 하단)
+  if(birth){
+    const phys = biorhythm(birth, d, 23);
+    const emo  = biorhythm(birth, d, 28);
+    const intl = biorhythm(birth, d, 33);
+    drawBioDots(ctx, x + 10, y + h - 20, phys, emo, intl, theme);
+  }
+
+  /* 중앙 세로 구분선 */
+  ctx.strokeStyle = INK; ctx.globalAlpha = 0.2; ctx.lineWidth = 0.5;
+  ctx.beginPath(); ctx.moveTo(x + LEFT_W, y + 8); ctx.lineTo(x + LEFT_W, y + h - 8); ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  /* 우측 메모 라인 (6줄) */
+  const lineX = x + LEFT_W + 20;
+  const lineW = w - LEFT_W - 40;
+  const lines = 6;
+  const lineStartY = y + 24;
+  const lineStepY = (h - 44) / (lines - 1);
+  ctx.strokeStyle = INK; ctx.globalAlpha = 0.28; ctx.lineWidth = 0.55;
+  for(let i = 0; i < lines; i++){
+    const ly = lineStartY + i * lineStepY;
+    ctx.beginPath(); ctx.moveTo(lineX, ly); ctx.lineTo(lineX + lineW, ly); ctx.stroke();
+    // 라인 시작 도트 (체크박스 대체)
+    ctx.fillStyle = theme.accent; ctx.globalAlpha = 0.4;
+    ctx.beginPath(); ctx.arc(lineX - 10, ly - 4, 2, 0, Math.PI*2); ctx.fill();
+    ctx.globalAlpha = 0.28;
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawBioDots(ctx, x, y, p, e, i, theme){
+  // 3개 작은 막대(신체·감정·지성)
+  const labels = ['體', '情', '智'];
+  const values = [p, e, i];
+  const colors = [theme.accent, SEAL, INK];
+  for(let k = 0; k < 3; k++){
+    const cx = x + k * 44;
+    ctx.font = '300 10px "Noto Serif KR", serif';
+    ctx.fillStyle = INK_FAINT;
+    ctx.fillText(labels[k], cx, y);
+    // bar
+    const barY = y + 4;
+    const barW = 28;
+    ctx.strokeStyle = INK; ctx.globalAlpha = 0.15;
+    ctx.beginPath(); ctx.moveTo(cx + 14, barY); ctx.lineTo(cx + 14 + barW, barY); ctx.stroke();
+    ctx.globalAlpha = 1;
+    // value marker
+    const pos = cx + 14 + (values[k] + 1) / 2 * barW;
+    ctx.fillStyle = colors[k];
+    ctx.beginPath(); ctx.arc(pos, barY, 2.6, 0, Math.PI*2); ctx.fill();
+  }
+}
+
+function drawWeekFooter(ctx, x, y, w, h, theme){
+  // 상단 얇은 먹선
+  ctx.strokeStyle = INK; ctx.globalAlpha = 0.55; ctx.lineWidth = 0.9;
+  ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + w, y); ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  const colW = w / 3;
+  const GAP = 20;
+
+  drawFooterBlock(ctx, x,             y + 16, colW - GAP, h - 16, theme, '01', 'TOP 3',    '이번 주 핵심', 3);
+  drawFooterBlock(ctx, x + colW,      y + 16, colW - GAP, h - 16, theme, '02', 'GRATITUDE','감사한 것',   3);
+  drawFooterBlock(ctx, x + colW * 2,  y + 16, colW - GAP, h - 16, theme, '03', 'REFLECTION','한 주 회고', 4);
+}
+
+function drawFooterBlock(ctx, x, y, w, h, theme, num, en, ko, lines){
+  ctx.font = '700 28px "Playfair Display", serif';
+  ctx.fillStyle = theme.accent;
+  ctx.fillText(num, x, y + 24);
+
+  ctx.font = '300 10px "Playfair Display", serif';
+  ctx.fillStyle = INK_FAINT;
+  ctx.save();
+  if(ctx.letterSpacing !== undefined) ctx.letterSpacing = '2px';
+  ctx.fillText(en, x + 46, y + 12);
+  ctx.restore();
+
+  ctx.font = '600 15px "Noto Serif KR", serif';
+  ctx.fillStyle = INK;
+  ctx.fillText(ko, x + 46, y + 28);
+
+  ctx.strokeStyle = INK; ctx.globalAlpha = 0.35; ctx.lineWidth = 0.7;
+  ctx.beginPath(); ctx.moveTo(x, y + 42); ctx.lineTo(x + w, y + 42); ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  let cy = y + 76;
+  const step = (h - 50) / lines;
+  for(let i = 0; i < lines; i++){
+    ctx.fillStyle = theme.accent; ctx.globalAlpha = 0.55;
+    ctx.beginPath(); ctx.arc(x + 2, cy - 6, 2, 0, Math.PI*2); ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = INK; ctx.globalAlpha = 0.3; ctx.lineWidth = 0.55;
+    ctx.beginPath(); ctx.moveTo(x + 12, cy); ctx.lineTo(x + w, cy); ctx.stroke();
+    ctx.globalAlpha = 1;
+    cy += step;
+  }
+}
+
+/* ── 렌더 ─────────────────────────────────── */
+function renderAll(weekNo){
+  const grid = document.getElementById('grid');
+  grid.textContent = '';
+
+  const start = weekStart(2026, weekNo);
+  const end = new Date(start.getTime() + 6 * 86400000);
+  const lbl = document.getElementById('weekLabel');
+  lbl.textContent = `${start.getMonth()+1}.${start.getDate()} — ${end.getMonth()+1}.${end.getDate()}, 2026`;
+
+  THEMES.forEach(theme => {
+    const card = document.createElement('div');
+    card.className = 'card';
+
+    const canvas = document.createElement('canvas');
+    card.appendChild(canvas);
+
+    const meta = document.createElement('div');
+    meta.className = 'meta';
+    const left = document.createElement('span');
+    left.textContent = theme.name + ' ';
+    const sw = document.createElement('span');
+    sw.className = 'swatch';
+    sw.style.background = theme.accent;
+    left.appendChild(sw);
+    const right = document.createElement('b');
+    right.textContent = '#' + theme.id.toUpperCase();
+    meta.appendChild(left);
+    meta.appendChild(right);
+    card.appendChild(meta);
+
+    grid.appendChild(card);
+
+    renderWeek(canvas, theme, {
+      year: 2026, weekNo,
+      birth: new Date(1990, 4, 15), // 샘플 생년월일
+    });
+  });
+}
+renderAll(20);
+document.getElementById('week').addEventListener('input', (e) => {
+  const wk = Math.min(52, Math.max(1, parseInt(e.target.value, 10) || 1));
+  renderAll(wk);
+});
+</script>
+</body>
+</html>

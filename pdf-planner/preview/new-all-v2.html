@@ -1,0 +1,935 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<title>FortuneTab PDF 플래너 — v2 통합 (줄간격·정렬 정돈)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;600;900&family=Noto+Sans+KR:wght@300;400;700&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,700;1,400&display=swap" rel="stylesheet" />
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#e8e3d8;font-family:'Noto Sans KR',sans-serif;padding:40px 24px 80px;color:#2a271f}
+  h1{font-family:'Playfair Display',serif;font-weight:900;font-size:40px;letter-spacing:-.5px;margin-bottom:4px}
+  .lead{color:#6a645a;font-size:15px;margin-bottom:18px;max-width:1040px;line-height:1.55}
+  .controls{max-width:1040px;margin:0 auto 30px;display:flex;gap:16px;align-items:center;flex-wrap:wrap;background:#fff;padding:14px 18px;border:1px solid #d8d2c4;border-radius:6px}
+  .controls label{font-size:13px;color:#4a463d;font-weight:600}
+  .controls select,.controls input{padding:6px 10px;border:1px solid #d8d2c4;border-radius:4px;background:#fff;font-family:inherit;font-size:13px}
+  .tokens{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:#6a645a;max-width:1040px;margin:0 auto 28px}
+  .tokens span{padding:4px 10px;background:#fff;border:1px solid #d8d2c4;border-radius:14px;font-family:'Playfair Display',serif;letter-spacing:.5px}
+  .book{max-width:1040px;margin:0 auto;display:flex;flex-direction:column;gap:32px}
+  .page-wrap{background:#faf6ee;box-shadow:0 14px 40px -10px rgba(20,15,5,.25),0 2px 8px rgba(20,15,5,.08);border-radius:2px}
+  .page-label{text-align:center;font-family:'Playfair Display',serif;font-size:13px;color:#6a645a;letter-spacing:4px;margin-bottom:6px;padding-top:8px}
+  canvas{width:100%;height:auto;display:block}
+  .note{margin:42px auto 0;max-width:1040px;background:#fff;border:1px solid #e0d9c8;padding:20px 24px;border-radius:6px;font-size:13.5px;line-height:1.7;color:#413d34}
+  .note b{color:#1a1814}
+  .note ul{margin-top:8px;padding-left:18px}
+  .note code{background:#f3ede0;padding:1px 6px;border-radius:3px;font-family:'Playfair Display',serif}
+</style>
+</head>
+<body>
+
+<h1>FortuneTab Planner — v2 (Alignment Pass)</h1>
+<p class="lead">
+  5페이지 통합 프리뷰. <b>PAD 88 · 베이스라인 8 · 메모 라인 32 · 섹션 헤드 56</b>으로 통일.
+  테마 선택 시 전 페이지에 즉시 반영됩니다. 페이지 간 상·하단 먹선 위치, 타이틀 분리선 Y, 섹션 헤드 리듬이 일치하는지 세로 스크롤로 검증.
+</p>
+
+<div class="controls">
+  <label>테마</label>
+  <select id="theme">
+    <option value="rose">로즈</option>
+    <option value="navy" selected>네이비</option>
+    <option value="black">블랙</option>
+    <option value="blue">블루</option>
+    <option value="forest">포레스트</option>
+    <option value="orange">오렌지</option>
+    <option value="gold">골드</option>
+  </select>
+  <label>월(미리보기)</label>
+  <select id="month">
+    <option>1</option><option>2</option><option>3</option><option>4</option>
+    <option selected>5</option><option>6</option><option>7</option><option>8</option>
+    <option>9</option><option>10</option><option>11</option><option>12</option>
+  </select>
+  <label>주</label>
+  <input id="week" type="number" min="1" max="52" value="20" />
+  <label>일자</label>
+  <input id="date" type="date" value="2026-05-15" />
+  <label>생년월일</label>
+  <input id="birth" type="date" value="1990-05-15" />
+</div>
+
+<div class="tokens">
+  <span>PAD · 88</span>
+  <span>BASELINE · 8</span>
+  <span>LINE_HEIGHT · 32</span>
+  <span>SECTION_HEAD · 56</span>
+  <span>TITLE_DIVIDER · PAD+14+200</span>
+  <span>FOOTER_TEXT · H-PAD+22</span>
+</div>
+
+<div id="book" class="book"></div>
+
+<div class="note">
+  <b>v1 → v2 정리 사항</b>
+  <ul>
+    <li><code>PAD</code> 88로 전 페이지 통일 (기존 92/84 혼재 → 상단 먹선 위치 정확히 맞음)</li>
+    <li>메모 라인 간격을 <code>32px</code> 고정 → 주간 일별 메모 6줄, 일간 메모 16줄, 사이드바/푸터 블록 전부 동일 리듬</li>
+    <li>섹션 헤드(숫자·영문·한글·구분선)를 <code>56px</code> 고정 높이로 통일 → 월간 사이드바 4블록, 주간 푸터 3블록, 일간 12시진/메모/하단 3블록 리듬 일치</li>
+    <li>타이틀 존 끝 먹선 Y를 <code>PAD+214</code>로 고정 → 커버/연간/월간/주간/일간 상단이 동일 높이에서 끊어짐</li>
+    <li>푸터 모노라인 Y를 <code>H-PAD+22</code> 고정 → 모든 페이지 하단 FORTUNETAB 라벨 정렬 일치</li>
+    <li>섹션 번호는 <code>01~nn</code> 규칙으로 통일 (기존 <code>—</code> 혼용 제거)</li>
+  </ul>
+</div>
+
+<script>
+/* =============================================================
+   FortuneTab Planner — Unified Design Tokens (v2)
+   ============================================================= */
+const A4W = 1240, A4H = 1754;
+
+const PAD = 88;
+const BASE = 8;                         // baseline grid
+const LH = 32;                          // 메모 라인 간격 (writing lines)
+const LH_TIGHT = 24;                    // 촘촘한 라인
+const SECTION_HEAD_H = 56;              // 섹션 헤드 고정 높이
+
+const TITLE_Y = PAD + 14;               // 타이틀 영역 시작
+const TITLE_H = 200;                    // 타이틀 영역 높이
+const TITLE_DIVIDER_Y = TITLE_Y + TITLE_H;   // 타이틀 아래 먹선 Y (= PAD+214)
+const CONTENT_Y = TITLE_DIVIDER_Y + 24;      // 본문 시작 Y
+const CONTENT_BOT = A4H - PAD - 40;          // 본문 끝 Y (푸터 위 여백)
+
+const THEMES = {
+  rose:   { name:'로즈',     kanji:'燃', accent:'#9a3055', accentDeep:'#6a1a38' },
+  navy:   { name:'네이비',   kanji:'靜', accent:'#1a2a6c', accentDeep:'#0f1a4a' },
+  black:  { name:'블랙',     kanji:'玄', accent:'#222222', accentDeep:'#000000' },
+  blue:   { name:'블루',     kanji:'淸', accent:'#2a5280', accentDeep:'#102040' },
+  forest: { name:'포레스트', kanji:'綠', accent:'#1e5040', accentDeep:'#0b2a1c' },
+  orange: { name:'오렌지',   kanji:'陽', accent:'#b04020', accentDeep:'#6a1e08' },
+  gold:   { name:'골드',     kanji:'曜', accent:'#a07020', accentDeep:'#5a3808' },
+};
+
+const PAPER = '#faf6ee';
+const INK = '#1a1814';
+const INK_FAINT = '#8b857a';
+const SEAL = '#b8322a';
+
+const MONTHS_EN = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+const MONTH_GANZHI_2026 = ['己丑','庚寅','辛卯','壬辰','癸巳','甲午','乙未','丙申','丁酉','戊戌','己亥','庚子'];
+const DAYS_FULL = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+const DAYS_SHORT = ['S','M','T','W','T','F','S'];
+const DAYS_KO = ['일','월','화','수','목','금','토'];
+const DAYS_KANJI = ['日','月','火','水','木','金','土'];
+
+const HOLIDAYS_2026 = {
+  '1-1':'신정','2-16':'설날연휴','2-17':'설날','2-18':'설날연휴','3-1':'삼일절',
+  '5-5':'어린이날','5-24':'부처님오신날','6-6':'현충일','8-15':'광복절',
+  '9-24':'추석연휴','9-25':'추석','9-26':'추석연휴','10-3':'개천절','10-9':'한글날','12-25':'크리스마스'
+};
+const JEOLGI_2026 = {
+  '2-4':'입춘','3-6':'경칩','3-21':'춘분','4-5':'청명','4-20':'곡우',
+  '5-6':'입하','5-21':'소만','6-6':'망종','6-21':'하지','7-7':'소서','7-23':'대서',
+  '8-7':'입추','8-23':'처서','9-8':'백로','9-23':'추분','10-8':'한로','10-23':'상강',
+  '11-7':'입동','11-22':'소설','12-7':'대설','12-22':'동지','1-6':'소한','1-20':'대한'
+};
+const MONTHLY_INSIGHT = {
+  1:{theme:'시작의 달',kw:['씨앗','숙고','고요']},   2:{theme:'움틈의 달',kw:['전환','발아','탐색']},
+  3:{theme:'펼침의 달',kw:['확장','연결','약속']},   4:{theme:'성장의 달',kw:['실행','속도','신뢰']},
+  5:{theme:'뿌리의 달',kw:['기반','관계','투자']},   6:{theme:'결실의 달',kw:['마감','점검','정산']},
+  7:{theme:'열기의 달',kw:['집중','몰입','단련']},   8:{theme:'수렴의 달',kw:['정리','재정비','회복']},
+  9:{theme:'수확의 달',kw:['성과','나눔','감사']},  10:{theme:'가다듬는 달',kw:['품질','정제','기록']},
+  11:{theme:'갈무리의 달',kw:['회고','결산','정돈']},12:{theme:'맺음의 달',kw:['완결','감사','재설계']},
+};
+const SHICHEN = [
+  {kanji:'子',name:'자시',range:'23:00 — 01:00',glyph:'鼠'},
+  {kanji:'丑',name:'축시',range:'01:00 — 03:00',glyph:'牛'},
+  {kanji:'寅',name:'인시',range:'03:00 — 05:00',glyph:'虎'},
+  {kanji:'卯',name:'묘시',range:'05:00 — 07:00',glyph:'兔'},
+  {kanji:'辰',name:'진시',range:'07:00 — 09:00',glyph:'龍'},
+  {kanji:'巳',name:'사시',range:'09:00 — 11:00',glyph:'蛇'},
+  {kanji:'午',name:'오시',range:'11:00 — 13:00',glyph:'馬'},
+  {kanji:'未',name:'미시',range:'13:00 — 15:00',glyph:'羊'},
+  {kanji:'申',name:'신시',range:'15:00 — 17:00',glyph:'猴'},
+  {kanji:'酉',name:'유시',range:'17:00 — 19:00',glyph:'鷄'},
+  {kanji:'戌',name:'술시',range:'19:00 — 21:00',glyph:'狗'},
+  {kanji:'亥',name:'해시',range:'21:00 — 23:00',glyph:'豬'},
+];
+const GANZHI_60 = ['甲子','乙丑','丙寅','丁卯','戊辰','己巳','庚午','辛未','壬申','癸酉',
+  '甲戌','乙亥','丙子','丁丑','戊寅','己卯','庚辰','辛巳','壬午','癸未',
+  '甲申','乙酉','丙戌','丁亥','戊子','己丑','庚寅','辛卯','壬辰','癸巳',
+  '甲午','乙未','丙申','丁酉','戊戌','己亥','庚子','辛丑','壬寅','癸卯',
+  '甲辰','乙巳','丙午','丁未','戊申','己酉','庚戌','辛亥','壬子','癸丑',
+  '甲寅','乙卯','丙辰','丁巳','戊午','己未','庚申','辛酉','壬戌','癸亥'];
+
+/* =============================================================
+   Helpers
+   ============================================================= */
+function dayGanzhi(year, month, day){
+  const base = new Date(2026, 0, 1); const baseIdx = 6;
+  const target = new Date(year, month-1, day);
+  const diff = Math.floor((target - base)/86400000);
+  const idx = ((baseIdx + diff) % 60 + 60) % 60;
+  return GANZHI_60[idx];
+}
+function biorhythm(birth, target, period){
+  const days = Math.floor((target - birth)/86400000);
+  return Math.sin(2 * Math.PI * days / period);
+}
+function firstWeekday(y, m){ return new Date(y, m-1, 1).getDay(); }
+function daysInMonth(y, m){ return new Date(y, m, 0).getDate(); }
+function weekStart(y, wk){
+  const jan1 = new Date(y, 0, 1);
+  const firstSun = new Date(y, 0, 1 - jan1.getDay());
+  return new Date(firstSun.getTime() + (wk-1)*7*86400000);
+}
+function setLS(ctx, v){ if(ctx.letterSpacing !== undefined) ctx.letterSpacing = v; }
+
+/* =============================================================
+   Shared Drawing Primitives
+   ============================================================= */
+function drawPaper(ctx, W, H){
+  ctx.fillStyle = PAPER; ctx.fillRect(0, 0, W, H);
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0,   'rgba(244, 236, 218, 0.55)');
+  g.addColorStop(0.5, 'rgba(250, 246, 238, 0)');
+  g.addColorStop(1,   'rgba(238, 230, 210, 0.35)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  ctx.save(); ctx.globalAlpha = 0.04;
+  for(let i = 0; i < 1200; i++){
+    const x = Math.random()*W, y = Math.random()*H;
+    ctx.fillStyle = Math.random() > .5 ? '#3a342a' : '#b8ae95';
+    ctx.fillRect(x, y, 1, 1);
+  }
+  ctx.restore();
+}
+function drawHeader(ctx, W, theme){
+  ctx.strokeStyle = INK; ctx.globalAlpha = 0.85; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(PAD, PAD); ctx.lineTo(W - PAD, PAD); ctx.stroke();
+  ctx.globalAlpha = 1;
+  ctx.save();
+  ctx.font = '400 18px "Playfair Display", serif';
+  ctx.fillStyle = INK; setLS(ctx, '6px');
+  ctx.fillText('FORTUNETAB', PAD, PAD - 18);
+  ctx.restore();
+  ctx.font = '300 13px "Playfair Display", serif';
+  ctx.fillStyle = INK_FAINT;
+  const est = 'EST · MMXXVI';
+  const estW = ctx.measureText(est).width;
+  ctx.fillText(est, W - PAD - estW, PAD - 22);
+  ctx.fillStyle = theme.accent;
+  ctx.beginPath(); ctx.arc(W - PAD - estW - 20, PAD - 26, 4, 0, Math.PI*2); ctx.fill();
+}
+function drawFooter(ctx, W, H, label){
+  ctx.strokeStyle = INK; ctx.globalAlpha = 0.85; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(PAD, H - PAD); ctx.lineTo(W - PAD, H - PAD); ctx.stroke();
+  ctx.globalAlpha = 1;
+  ctx.save();
+  ctx.font = '300 12px "Playfair Display", serif';
+  ctx.fillStyle = INK_FAINT; setLS(ctx, '4px');
+  ctx.fillText('FORTUNETAB  ·  EASTERN WISDOM  ·  WESTERN STARS', PAD, H - PAD + 22);
+  ctx.restore();
+  ctx.font = '300 11px "Playfair Display", serif';
+  ctx.fillStyle = INK_FAINT;
+  const pgW = ctx.measureText(label).width;
+  ctx.fillText(label, W - PAD - pgW, H - PAD + 22);
+}
+function drawTitleDivider(ctx, W){
+  ctx.strokeStyle = INK; ctx.globalAlpha = 0.55; ctx.lineWidth = 0.9;
+  ctx.beginPath(); ctx.moveTo(PAD, TITLE_DIVIDER_Y); ctx.lineTo(W - PAD, TITLE_DIVIDER_Y); ctx.stroke();
+  ctx.globalAlpha = 1;
+}
+/**
+ * 섹션 헤드 — 고정 56px.
+ * Row 0~8  : 숫자(y+24) + en(y+12)
+ * Row 28   : 한글(y+28)
+ * Row 42   : 구분선
+ * Row 56   : 본문 시작
+ */
+function drawSectionHead(ctx, x, y, w, theme, num, en, ko){
+  ctx.font = '700 28px "Playfair Display", serif';
+  ctx.fillStyle = theme.accent;
+  ctx.fillText(num, x, y + 24);
+  ctx.save();
+  ctx.font = '300 10px "Playfair Display", serif';
+  ctx.fillStyle = INK_FAINT; setLS(ctx, '2px');
+  ctx.fillText(en, x + 46, y + 12);
+  ctx.restore();
+  ctx.font = '600 15px "Noto Serif KR", serif';
+  ctx.fillStyle = INK;
+  ctx.fillText(ko, x + 46, y + 28);
+  ctx.strokeStyle = INK; ctx.globalAlpha = 0.35; ctx.lineWidth = 0.7;
+  ctx.beginPath(); ctx.moveTo(x, y + 42); ctx.lineTo(x + w, y + 42); ctx.stroke();
+  ctx.globalAlpha = 1;
+  // 본문 시작 Y 반환
+  return y + SECTION_HEAD_H;
+}
+/** LH 고정 메모 라인 n줄. 시작 Y에서 n*LH 높이를 차지. */
+function drawMemoLines(ctx, x, y, w, n, theme, opts){
+  opts = opts || {};
+  const bullet = opts.bullet ?? 'dot'; // 'dot' | 'check' | 'none'
+  ctx.strokeStyle = INK; ctx.lineWidth = 0.55;
+  for(let i = 0; i < n; i++){
+    const ly = y + LH + i * LH;      // 첫 라인은 y+LH에 (글씨 쓸 공간 확보)
+    // bullet
+    if(bullet === 'dot'){
+      ctx.fillStyle = theme.accent; ctx.globalAlpha = 0.55;
+      ctx.beginPath(); ctx.arc(x + 2, ly - 6, 2, 0, Math.PI*2); ctx.fill();
+      ctx.globalAlpha = 1;
+    } else if(bullet === 'check'){
+      ctx.strokeStyle = INK; ctx.globalAlpha = 0.45;
+      ctx.strokeRect(x, ly - 11, 10, 10);
+    }
+    // line
+    ctx.strokeStyle = INK; ctx.globalAlpha = 0.3;
+    ctx.beginPath();
+    ctx.moveTo(x + (bullet === 'check' ? 18 : 12), ly);
+    ctx.lineTo(x + w, ly);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+  return y + (n + 1) * LH;
+}
+function drawBioStrip(ctx, x, y, w, p, e, i, theme){
+  const labels = ['體','情','智']; const vals = [p,e,i];
+  const colors = [theme.accent, SEAL, INK]; const colW = w/3;
+  for(let k = 0; k < 3; k++){
+    const cx = x + k*colW;
+    ctx.font = '300 11px "Noto Serif KR", serif';
+    ctx.fillStyle = INK_FAINT; ctx.fillText(labels[k], cx, y + 8);
+    const barY = y + 14, barW = colW - 24;
+    ctx.strokeStyle = INK; ctx.globalAlpha = 0.2;
+    ctx.beginPath(); ctx.moveTo(cx + 18, barY); ctx.lineTo(cx + 18 + barW, barY); ctx.stroke();
+    ctx.globalAlpha = 1;
+    const pos = cx + 18 + (vals[k]+1)/2*barW;
+    ctx.fillStyle = colors[k];
+    ctx.beginPath(); ctx.arc(pos, barY, 3, 0, Math.PI*2); ctx.fill();
+  }
+}
+
+/* =============================================================
+   PAGE 1: COVER
+   ============================================================= */
+function renderCover(canvas, theme, opts){
+  const W = A4W, H = A4H; canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  drawPaper(ctx, W, H);
+  drawHeader(ctx, W, theme);
+
+  // 좌측 세로 한자 "運命之曆"
+  const kanji = ['運','命','之','曆'];
+  ctx.save();
+  ctx.font = '300 54px "Noto Serif KR", serif';
+  ctx.fillStyle = theme.accentDeep; ctx.globalAlpha = 0.82;
+  let ky = PAD + 210;
+  kanji.forEach(ch => { ctx.fillText(ch, PAD + 8, ky); ky += 82; });
+  ctx.restore();
+  ctx.strokeStyle = theme.accent; ctx.globalAlpha = 0.35; ctx.lineWidth = 0.8;
+  ctx.beginPath(); ctx.moveTo(PAD + 62, PAD + 170); ctx.lineTo(PAD + 62, ky + 20); ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  // 큰 연도 (우측)
+  const year = String(opts.year);
+  ctx.font = '900 360px "Playfair Display", serif';
+  const yearW = ctx.measureText(year).width;
+  const yearX = W - PAD - yearW + 20;
+  const yearY = H * 0.52;
+  ctx.save(); ctx.globalAlpha = 0.10;
+  ctx.fillStyle = theme.accentDeep; ctx.fillText(year, yearX + 2, yearY + 3); ctx.restore();
+  ctx.fillStyle = theme.accent; ctx.globalAlpha = 0.95;
+  ctx.fillText(year, yearX, yearY); ctx.globalAlpha = 1;
+
+  // 연도 간지
+  ctx.strokeStyle = INK; ctx.lineWidth = 0.8; ctx.globalAlpha = 0.5;
+  ctx.beginPath(); ctx.moveTo(yearX + 20, yearY + 24); ctx.lineTo(W - PAD, yearY + 24); ctx.stroke();
+  ctx.globalAlpha = 1;
+  ctx.font = '400 22px "Noto Serif KR", serif';
+  ctx.fillStyle = INK; ctx.globalAlpha = 0.72;
+  const gz = '丙午年'; const gzW = ctx.measureText(gz).width;
+  ctx.fillText(gz, W - PAD - gzW, yearY + 58); ctx.globalAlpha = 1;
+
+  // 중앙 하단 제목
+  const titleY = H * 0.70;
+  ctx.font = '700 62px "Noto Serif KR", serif';
+  ctx.fillStyle = INK;
+  const title = '사주로 쓰는 365일';
+  ctx.fillText(title, (W - ctx.measureText(title).width)/2, titleY);
+  ctx.fillStyle = theme.accent;
+  ctx.beginPath(); ctx.arc(W/2, titleY + 28, 3.5, 0, Math.PI*2); ctx.fill();
+  ctx.font = '300 24px "Noto Serif KR", serif';
+  ctx.fillStyle = INK_FAINT;
+  const sub = '동양의 지혜 · 서양의 별을 만나다';
+  ctx.fillText(sub, (W - ctx.measureText(sub).width)/2, titleY + 66);
+  ctx.font = 'italic 300 18px "Cormorant Garamond", serif';
+  const en = 'Where Eastern Wisdom Meets Western Stars';
+  ctx.fillText(en, (W - ctx.measureText(en).width)/2, titleY + 100);
+
+  // 이름 라인
+  const nameY = H * 0.86;
+  ctx.font = '300 14px "Noto Serif KR", serif';
+  ctx.fillStyle = INK_FAINT;
+  ctx.fillText('姓名', W/2 - 200, nameY - 18);
+  ctx.strokeStyle = INK; ctx.globalAlpha = 0.45; ctx.lineWidth = 0.8;
+  ctx.beginPath(); ctx.moveTo(W/2 - 200, nameY); ctx.lineTo(W/2 + 200, nameY); ctx.stroke();
+  ctx.globalAlpha = 1;
+  if(opts.name){
+    ctx.font = '400 26px "Noto Serif KR", serif';
+    ctx.fillStyle = INK;
+    ctx.fillText(opts.name, (W - ctx.measureText(opts.name).width)/2, nameY - 6);
+  }
+
+  // 낙관
+  const sealSize = 92;
+  const sealX = W - PAD - sealSize;
+  const sealY = H - PAD - sealSize - 32;
+  ctx.fillStyle = SEAL; ctx.globalAlpha = 0.92;
+  ctx.fillRect(sealX, sealY, sealSize, sealSize); ctx.globalAlpha = 1;
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 2.5;
+  ctx.strokeRect(sealX + 5, sealY + 5, sealSize - 10, sealSize - 10);
+  ctx.font = '900 58px "Noto Serif KR", serif';
+  ctx.fillStyle = '#fff8f0';
+  ctx.fillText(theme.kanji, sealX + (sealSize - ctx.measureText(theme.kanji).width)/2, sealY + sealSize - 20);
+
+  drawFooter(ctx, W, H, '— COVER —');
+}
+
+/* =============================================================
+   PAGE 2: YEAR INDEX
+   ============================================================= */
+function renderYear(canvas, theme, opts){
+  const W = A4W, H = A4H; canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  drawPaper(ctx, W, H);
+  drawHeader(ctx, W, theme);
+
+  // 타이틀 — 좌측 큰 연도
+  const year = String(opts.year);
+  ctx.font = '900 128px "Playfair Display", serif';
+  ctx.fillStyle = theme.accent;
+  ctx.fillText(year, PAD, TITLE_Y + 130);
+
+  // 우측 간지 + 라벨
+  ctx.font = '400 22px "Noto Serif KR", serif';
+  ctx.fillStyle = INK; ctx.globalAlpha = 0.78;
+  const gz = '丙午年'; const gzW = ctx.measureText(gz).width;
+  ctx.fillText(gz, W - PAD - gzW, TITLE_Y + 54); ctx.globalAlpha = 1;
+  ctx.font = '300 14px "Noto Serif KR", serif';
+  ctx.fillStyle = INK_FAINT;
+  const sub = 'ANNUAL · 연간 일력';
+  ctx.fillText(sub, W - PAD - ctx.measureText(sub).width, TITLE_Y + 80);
+
+  drawTitleDivider(ctx, W);
+
+  // 12개월 3×4 그리드
+  const gridTop = CONTENT_Y;
+  const gridBot = CONTENT_BOT;
+  const gridW = W - PAD*2;
+  const gridH = gridBot - gridTop;
+  const cellW = gridW / 3;
+  const cellH = gridH / 4;
+
+  for(let m = 1; m <= 12; m++){
+    const idx = m - 1;
+    const col = idx % 3, row = Math.floor(idx/3);
+    drawYearMonth(ctx, PAD + col*cellW, gridTop + row*cellH, cellW - 18, cellH - 18, m, theme, opts.year);
+  }
+
+  drawFooter(ctx, W, H, '— YEAR INDEX —');
+}
+function drawYearMonth(ctx, x, y, w, h, m, theme, year){
+  const idx = m - 1;
+  // 월 번호
+  ctx.font = '700 46px "Playfair Display", serif';
+  ctx.fillStyle = theme.accent;
+  ctx.fillText(String(m).padStart(2,'0'), x, y + 38);
+  ctx.save();
+  ctx.font = '300 13px "Playfair Display", serif';
+  ctx.fillStyle = INK_FAINT; setLS(ctx, '3px');
+  ctx.fillText(MONTHS_EN[idx], x + 74, y + 22);
+  ctx.restore();
+  ctx.font = '400 14px "Noto Serif KR", serif';
+  ctx.fillStyle = INK; ctx.globalAlpha = 0.72;
+  ctx.fillText(MONTH_GANZHI_2026[idx] + '月', x + 74, y + 42);
+  ctx.globalAlpha = 1;
+  // 구분선
+  ctx.strokeStyle = INK; ctx.globalAlpha = 0.35; ctx.lineWidth = 0.6;
+  ctx.beginPath(); ctx.moveTo(x, y + 54); ctx.lineTo(x + w, y + 54); ctx.stroke();
+  ctx.globalAlpha = 1;
+  // 요일 헤더
+  const dayY = y + 72;
+  const colW = w/7;
+  ctx.save();
+  ctx.font = '400 10px "Playfair Display", serif'; setLS(ctx, '1px');
+  for(let d = 0; d < 7; d++){
+    const ch = DAYS_SHORT[d];
+    const cx = x + colW*d + colW/2 - ctx.measureText(ch).width/2;
+    ctx.fillStyle = d === 0 ? theme.accent : INK_FAINT;
+    ctx.fillText(ch, cx, dayY);
+  }
+  ctx.restore();
+  // 날짜
+  const startW = firstWeekday(year, m);
+  const days = daysInMonth(year, m);
+  const rowH = 22;
+  const jeolgi = [];
+  Object.keys(JEOLGI_2026).forEach(k => {
+    const [mm, dd] = k.split('-').map(Number);
+    if(mm === m) jeolgi.push(dd);
+  });
+  for(let d = 1; d <= days; d++){
+    const slot = startW + d - 1;
+    const c = slot % 7, row = Math.floor(slot/7);
+    const cx = x + colW*c + colW/2, cy = dayY + 18 + row*rowH;
+    const isSun = c === 0, isSat = c === 6;
+    ctx.font = '400 11.5px "Playfair Display", serif';
+    ctx.fillStyle = isSun ? theme.accent : (isSat ? INK_FAINT : INK);
+    ctx.globalAlpha = isSat ? 0.85 : 1;
+    const t = String(d);
+    ctx.fillText(t, cx - ctx.measureText(t).width/2, cy);
+    ctx.globalAlpha = 1;
+    if(jeolgi.includes(d)){
+      ctx.fillStyle = SEAL;
+      ctx.beginPath(); ctx.arc(cx + 10, cy - 10, 1.8, 0, Math.PI*2); ctx.fill();
+    }
+  }
+}
+
+/* =============================================================
+   PAGE 3: MONTHLY
+   ============================================================= */
+function renderMonth(canvas, theme, opts){
+  const W = A4W, H = A4H; canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  drawPaper(ctx, W, H);
+  drawHeader(ctx, W, theme);
+
+  const year = opts.year, month = opts.month;
+
+  // 좌측 큰 월
+  ctx.font = '900 180px "Playfair Display", serif';
+  ctx.fillStyle = theme.accent;
+  const mNum = String(month).padStart(2,'0');
+  ctx.fillText(mNum, PAD, TITLE_Y + 172);
+  const mNumW = ctx.measureText(mNum).width;
+
+  // 월 옆 정보
+  ctx.save();
+  ctx.font = '300 20px "Playfair Display", serif';
+  ctx.fillStyle = INK; setLS(ctx, '4px');
+  ctx.fillText(MONTHS_EN[month-1], PAD + mNumW + 24, TITLE_Y + 58);
+  ctx.restore();
+  ctx.font = '400 32px "Noto Serif KR", serif';
+  ctx.fillStyle = INK;
+  ctx.fillText(MONTH_GANZHI_2026[month-1] + '月', PAD + mNumW + 24, TITLE_Y + 104);
+  ctx.font = '300 16px "Noto Serif KR", serif';
+  ctx.fillStyle = INK_FAINT;
+  ctx.fillText(`${year}년 · ${MONTHLY_INSIGHT[month].theme}`, PAD + mNumW + 24, TITLE_Y + 140);
+
+  // 우측 상단 키워드
+  ctx.font = '300 14px "Noto Serif KR", serif';
+  ctx.fillStyle = INK_FAINT;
+  const kw = MONTHLY_INSIGHT[month].kw.join(' · ');
+  ctx.fillText(kw, W - PAD - ctx.measureText(kw).width, TITLE_Y + 54);
+
+  drawTitleDivider(ctx, W);
+
+  // 달력 + 사이드바
+  const SIDE_W = 260, GAP = 28;
+  const CAL_W = W - PAD*2 - SIDE_W - GAP;
+  const CAL_H = CONTENT_BOT - CONTENT_Y;
+  drawMonthCalendar(ctx, PAD, CONTENT_Y, CAL_W, CAL_H, year, month, theme);
+  drawMonthSidebar(ctx, PAD + CAL_W + GAP, CONTENT_Y, SIDE_W, CAL_H, year, month, theme);
+
+  drawFooter(ctx, W, H, `— ${mNum} · MONTHLY —`);
+}
+function drawMonthCalendar(ctx, x, y, w, h, year, month, theme){
+  const days = daysInMonth(year, month);
+  const start = firstWeekday(year, month);
+  const rows = Math.ceil((start + days)/7);
+  const colW = w/7;
+  const headerH = 32;
+  const rowH = (h - headerH)/rows;
+  // 요일
+  ctx.save();
+  ctx.font = '400 12px "Playfair Display", serif'; setLS(ctx, '2px');
+  for(let d = 0; d < 7; d++){
+    const cx = x + colW*d + colW/2 - ctx.measureText(DAYS_FULL[d]).width/2;
+    ctx.fillStyle = d === 0 ? theme.accent : INK_FAINT;
+    ctx.fillText(DAYS_FULL[d], cx, y + 18);
+  }
+  ctx.restore();
+  ctx.strokeStyle = INK; ctx.globalAlpha = 0.3; ctx.lineWidth = 0.5;
+  ctx.beginPath(); ctx.moveTo(x, y + headerH); ctx.lineTo(x + w, y + headerH); ctx.stroke();
+  ctx.globalAlpha = 1;
+  // 셀
+  for(let d = 1; d <= days; d++){
+    const slot = start + d - 1;
+    const col = slot % 7, row = Math.floor(slot/7);
+    const cx = x + colW*col, cy = y + headerH + row*rowH;
+    drawMonthDayCell(ctx, cx, cy, colW, rowH, month, d, col, theme);
+  }
+  // grid
+  ctx.strokeStyle = INK; ctx.globalAlpha = 0.12; ctx.lineWidth = 0.5;
+  for(let c = 1; c < 7; c++){
+    ctx.beginPath(); ctx.moveTo(x + colW*c, y + headerH); ctx.lineTo(x + colW*c, y + headerH + rows*rowH); ctx.stroke();
+  }
+  for(let r = 1; r <= rows; r++){
+    ctx.beginPath(); ctx.moveTo(x, y + headerH + rowH*r); ctx.lineTo(x + w, y + headerH + rowH*r); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+}
+function drawMonthDayCell(ctx, x, y, w, h, month, day, col, theme){
+  const key = `${month}-${day}`;
+  const holiday = HOLIDAYS_2026[key], jeolgi = JEOLGI_2026[key];
+  const isSun = col === 0, isSat = col === 6, isHoliday = !!holiday;
+  if(isHoliday || isSun){
+    ctx.fillStyle = theme.accent; ctx.globalAlpha = 0.04;
+    ctx.fillRect(x, y, w, h); ctx.globalAlpha = 1;
+  }
+  ctx.font = '400 22px "Playfair Display", serif';
+  ctx.fillStyle = (isSun || isHoliday) ? theme.accent : (isSat ? INK_FAINT : INK);
+  ctx.fillText(String(day), x + 10, y + 28);
+  if(holiday){
+    ctx.font = '400 9.5px "Noto Sans KR", sans-serif';
+    ctx.fillStyle = theme.accent;
+    ctx.fillText(holiday, x + 38, y + 24);
+  } else if(jeolgi){
+    ctx.font = '400 9.5px "Noto Sans KR", sans-serif';
+    ctx.fillStyle = SEAL;
+    ctx.fillText('· ' + jeolgi, x + 38, y + 24);
+  }
+  ctx.font = '300 8.5px "Playfair Display", serif';
+  ctx.fillStyle = INK_FAINT; ctx.globalAlpha = 0.5;
+  ctx.fillText('음 ' + ((day % 30) || 30).toString().padStart(2,'0'), x + w - 40, y + 16);
+  ctx.globalAlpha = 1;
+}
+function drawMonthSidebar(ctx, x, y, w, h, year, month, theme){
+  // 좌측 얇은 경계
+  ctx.strokeStyle = INK; ctx.globalAlpha = 0.15; ctx.lineWidth = 0.6;
+  ctx.beginPath(); ctx.moveTo(x - 14, y); ctx.lineTo(x - 14, y + h); ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  let cy = y;
+
+  // 01 INTENTION — 3 lines
+  cy = drawSectionHead(ctx, x, cy, w, theme, '01', 'INTENTION', '이번 달 의도');
+  cy = drawMemoLines(ctx, x, cy, w, 3, theme, { bullet:'dot' });
+  cy += 16;
+
+  // 02 QI-FLOW
+  cy = drawSectionHead(ctx, x, cy, w, theme, '02', 'QI-FLOW', '월간 기운');
+  ctx.font = '400 15px "Noto Serif KR", serif';
+  ctx.fillStyle = INK;
+  ctx.fillText(`간지 · ${MONTH_GANZHI_2026[month-1]}月`, x, cy + 20);
+  ctx.font = '300 13px "Noto Serif KR", serif';
+  ctx.fillStyle = INK_FAINT;
+  ctx.fillText(`테마 · ${MONTHLY_INSIGHT[month].theme}`, x, cy + 44);
+  ctx.fillText(`키워드 · ${MONTHLY_INSIGHT[month].kw.join(' / ')}`, x, cy + 66);
+  cy += 96;
+
+  // 03 SOLAR TERMS
+  cy = drawSectionHead(ctx, x, cy, w, theme, '03', 'SOLAR TERMS', '주요 절기');
+  ctx.font = '400 13px "Noto Serif KR", serif';
+  let found = 0, jy = cy + 16;
+  Object.keys(JEOLGI_2026).forEach(key => {
+    const [mm, dd] = key.split('-').map(Number);
+    if(mm === month && found < 3){
+      ctx.fillStyle = SEAL;
+      ctx.beginPath(); ctx.arc(x, jy - 4, 2.5, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = INK; ctx.fillText(`${String(dd).padStart(2,'0')}일`, x + 12, jy);
+      ctx.fillStyle = INK_FAINT; ctx.fillText(JEOLGI_2026[key], x + 60, jy);
+      jy += 22; found++;
+    }
+  });
+  if(found === 0){
+    ctx.fillStyle = INK_FAINT;
+    ctx.font = '300 12px "Noto Serif KR", serif';
+    ctx.fillText('이번 달 주요 절기 없음', x, jy);
+  }
+  cy += 96;
+
+  // 04 REFLECTION
+  cy = drawSectionHead(ctx, x, cy, w, theme, '04', 'REFLECTION', '한 달 회고');
+  const remain = (y + h) - cy - 8;
+  const refLines = Math.floor(remain / LH);
+  drawMemoLines(ctx, x, cy, w, Math.max(3, Math.min(6, refLines)), theme, { bullet:'dot' });
+}
+
+/* =============================================================
+   PAGE 4: WEEKLY
+   ============================================================= */
+function renderWeek(canvas, theme, opts){
+  const W = A4W, H = A4H; canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  drawPaper(ctx, W, H);
+  drawHeader(ctx, W, theme);
+
+  const start = weekStart(opts.year, opts.weekNo);
+  const end = new Date(start.getTime() + 6*86400000);
+
+  // WEEK 숫자
+  ctx.save();
+  ctx.font = '300 22px "Playfair Display", serif';
+  ctx.fillStyle = INK_FAINT; setLS(ctx, '6px');
+  ctx.fillText('WEEK', PAD, TITLE_Y + 46);
+  ctx.restore();
+  ctx.font = '900 112px "Playfair Display", serif';
+  ctx.fillStyle = theme.accent;
+  const wkStr = String(opts.weekNo).padStart(2,'0');
+  ctx.fillText(wkStr, PAD, TITLE_Y + 148);
+
+  // 우측 기간
+  const range = `${start.getMonth()+1}.${String(start.getDate()).padStart(2,'0')}  —  ${end.getMonth()+1}.${String(end.getDate()).padStart(2,'0')}`;
+  ctx.font = '400 28px "Playfair Display", serif';
+  ctx.fillStyle = INK;
+  ctx.fillText(range, W - PAD - ctx.measureText(range).width, TITLE_Y + 66);
+  ctx.font = '300 14px "Noto Serif KR", serif';
+  ctx.fillStyle = INK_FAINT;
+  const ms = `${opts.year}년 · 第${opts.weekNo}週`;
+  ctx.fillText(ms, W - PAD - ctx.measureText(ms).width, TITLE_Y + 94);
+  ctx.font = 'italic 300 16px "Cormorant Garamond", serif';
+  ctx.fillStyle = INK_FAINT;
+  const q = '"The rhythm of the week is the rhythm of a life."';
+  ctx.fillText(q, W - PAD - ctx.measureText(q).width, TITLE_Y + 130);
+
+  drawTitleDivider(ctx, W);
+
+  // 7일 행
+  const FOOT_H = 260;
+  const DAYS_TOP = CONTENT_Y;
+  const DAYS_BOT = A4H - PAD - FOOT_H;
+  const DAY_H = (DAYS_BOT - DAYS_TOP)/7;
+  for(let i = 0; i < 7; i++){
+    const d = new Date(start.getTime() + i*86400000);
+    drawWeekDayRow(ctx, PAD, DAYS_TOP + i*DAY_H, W - PAD*2, DAY_H, d, theme, opts.birth);
+  }
+  ctx.strokeStyle = INK; ctx.globalAlpha = 0.15; ctx.lineWidth = 0.5;
+  ctx.beginPath(); ctx.moveTo(PAD, DAYS_BOT); ctx.lineTo(W - PAD, DAYS_BOT); ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  // 하단 3블록
+  const BOT_Y = DAYS_BOT + 20;
+  drawWeekFooter(ctx, PAD, BOT_Y, W - PAD*2, FOOT_H - 60, theme);
+
+  drawFooter(ctx, W, H, `— WK ${wkStr} · WEEKLY —`);
+}
+function drawWeekDayRow(ctx, x, y, w, h, d, theme, birth){
+  const dow = d.getDay();
+  const isSun = dow === 0;
+  ctx.strokeStyle = INK; ctx.globalAlpha = 0.15; ctx.lineWidth = 0.5;
+  ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + w, y); ctx.stroke();
+  ctx.globalAlpha = 1;
+  if(isSun){
+    ctx.fillStyle = theme.accent; ctx.globalAlpha = 0.035;
+    ctx.fillRect(x, y, w, h); ctx.globalAlpha = 1;
+  }
+  const LEFT_W = 180;
+  // 큰 일자
+  ctx.font = '300 64px "Playfair Display", serif';
+  ctx.fillStyle = isSun ? theme.accent : INK;
+  ctx.fillText(String(d.getDate()).padStart(2,'0'), x + 10, y + 58);
+  // 요일 영문
+  ctx.save();
+  ctx.font = '400 13px "Playfair Display", serif';
+  ctx.fillStyle = isSun ? theme.accent : INK_FAINT; setLS(ctx, '3px');
+  ctx.fillText(DAYS_FULL[dow], x + 92, y + 30);
+  ctx.restore();
+  // 요일 한자
+  ctx.font = '400 20px "Noto Serif KR", serif';
+  ctx.fillStyle = isSun ? theme.accent : INK;
+  ctx.fillText(DAYS_KANJI[dow] + '曜', x + 92, y + 58);
+  // 일진
+  ctx.font = '300 13px "Noto Serif KR", serif';
+  ctx.fillStyle = INK_FAINT;
+  const gz = dayGanzhi(d.getFullYear(), d.getMonth()+1, d.getDate());
+  ctx.fillText('일진 · ' + gz + '日', x + 10, y + 88);
+  ctx.font = '300 12px "Playfair Display", serif';
+  ctx.fillText('lunar ' + ((d.getDate() % 30) || 30).toString().padStart(2,'0'), x + 10, y + 108);
+  // 바이오리듬
+  if(birth){
+    drawBioStrip(ctx, x + 10, y + h - 24, 160,
+      biorhythm(birth, d, 23), biorhythm(birth, d, 28), biorhythm(birth, d, 33), theme);
+  }
+  // 중앙 세로선
+  ctx.strokeStyle = INK; ctx.globalAlpha = 0.2; ctx.lineWidth = 0.5;
+  ctx.beginPath(); ctx.moveTo(x + LEFT_W, y + 8); ctx.lineTo(x + LEFT_W, y + h - 8); ctx.stroke();
+  ctx.globalAlpha = 1;
+  // 우측 메모 6줄 (LH=32 고정)
+  drawMemoLines(ctx, x + LEFT_W + 20, y + 8, w - LEFT_W - 40, 5, theme, { bullet:'dot' });
+}
+function drawWeekFooter(ctx, x, y, w, h, theme){
+  ctx.strokeStyle = INK; ctx.globalAlpha = 0.55; ctx.lineWidth = 0.9;
+  ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + w, y); ctx.stroke();
+  ctx.globalAlpha = 1;
+  const colW = w/3, GAP = 20;
+  drawFooterBlock(ctx, x,          y + 16, colW - GAP, theme, '01', 'TOP 3',      '이번 주 핵심', 3);
+  drawFooterBlock(ctx, x + colW,   y + 16, colW - GAP, theme, '02', 'GRATITUDE',  '감사한 것',   3);
+  drawFooterBlock(ctx, x + colW*2, y + 16, colW - GAP, theme, '03', 'REFLECTION', '한 주 회고',  4);
+}
+function drawFooterBlock(ctx, x, y, w, theme, num, en, ko, lines){
+  const contentY = drawSectionHead(ctx, x, y, w, theme, num, en, ko);
+  drawMemoLines(ctx, x, contentY, w, lines, theme, { bullet:'dot' });
+}
+
+/* =============================================================
+   PAGE 5: DAILY
+   ============================================================= */
+function renderDaily(canvas, theme, opts){
+  const W = A4W, H = A4H; canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  drawPaper(ctx, W, H);
+  drawHeader(ctx, W, theme);
+
+  const d = opts.date, dow = d.getDay();
+  const gz = dayGanzhi(d.getFullYear(), d.getMonth()+1, d.getDate());
+
+  // 좌: 큰 일자
+  ctx.font = '900 200px "Playfair Display", serif';
+  ctx.fillStyle = theme.accent;
+  const dayStr = String(d.getDate()).padStart(2,'0');
+  ctx.fillText(dayStr, PAD, TITLE_Y + 192);
+  const dayW = ctx.measureText(dayStr).width;
+  const x2 = PAD + dayW + 32;
+  // 일자 옆: 년·월
+  ctx.save();
+  ctx.font = '300 22px "Playfair Display", serif';
+  ctx.fillStyle = INK_FAINT; setLS(ctx, '3px');
+  ctx.fillText(`${d.getFullYear()} · ${String(d.getMonth()+1).padStart(2,'0')}`, x2, TITLE_Y + 56);
+  ctx.restore();
+  ctx.font = '600 54px "Noto Serif KR", serif';
+  ctx.fillStyle = INK;
+  ctx.fillText(DAYS_KO[dow] + '요일', x2, TITLE_Y + 118);
+  ctx.font = '400 20px "Noto Serif KR", serif';
+  ctx.fillStyle = INK_FAINT;
+  ctx.fillText(`${DAYS_KANJI[dow]}曜日 · ${DAYS_FULL[dow]}DAY`, x2, TITLE_Y + 148);
+
+  // 우측 DAY QI 박스
+  const boxW = 280, boxH = 168;
+  const boxX = A4W - PAD - boxW;
+  const boxY = TITLE_Y + 24;
+  ctx.strokeStyle = INK; ctx.globalAlpha = 0.45; ctx.lineWidth = 0.9;
+  ctx.strokeRect(boxX, boxY, boxW, boxH); ctx.globalAlpha = 1;
+  ctx.fillStyle = theme.accent;
+  ctx.fillRect(boxX, boxY, boxW, 28);
+  ctx.save();
+  ctx.font = '400 12px "Playfair Display", serif';
+  ctx.fillStyle = '#faf6ee'; setLS(ctx, '3px');
+  ctx.fillText('DAY QI · 오늘의 기운', boxX + 14, boxY + 18);
+  ctx.restore();
+  ctx.font = '400 64px "Noto Serif KR", serif';
+  ctx.fillStyle = INK;
+  ctx.fillText(gz, boxX + 18, boxY + 104);
+  ctx.font = '300 16px "Noto Serif KR", serif';
+  ctx.fillStyle = INK_FAINT;
+  ctx.fillText('日', boxX + 18 + ctx.measureText(gz).width * 1.6, boxY + 104);
+  ctx.font = '300 13px "Noto Serif KR", serif';
+  ctx.fillStyle = INK;
+  ctx.fillText('오행 · ' + ['木','火','土','金','水'][gz.charCodeAt(0) % 5], boxX + 18, boxY + 136);
+  ctx.fillStyle = SEAL;
+  ctx.fillText('기운 · 전진', boxX + 150, boxY + 136);
+  if(opts.birth){
+    drawBioStrip(ctx, boxX + 18, boxY + 148, boxW - 36,
+      biorhythm(opts.birth, d, 23), biorhythm(opts.birth, d, 28), biorhythm(opts.birth, d, 33), theme);
+  }
+
+  drawTitleDivider(ctx, A4W);
+
+  // 중단: 12시진 + 메모
+  const BOT_H = 340;
+  const MID_Y = CONTENT_Y;
+  const MID_H = CONTENT_BOT - BOT_H - MID_Y;
+  const SHI_W = 420;
+  drawShichen(ctx, PAD, MID_Y, SHI_W, MID_H, theme);
+  const MEMO_X = PAD + SHI_W + 24;
+  const MEMO_W = A4W - PAD - MEMO_X;
+  // 메모 섹션 헤드 + 16줄 (LH=32 고정)
+  const memoContentY = drawSectionHead(ctx, MEMO_X, MID_Y, MEMO_W, theme, '02', 'TASKS & NOTES', '할 일 · 메모');
+  const memoLines = Math.min(16, Math.floor((MID_H - SECTION_HEAD_H) / LH));
+  drawMemoLines(ctx, MEMO_X, memoContentY, MEMO_W, memoLines, theme, { bullet:'check' });
+
+  // 하단 3블록
+  const BOT_Y = CONTENT_BOT - BOT_H;
+  ctx.strokeStyle = INK; ctx.globalAlpha = 0.55; ctx.lineWidth = 0.9;
+  ctx.beginPath(); ctx.moveTo(PAD, BOT_Y); ctx.lineTo(A4W - PAD, BOT_Y); ctx.stroke();
+  ctx.globalAlpha = 1;
+  const colW = (A4W - PAD*2)/3, GAP = 20;
+  drawFooterBlock(ctx, PAD,            BOT_Y + 16, colW - GAP, theme, '03', 'TOP 3',     '오늘 핵심', 3);
+  drawFooterBlock(ctx, PAD + colW,     BOT_Y + 16, colW - GAP, theme, '04', 'GRATITUDE', '감사',     3);
+  drawFooterBlock(ctx, PAD + colW*2,   BOT_Y + 16, colW - GAP, theme, '05', 'TOMORROW',  '내일 의도', 3);
+
+  drawFooter(ctx, A4W, A4H, `— ${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${dayStr} · DAILY —`);
+}
+function drawShichen(ctx, x, y, w, h, theme){
+  const contentY = drawSectionHead(ctx, x, y, w, theme, '01', 'SHICHEN', '십이시진');
+  const rowH = (h - SECTION_HEAD_H) / 12;
+  SHICHEN.forEach((s, i) => {
+    const ry = contentY + i*rowH;
+    if(i > 0){
+      ctx.strokeStyle = INK; ctx.globalAlpha = 0.12; ctx.lineWidth = 0.5;
+      ctx.beginPath(); ctx.moveTo(x, ry); ctx.lineTo(x + w, ry); ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+    ctx.font = '400 28px "Noto Serif KR", serif';
+    ctx.fillStyle = theme.accent;
+    ctx.fillText(s.kanji, x + 6, ry + rowH*0.68);
+    ctx.font = '400 12px "Noto Serif KR", serif';
+    ctx.fillStyle = INK;
+    ctx.fillText(s.name, x + 42, ry + rowH*0.48);
+    ctx.font = '300 11px "Playfair Display", serif';
+    ctx.fillStyle = INK_FAINT;
+    ctx.fillText(s.range, x + 42, ry + rowH*0.78);
+    ctx.font = '300 14px "Noto Serif KR", serif';
+    ctx.fillStyle = INK_FAINT; ctx.globalAlpha = 0.45;
+    ctx.fillText(s.glyph, x + 148, ry + rowH*0.68);
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = INK; ctx.globalAlpha = 0.28; ctx.lineWidth = 0.55;
+    ctx.beginPath(); ctx.moveTo(x + 180, ry + rowH*0.72); ctx.lineTo(x + w - 6, ry + rowH*0.72); ctx.stroke();
+    ctx.globalAlpha = 1;
+  });
+  ctx.strokeStyle = INK; ctx.globalAlpha = 0.2; ctx.lineWidth = 0.6;
+  ctx.beginPath(); ctx.moveTo(x + 172, contentY); ctx.lineTo(x + 172, contentY + 12*rowH); ctx.stroke();
+  ctx.globalAlpha = 1;
+}
+
+/* =============================================================
+   Render Book (5 pages stacked)
+   ============================================================= */
+function renderBook(){
+  const theme = THEMES[document.getElementById('theme').value];
+  const month = parseInt(document.getElementById('month').value, 10);
+  const week = Math.min(52, Math.max(1, parseInt(document.getElementById('week').value, 10) || 1));
+  const date = new Date(document.getElementById('date').value);
+  const birth = new Date(document.getElementById('birth').value);
+
+  const book = document.getElementById('book');
+  book.textContent = '';
+
+  const pages = [
+    { label:'01 · COVER',      render: c => renderCover(c, theme, { year: 2026, name: '박성준' }) },
+    { label:'02 · YEAR INDEX', render: c => renderYear(c, theme, { year: 2026 }) },
+    { label:'03 · MONTHLY',    render: c => renderMonth(c, theme, { year: 2026, month }) },
+    { label:'04 · WEEKLY',     render: c => renderWeek(c, theme, { year: 2026, weekNo: week, birth }) },
+    { label:'05 · DAILY',      render: c => renderDaily(c, theme, { date, birth }) },
+  ];
+
+  pages.forEach(p => {
+    const wrap = document.createElement('div');
+    wrap.className = 'page-wrap';
+    const lbl = document.createElement('div');
+    lbl.className = 'page-label'; lbl.textContent = p.label;
+    wrap.appendChild(lbl);
+    const canvas = document.createElement('canvas');
+    wrap.appendChild(canvas);
+    book.appendChild(wrap);
+    p.render(canvas);
+  });
+}
+
+['theme','month','week','date','birth'].forEach(id => {
+  document.getElementById(id).addEventListener('change', renderBook);
+});
+document.getElementById('week').addEventListener('input', renderBook);
+renderBook();
+</script>
+</body>
+</html>
