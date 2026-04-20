@@ -107,7 +107,7 @@ export const PRODUCTS: Product[] = [
     ],
     specs: [
       { label: '파일 형식', value: 'PDF (개인 정보 포함 맞춤 제작)' },
-      { label: '페이지 수', value: '약 67p (커버1+연간1+월간12+주간52+일간1)' },
+      { label: '페이지 수', value: '약 430p (커버1+연간1+월간12+주간52+일간365)' },
       { label: '크기',     value: 'A4 (210×297mm), 고화질' },
       { label: '언어',     value: '한국어' },
       { label: '배송',     value: '결제 후 이메일로 PDF 자동 발송 (평균 5분)' },
@@ -154,8 +154,8 @@ export const PRODUCTS: Product[] = [
   {
     id: 'saju-planner-premium',
     slug: 'saju-planner-premium',
-    name: '사주 플래너 + 개인 리포트',
-    subtitle: '사주 맞춤 플래너 + 20p 심층 사주 분석 리포트',
+    name: '사주 플래너 프리미엄',
+    subtitle: '사주 맞춤 플래너 + 심층 리포트 (출시 예정)',
     price: 49000,
     originalPrice: null,
     badge: 'BEST',
@@ -168,19 +168,28 @@ export const PRODUCTS: Product[] = [
       '/products/planner-daily.png',
     ],
     thumbnailImage: '/products/cover-saju-premium.png',
-    shortDescription: '사주 기본 플래너 + 20p 심층 사주 리포트. 가장 완전한 패키지.',
-    description: `사주 플래너 기본의 모든 페이지 + **별도 PDF로 20페이지 이상의 개인 사주 심층 리포트**를 받아보실 수 있습니다.
+    shortDescription: '사주 맞춤 플래너 + 365일 일간. 심층 리포트는 개발 중 (무료 업데이트로 제공).',
+    description: `사주 플래너 기본의 모든 페이지를 포함하고, 추가로 사주 심층 리포트 기능이 개발 중입니다.
 
-리포트에는 사주 구조·성향 분석, 10년 대운 흐름, ${PLANNER_YEAR}년 월별 세운(歲運) 분석, 재운·관운·건강운까지 포함됩니다. 한 해를 전략적으로 설계하고 싶은 분께 추천합니다.`,
+**지금 구매 시 즉시 이용 가능한 것**
+- 사주 커버 + 연간 운세 강약 + 월별 세운 사이드바 + 주간 + 365일 일간 스케줄(DAY QI 박스)
+- 원하는 부록 페이지 자유 선택
+
+**출시 예정 (얼리버드 고객 무료 제공)**
+- 사주 구조·성향·강약 분석 리포트 (별도 PDF)
+- 10년 대운 흐름 차트
+- ${PLANNER_YEAR}년 12개월 세운(歲運) 분석 + 액션 플랜
+
+리포트 출시 시 가입 이메일로 별도 발송해드리며, 추후 가격 상향 예정이니 얼리버드로 구매하시는 게 유리합니다.`,
     features: [
-      { icon: '📋', title: '기본 플래너 전체 포함',   description: '사주 기본 플래너의 연간·월간·주간·일간 전부 포함' },
-      { icon: '📖', title: '20p+ 사주 심층 리포트',   description: '사주 구조·성향·강약·재운·관운을 별도 PDF로 제공' },
-      { icon: '🌊', title: '12개월 세운 분석',       description: `${PLANNER_YEAR}년 월별 세운 + 추천 액션 플랜` },
-      { icon: '🎯', title: '10년 대운 흐름 분석',     description: '중장기 인생 흐름을 이해하고 한 해를 전략적으로 활용' },
+      { icon: '📋', title: '기본 플래너 전체 포함',   description: '사주 기본 플래너의 연간·월간·주간·365일 일간 전부 포함' },
+      { icon: '📖', title: '사주 심층 리포트 (출시 예정)', description: '개발 중 — 얼리버드 고객은 출시 후 무료로 이메일 발송' },
+      { icon: '🌊', title: '12개월 세운 분석 (출시 예정)', description: `${PLANNER_YEAR}년 월별 세운 + 추천 액션 플랜` },
+      { icon: '🎯', title: '10년 대운 차트 (출시 예정)',    description: '중장기 인생 흐름을 이해하고 한 해를 전략적으로 활용' },
     ],
     specs: [
-      { label: '파일 형식', value: '플래너 PDF + 리포트 PDF (2개 파일)' },
-      { label: '페이지 수', value: '플래너 약 67p + 리포트 20p+' },
+      { label: '파일 형식', value: '플래너 PDF (리포트 PDF 출시 예정)' },
+      { label: '페이지 수', value: '플래너 약 430p (커버1+연간1+월간12+주간52+일간365) · 리포트 20p+ 출시 예정' },
       { label: '크기',     value: 'A4 (210×297mm), 고화질' },
       { label: '언어',     value: '한국어' },
       { label: '배송',     value: '결제 후 이메일로 PDF 자동 발송 (평균 5분)' },
@@ -198,9 +207,9 @@ export const PRODUCTS: Product[] = [
       { icon: '📋', label: '주간',                 count: '52p' },
       { icon: '✏️', label: '일간 스케줄 (DAY QI 박스)', count: '365p', highlight: true, note: '매일 일진·오행·기운' },
       { icon: '📦', label: '부록 페이지 선택',       count: '옵션', note: '원하는 부록 자유 선택' },
-      { icon: '📖', label: '사주 심층 리포트',        count: '20p+', highlight: true, note: '별도 PDF' },
-      { icon: '🌊', label: '월별 세운 분석',          count: '12개', highlight: true },
-      { icon: '🎯', label: '10년 대운 차트',          count: '1p',   highlight: true },
+      { icon: '📖', label: '사주 심층 리포트',        count: '20p+', highlight: true, note: '⏳ 출시 예정 — 현재 개발 중' },
+      { icon: '🌊', label: '월별 세운 분석',          count: '12개', highlight: true, note: '⏳ 출시 예정' },
+      { icon: '🎯', label: '10년 대운 차트',          count: '1p',   highlight: true, note: '⏳ 출시 예정' },
     ],
     previewPages: [
       { type: 'cover',      label: '프리미엄 커버', icon: '✨', idx: 0 },
@@ -211,9 +220,9 @@ export const PRODUCTS: Product[] = [
     ],
     differentiators: [
       '사주 기본 플래너의 모든 기능 포함 + 365일 일간',
-      '20p+ 사주 심층 리포트 별도 PDF',
-      '10년 대운 흐름 차트',
       '부록 페이지 자유 선택',
+      '사주 심층 리포트·대운 차트 (출시 예정 — 무료 업데이트)',
+      '얼리버드 가격 — 리포트 기능 출시 후 가격 상향',
     ],
     notIncluded: ['OKR·MIT·습관 트래커'],
     compareRow: {

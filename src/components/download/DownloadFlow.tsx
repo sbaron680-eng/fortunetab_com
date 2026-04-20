@@ -212,6 +212,9 @@ export default function DownloadFlow({ initialFlow }: DownloadFlowProps = {}) {
         theme,
         mode,
         saju: mode === 'practice' ? undefined : (savedSaju ?? undefined),
+        // 유료 사주 사용자(티어 basic/premium 또는 방금 결제 검증된 주문) →
+        // 일간 페이지를 365일치로 생성. 무료 사용자는 샘플 1p만.
+        dailyFull: canUseSaju,
         fortuneData,
         onProgress: (current, total, label) => {
           setProgress({ current, total, label });
@@ -237,6 +240,7 @@ export default function DownloadFlow({ initialFlow }: DownloadFlowProps = {}) {
   // ── 예상 페이지 수 계산 ──────────────────────────────────────────────────────
   const estimatedPages = [...selectedPages].reduce((acc, t) => {
     if (t === 'monthly') return acc + 12;
+    if (t === 'daily' && canUseSaju) return acc + 365;
     if (t === 'weekly')  return acc + 52;
     return acc + 1;
   }, 0);
@@ -549,6 +553,9 @@ export default function DownloadFlow({ initialFlow }: DownloadFlowProps = {}) {
               <div className="space-y-2">
                 {PAGE_OPTIONS.map(({ type, label, sublabel, icon }) => {
                   const checked = selectedPages.has(type);
+                  // 유료 사주 사용자는 일간이 365일 풀 버전 → 레이블·페이지 수 동적 변경
+                  const displayLabel = type === 'daily' && canUseSaju ? '일간 스케줄 (365일)' : label;
+                  const displaySublabel = type === 'daily' && canUseSaju ? '365 페이지 · 매일 일진·오행 자동' : sublabel;
                   return (
                     <label
                       key={type}
@@ -579,8 +586,8 @@ export default function DownloadFlow({ initialFlow }: DownloadFlowProps = {}) {
                       </span>
                       <span className="text-lg leading-none">{icon}</span>
                       <div className="flex-1 min-w-0">
-                        <span className="text-sm font-medium text-ft-body">{label}</span>
-                        <span className="ml-2 text-xs text-ft-muted">{sublabel}</span>
+                        <span className="text-sm font-medium text-ft-body">{displayLabel}</span>
+                        <span className="ml-2 text-xs text-ft-muted">{displaySublabel}</span>
                       </div>
                     </label>
                   );
