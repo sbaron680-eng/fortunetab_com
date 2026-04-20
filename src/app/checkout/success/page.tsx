@@ -15,7 +15,6 @@ import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useCartStore, useAuthStore } from '@/lib/store';
-import { createOrder } from '@/lib/orders';
 import { supabase } from '@/lib/supabase';
 
 type ConfirmStatus = 'confirming' | 'done' | 'error';
@@ -23,17 +22,13 @@ type ConfirmStatus = 'confirming' | 'done' | 'error';
 function SuccessContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { items, clearCart } = useCartStore();
+  const { clearCart } = useCartStore();
   const { user } = useAuthStore();
 
   const paymentKey   = searchParams.get('paymentKey') ?? '';
   const orderId      = searchParams.get('orderId') ?? '';
   const amount       = Number(searchParams.get('amount') ?? '0');
   const paymentType  = searchParams.get('paymentType') ?? '';
-
-  const savedForm = typeof window !== 'undefined'
-    ? JSON.parse(sessionStorage.getItem('checkout-form') || '{}')
-    : {};
 
   const [status, setStatus] = useState<ConfirmStatus>('confirming');
   const [orderNumber, setOrderNumber] = useState('');
@@ -94,25 +89,12 @@ function SuccessContent() {
           return;
         }
 
-        // 기존 카트 기반 주문 처리
-        let orderNum = orderId;
-        const sajuData = savedForm.birthDate ? {
-          name: savedForm.name || '',
-          email: savedForm.email || '',
-          birthDate: savedForm.birthDate,
-          birthTime: savedForm.birthTime || '',
-          birthGender: savedForm.birthGender || '',
-          theme: 'navy',
-          orientation: 'portrait',
-          notes: savedForm.notes || '',
-        } : undefined;
-        if (user) {
-          const result = await createOrder(user.id, items, amount, sajuData);
-          if (result) orderNum = result.orderNumber;
-        }
+        // 카트 기반 일반 주문 — 이미 /checkout에서 pending 상태로 DB에 생성되어 있고,
+        // confirm-payment가 status를 'paid'로 전환하며 send-order-email을 트리거함.
+        // 여기서는 세션/카트 정리와 UI 상태만 변경.
         sessionStorage.removeItem('checkout-form');
         clearCart();
-        setOrderNumber(orderNum);
+        setOrderNumber(orderId);
         setStatus('done');
       } catch (err) {
         setStatus('error');

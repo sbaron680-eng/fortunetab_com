@@ -209,11 +209,33 @@ export default function CheckoutPage() {
         return;
       }
 
-      // 토스페이먼츠 결제 요청 (성공 시 /checkout/success로 redirect)
-      // 토스 리디렉트 전 폼 데이터 임시 저장
+      // 결제 전 DB에 pending 주문 레코드 먼저 생성 → 생성된 order_number를 Toss/PayPal에 전달.
+      // 이렇게 해야 /checkout/success에서 confirm-payment가 레코드를 찾아 status를 'paid'로 전환하고
+      // send-order-email을 트리거할 수 있음. (로그인 필수)
+      if (!user) {
+        setPaymentError('결제하려면 로그인이 필요합니다.');
+        return;
+      }
+      const sajuData = hasSajuProduct ? {
+        name: form.name,
+        email: form.email,
+        birthDate: form.birthDate,
+        birthTime: form.birthTime,
+        birthGender: form.birthGender,
+        theme: 'navy',
+        orientation: 'portrait',
+        notes: form.notes,
+      } : undefined;
+      const pending = await createOrder(user.id, items, total, sajuData);
+      if (!pending) {
+        setPaymentError('주문 생성에 실패했습니다. 다시 시도해 주세요.');
+        return;
+      }
+      const orderId = pending.orderNumber; // 예: FT-20260421-XXXX — Toss orderId 규격 충족
+
+      // 토스 리디렉트 전 폼 데이터 임시 저장 (성공 페이지에서 UI 표시용)
       sessionStorage.setItem('checkout-form', JSON.stringify(form));
 
-      const orderId = `FT-${Date.now()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
       const orderName = items.map((i) => i.product.name).join(', ');
 
       if (paymentMethod === 'paypal') {
