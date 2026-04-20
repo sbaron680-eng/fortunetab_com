@@ -7,7 +7,8 @@ import { useAuthStore } from '@/lib/store';
 import { fetchMyOrders } from '@/lib/orders';
 import { supabase, type FtSessionRow } from '@/lib/supabase';
 import type { GenerateResult } from '@/lib/stores/session';
-import { DailyMusicCard } from '@/components/dashboard/DailyMusicCard';
+// FT-1 "오늘의 음악" — Supabase Edge Function으로 이전 예정 (정적 export 충돌 임시 보류)
+// import { DailyMusicCard } from '@/components/dashboard/DailyMusicCard';
 
 // ── 타입 ─────────────────────────────────────────────────────────────────────
 
@@ -172,8 +173,8 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* FT-1: 오늘의 음악 */}
-        <DailyMusicCard />
+        {/* FT-1: 오늘의 음악 — Supabase Edge Function 이전 후 복구 예정 */}
+        {/* <DailyMusicCard /> */}
 
         {/* 빠른 액션 */}
         <div className="grid grid-cols-3 gap-3">
