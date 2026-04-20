@@ -7,6 +7,7 @@ import { useAuthStore } from '@/lib/store';
 import { fetchMyOrders } from '@/lib/orders';
 import { supabase, type FtSessionRow } from '@/lib/supabase';
 import type { GenerateResult } from '@/lib/stores/session';
+import { DailyMusicCard } from '@/components/dashboard/DailyMusicCard';
 
 // ── 타입 ─────────────────────────────────────────────────────────────────────
 
@@ -170,6 +171,9 @@ export default function DashboardPage() {
             </button>
           </div>
         </div>
+
+        {/* FT-1: 오늘의 음악 */}
+        <DailyMusicCard />
 
         {/* 빠른 액션 */}
         <div className="grid grid-cols-3 gap-3">

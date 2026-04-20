@@ -4,7 +4,7 @@
   Referrer-Policy: strict-origin-when-cross-origin
   X-XSS-Protection: 0
   Permissions-Policy: camera=(), microphone=(), geolocation=()
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://js.tosspayments.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://www.google-analytics.com; font-src 'self'; connect-src 'self' https://*.supabase.co https://api.lemonsqueezy.com https://www.google-analytics.com https://*.tosspayments.com; frame-src https://*.tosspayments.com https://*.paypal.com; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://js.tosspayments.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://www.google-analytics.com; font-src 'self'; connect-src 'self' https://*.supabase.co https://api.lemonsqueezy.com https://www.google-analytics.com https://*.tosspayments.com https://*.toss.im; frame-src https://*.tosspayments.com https://*.paypal.com https://toss.im https://*.toss.im; frame-ancestors 'none'
   Cache-Control: public, max-age=0, must-revalidate
 
 /_next/static/*
