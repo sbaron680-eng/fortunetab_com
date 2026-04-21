@@ -1,0 +1,14 @@
+# FortuneTab — 무료/유료 플래너 라우트 분리 (2026-04-21)
+# Cloudflare Pages `_redirects` — 정적 파일보다 먼저 평가됨.
+
+# 무료 플래너
+/download              /free-planner              301
+/download/             /free-planner/             301
+/download/practice     /free-planner/practice     301
+/download/practice/    /free-planner/practice/    301
+/download/extras       /free-planner/extras       301
+/download/extras/      /free-planner/extras/      301
+
+# 유료 플래너 이메일 경유 페이지 (access_token 검증)
+/download/view         /premium-planner/view      301
+/download/view/        /premium-planner/view/     301

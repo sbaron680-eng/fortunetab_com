@@ -39,11 +39,11 @@ export default function AddToCartButton({ product }: Props) {
   if (product.price === 0) {
     // 각 무료 플래너는 개별 독립 라우트로 이동
     const pathMap: Record<string, string> = {
-      'common-planner':   '/download',
-      'practice-planner': '/download/practice',
-      'extras-free':      '/download/extras',
+      'common-planner':   '/free-planner',
+      'practice-planner': '/free-planner/practice',
+      'extras-free':      '/free-planner/extras',
     };
-    const downloadUrl = pathMap[product.slug] || '/download';
+    const downloadUrl = pathMap[product.slug] || '/free-planner';
 
     return (
       <div className="space-y-3">

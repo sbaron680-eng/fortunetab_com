@@ -356,7 +356,7 @@ export default function AdminPage() {
   };
 
   const copyTrackingUrl = (orderId: string, token: string) => {
-    const url = `${window.location.origin}/download/view?order=${orderId}&token=${token}`;
+    const url = `${window.location.origin}/premium-planner/view?order=${orderId}&token=${token}`;
     navigator.clipboard.writeText(url);
   };
 

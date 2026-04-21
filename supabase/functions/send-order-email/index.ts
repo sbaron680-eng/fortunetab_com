@@ -86,7 +86,7 @@ Deno.serve(async (req: Request) => {
 
     // 다운로드 링크 생성
     const downloadUrl = order.file_url
-      ? `${SITE_URL}/download/view?order=${order.id}&token=${order.access_token}`
+      ? `${SITE_URL}/premium-planner/view?order=${order.id}&token=${order.access_token}`
       : `${SITE_URL}/dashboard`;
 
     // 이메일 발송 (Resend API)

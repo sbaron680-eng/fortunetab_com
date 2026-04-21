@@ -51,7 +51,7 @@ function getAvailableYears(): number[] {
 }
 
 export interface DownloadFlowProps {
-  /** 개별 라우트에서 플로우 지정 — `/download`는 fortune 기본 */
+  /** 개별 라우트에서 플로우 지정 — `/free-planner`는 fortune 기본 */
   initialFlow?: 'fortune' | 'practice' | 'extras';
 }
 
@@ -283,9 +283,9 @@ export default function DownloadFlow({ initialFlow }: DownloadFlowProps = {}) {
           {/* 플로우 전환 링크 — 각 독립 라우트로 이동 */}
           <div className="mt-5 flex justify-center gap-1 text-xs">
             {([
-              { f: 'fortune',  path: '/download',          label: '🔮 운세' },
-              { f: 'practice', path: '/download/practice', label: '🎯 실천' },
-              { f: 'extras',   path: '/download/extras',   label: '📋 부록' },
+              { f: 'fortune',  path: '/free-planner',          label: '🔮 운세' },
+              { f: 'practice', path: '/free-planner/practice', label: '🎯 실천' },
+              { f: 'extras',   path: '/free-planner/extras',   label: '📋 부록' },
             ] as const).map(({ f, path, label }) => (
               <a
                 key={f}
@@ -329,7 +329,7 @@ export default function DownloadFlow({ initialFlow }: DownloadFlowProps = {}) {
                 <h2 className="text-ft-ink font-bold text-base mb-1.5">부록 맛보기 가이드</h2>
                 <p className="text-sm text-ft-body leading-relaxed">
                   28종 부록 중 <b>무료 7종</b>이 이미 선택되어 있습니다. 원하지 않는 항목은 체크 해제하고, 다른 무료 부록으로 교체할 수 있습니다.
-                  메인 5종 템플릿은 이 플래너에 포함되지 않습니다 — 필요하면 <a className="underline" href="/download">운세</a> 또는 <a className="underline" href="/download/practice">실천</a>으로 이동하세요.
+                  메인 5종 템플릿은 이 플래너에 포함되지 않습니다 — 필요하면 <a className="underline" href="/free-planner">운세</a> 또는 <a className="underline" href="/free-planner/practice">실천</a>으로 이동하세요.
                 </p>
               </div>
             </div>
@@ -337,7 +337,7 @@ export default function DownloadFlow({ initialFlow }: DownloadFlowProps = {}) {
         )}
 
         {/* 플래너 스타일 선택기 제거 — 각 라우트가 단일 스타일로 고정
-            /download=fortune · /download/practice=practice · /download/extras=extras */}
+            /free-planner=fortune · /free-planner/practice=practice · /free-planner/extras=extras */}
 
         {/* ── 카드: 출생 연도 (운세 모드 + 생년월일 미설정 시) ─────────────────── */}
         {needsZodiacInput && (

@@ -92,7 +92,7 @@ export default function ProductCard({ product, priority = false }: Props) {
           </Link>
           {product.price === 0 ? (
             <Link
-              href="/download"
+              href={product.downloadUrl || '/free-planner'}
               className="flex-1 py-2.5 text-sm font-bold bg-ft-red text-white rounded-xl hover:bg-ft-red-h transition-colors text-center"
             >
               무료 다운로드

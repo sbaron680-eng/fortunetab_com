@@ -190,7 +190,14 @@ export default function DashboardPage() {
             <div className="text-2xl mb-1">🌱</div>
             <p className="text-xs font-medium text-ft-ink">명발굴 세션</p>
           </Link>
-          <Link href="/download" className="bg-white border border-ft-border rounded-xl p-4 text-center hover-lift transition-all">
+          <Link
+            href={
+              orders.find((o) => o.status !== 'pending' && o.status !== 'cancelled')
+                ? `/premium-planner?order=${orders.find((o) => o.status !== 'pending' && o.status !== 'cancelled')!.id}`
+                : '/free-planner'
+            }
+            className="bg-white border border-ft-border rounded-xl p-4 text-center hover-lift transition-all"
+          >
             <div className="text-2xl mb-1">📋</div>
             <p className="text-xs font-medium text-ft-ink">플래너 생성</p>
           </Link>
@@ -272,42 +279,9 @@ function OrdersTab({ orders }: { orders: MyOrder[] }) {
 }
 
 function OrderCard({ order, index }: { order: MyOrder; index: number }) {
-  const [generating, setGenerating] = useState(false);
   // 다운로드 경고 모달 (환불·취소 금지 고지 동의) — Option C 관련
   const [showDownloadModal, setShowDownloadModal] = useState<'planner' | 'report' | null>(null);
   const [downloadAgreed, setDownloadAgreed] = useState(false);
-
-  // 사주 데이터가 있는 주문의 클라이언트 PDF 생성
-  const handleGeneratePDF = useCallback(async () => {
-    if (!order.saju_data) return;
-    setGenerating(true);
-    try {
-      const { generatePlannerPDF } = await import('@/lib/pdf-generator');
-      const { calculateSajuFromBirthData, sajuResultToSajuData } = await import('@/lib/saju');
-      const { generatePlannerFortune } = await import('@/lib/fortune-text');
-
-      const sd = order.saju_data;
-      const year = new Date().getFullYear();
-      const sajuResult = calculateSajuFromBirthData(sd.birthDate, sd.birthTime || '모름');
-      const sajuData = sajuResultToSajuData(sajuResult);
-      const fortuneData = generatePlannerFortune(sajuResult, year);
-
-      await generatePlannerPDF({
-        pages: ['cover', 'year-index', 'monthly', 'weekly'],
-        theme: sd.theme || 'navy',
-        orientation: (sd.orientation as 'portrait' | 'landscape') || 'portrait',
-        year,
-        name: sd.name || '나의 플래너',
-        mode: 'fortune',
-        saju: sajuData,
-        fortuneData,
-      });
-    } catch (err) {
-      console.error('PDF 생성 실패:', err);
-    } finally {
-      setGenerating(false);
-    }
-  }, [order.saju_data]);
 
   return (
     <div
@@ -366,28 +340,18 @@ function OrderCard({ order, index }: { order: MyOrder; index: number }) {
         </button>
       )}
 
-      {/* 사주 데이터가 있는 주문 → 즉시 맞춤 플래너 PDF 생성·다운로드 */}
+      {/* 사주 데이터가 있는 주문 → 프리미엄 플래너 생성 페이지로 이동 */}
       {order.saju_data && order.status !== 'cancelled' && !order.file_url && (
         <div className="mt-3">
-          <button
-            onClick={handleGeneratePDF}
-            disabled={generating}
-            className="flex items-center justify-center gap-2 w-full py-2.5 bg-ft-gold text-ft-ink font-bold rounded-xl text-sm hover:bg-ft-gold-h transition-colors disabled:opacity-50"
+          <Link
+            href={`/premium-planner?order=${order.id}`}
+            className="flex items-center justify-center gap-2 w-full py-2.5 bg-ft-gold text-ft-ink font-bold rounded-xl text-sm hover:bg-ft-gold-h transition-colors"
           >
-            {generating ? (
-              <>
-                <SpinnerIcon />
-                PDF 생성 중... (최대 30초)
-              </>
-            ) : (
-              <>
-                <DownloadIcon />
-                🗓️ 맞춤 플래너 PDF 생성 · 즉시 다운로드
-              </>
-            )}
-          </button>
+            <DownloadIcon />
+            🗓️ 맞춤 플래너 생성 페이지로 이동
+          </Link>
           <p className="text-[11px] text-ft-muted mt-1.5 text-center">
-            플래너는 브라우저에서 즉시 생성됩니다. 심층 리포트는 관리자 발송(별도 이메일).
+            연도·테마·포함 페이지를 선택해 브라우저에서 즉시 PDF 생성. 심층 리포트는 관리자 발송(별도 이메일).
           </p>
         </div>
       )}
@@ -515,7 +479,7 @@ function OrderCard({ order, index }: { order: MyOrder; index: number }) {
                 onClick={() => {
                   if (!downloadAgreed) return;
                   const url = showDownloadModal === 'planner'
-                    ? `/download/view?order=${order.id}&token=${order.access_token}`
+                    ? `/premium-planner/view?order=${order.id}&token=${order.access_token}`
                     : order.report_file_url ?? '';
                   if (url) window.open(url, showDownloadModal === 'report' ? '_blank' : '_self');
                   setShowDownloadModal(null);

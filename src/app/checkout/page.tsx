@@ -534,8 +534,8 @@ export default function CheckoutPage() {
             <Link
               href={
                 hasSajuProduct
-                  ? `/download?mode=fortune&orderId=${orderNumber}`
-                  : '/download'
+                  ? `/premium-planner?order=${orderNumber}`
+                  : '/free-planner'
               }
               className="block w-full py-3.5 font-bold text-ft-navy bg-ft-gold rounded-xl hover:bg-ft-gold-h btn-press transition-colors text-center"
             >

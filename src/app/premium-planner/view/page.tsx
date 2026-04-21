@@ -1,14 +1,14 @@
 'use client';
 
 /**
- * /download/view?order=UUID&token=UUID
+ * /premium-planner/view?order=UUID&token=UUID
  *
  * 이메일 내 다운로드 링크의 경유 페이지.
  * 1. Supabase RPC `track_download` 호출 → 열람 시각 기록
  * 2. 파일 URL이 있으면 자동 리다이렉트, 없으면 대기 안내
  *
  * 이메일 발송 시 링크 형식:
- *   https://fortunetab.com/download/view?order=ORDER_ID&token=ACCESS_TOKEN
+ *   https://fortunetab.com/premium-planner/view?order=ORDER_ID&token=ACCESS_TOKEN
  */
 
 import { useEffect, useState, Suspense } from 'react';
@@ -46,10 +46,8 @@ function ViewContent() {
       if (url) {
         setFileUrl(url);
         setStatus('redirect');
-        // 1초 후 자동 리다이렉트
         setTimeout(() => { window.location.href = url; }, 1000);
       } else {
-        // 파일 아직 미설정 (제작 중)
         setStatus('pending');
       }
     })();
@@ -115,7 +113,6 @@ function ViewContent() {
     );
   }
 
-  // status === 'redirect'
   return (
     <div className="text-center">
       <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center bg-emerald-100 rounded-full">
@@ -138,7 +135,7 @@ function ViewContent() {
   );
 }
 
-export default function DownloadViewPage() {
+export default function PremiumPlannerViewPage() {
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-ft-paper flex items-center justify-center py-20 px-4">
       <div className="bg-white border border-ft-border rounded-2xl shadow-sm p-10 max-w-md w-full">
