@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/lib/store';
@@ -455,9 +456,11 @@ function OrderCard({ order, index }: { order: MyOrder; index: number }) {
       )}
 
       {/* ── 다운로드 경고 모달 — 환불·취소 금지 고지 ─────────────────────────── */}
-      {showDownloadModal && (
+      {/* 상위 OrderCard가 transform을 적용하여 fixed containing block이 되므로 */}
+      {/* Portal로 document.body에 렌더해 viewport 기준으로 중앙 정렬되게 함 */}
+      {showDownloadModal && typeof document !== 'undefined' && createPortal(
         <div
-          className="fixed inset-0 bg-black/50 flex items-start sm:items-center justify-center z-50 p-4 overflow-y-auto"
+          className="fixed inset-0 bg-black/50 flex items-start sm:items-center justify-center z-[100] p-4 overflow-y-auto"
           onClick={() => setShowDownloadModal(null)}
         >
           <div
@@ -534,7 +537,8 @@ function OrderCard({ order, index }: { order: MyOrder; index: number }) {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

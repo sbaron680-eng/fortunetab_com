@@ -10,6 +10,7 @@
  */
 
 import { useEffect, useMemo, useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/lib/store';
@@ -610,8 +611,9 @@ function OrderFlow({ order, otherOrders }: { order: MyOrder; otherOrders: MyOrde
       </div>
 
       {/* ── 다운로드 경고 모달 ───────────────────────────────────────────────── */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-start sm:items-center justify-center z-50 p-4 overflow-y-auto" onClick={() => setShowModal(null)}>
+      {/* 상위 main/section들의 transform/animate가 fixed containing block을 만들 수 있어 Portal 사용 */}
+      {showModal && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 bg-black/50 flex items-start sm:items-center justify-center z-[100] p-4 overflow-y-auto" onClick={() => setShowModal(null)}>
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl my-8 max-h-[calc(100vh-4rem)] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-lg font-bold text-ft-ink mb-3 flex items-center gap-2">⚠️ 다운로드 전 안내</h3>
             <ul className="space-y-2.5 text-sm text-ft-body leading-relaxed mb-4">
@@ -651,7 +653,8 @@ function OrderFlow({ order, otherOrders }: { order: MyOrder; otherOrders: MyOrde
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </main>
   );
