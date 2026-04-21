@@ -20,10 +20,10 @@ type Tab = 'orders' | 'users' | 'promotions';
 type DateFilter = 'all' | 'today' | 'week' | 'month' | '3months';
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
-  pending:    '대기중',
-  paid:       '결제완료',
-  processing: '제작중',
-  completed:  '발송완료',
+  pending:    '결제 대기중',
+  paid:       '결제 완료',
+  processing: '제작 중',
+  completed:  '발송 완료',
   cancelled:  '취소됨',
 };
 
@@ -706,62 +706,78 @@ export default function AdminPage() {
                           </tr>
 
                           {/* ── 주문 상세 확장 패널 ──────────────────────────── */}
-                          {expandedOrder === order.id && (
+                          {expandedOrder === order.id && (() => {
+                            // 주문 아이템 기반 프리미엄 판별 — report_status가 null이어도 감지 가능
+                            const items = orderItems[order.id] ?? [];
+                            const isPremium = items.some(i => i.product_id === 'saju-planner-premium');
+                            const isSajuOrder = items.some(i => i.product_id.startsWith('saju-planner-'));
+                            return (
                             <tr key={`${order.id}-detail`}>
                               <td colSpan={8} className="bg-gray-800/30 p-0">
                                 <div className="p-5 space-y-4">
-                                  {/* 사주 정보 (프리미엄 리포트 생성 시 참고) */}
-                                  {order.saju_data && (
+                                  {/* 사주 정보 — 사주 상품이면 항상 섹션 표시 (데이터 없어도 안내) */}
+                                  {isSajuOrder && (
                                     <div className="bg-amber-950/30 rounded-xl p-4 border border-amber-900/50">
                                       <h4 className="text-xs font-bold text-amber-300 mb-3 flex items-center gap-2">
                                         🔮 고객 사주 정보 <span className="text-gray-500 font-normal">(리포트 생성 참고)</span>
                                       </h4>
-                                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-                                        <div>
-                                          <div className="text-gray-500">이름</div>
-                                          <div className="text-white mt-0.5 font-medium">{order.saju_data.name || '—'}</div>
-                                        </div>
-                                        <div>
-                                          <div className="text-gray-500">생년월일</div>
-                                          <div className="text-white mt-0.5 font-mono">{order.saju_data.birthDate || '—'}</div>
-                                        </div>
-                                        <div>
-                                          <div className="text-gray-500">생시</div>
-                                          <div className="text-white mt-0.5">{order.saju_data.birthTime || '—'}</div>
-                                        </div>
-                                        <div>
-                                          <div className="text-gray-500">성별</div>
-                                          <div className="text-white mt-0.5">{order.saju_data.birthGender === 'male' ? '남성' : order.saju_data.birthGender === 'female' ? '여성' : '—'}</div>
-                                        </div>
-                                        <div className="col-span-full">
-                                          <div className="text-gray-500">이메일</div>
-                                          <div className="text-white mt-0.5 font-mono text-[11px]">{order.saju_data.email || order.user_email || '—'}</div>
-                                        </div>
-                                        {order.saju_data.notes && (
-                                          <div className="col-span-full">
-                                            <div className="text-gray-500">고객 메모</div>
-                                            <div className="text-white mt-0.5 whitespace-pre-wrap">{order.saju_data.notes}</div>
+                                      {order.saju_data ? (
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                                          <div>
+                                            <div className="text-gray-500">이름</div>
+                                            <div className="text-white mt-0.5 font-medium">{order.saju_data.name || '—'}</div>
                                           </div>
-                                        )}
-                                      </div>
+                                          <div>
+                                            <div className="text-gray-500">생년월일</div>
+                                            <div className="text-white mt-0.5 font-mono">{order.saju_data.birthDate || '—'}</div>
+                                          </div>
+                                          <div>
+                                            <div className="text-gray-500">생시</div>
+                                            <div className="text-white mt-0.5">{order.saju_data.birthTime || '—'}</div>
+                                          </div>
+                                          <div>
+                                            <div className="text-gray-500">성별</div>
+                                            <div className="text-white mt-0.5">{order.saju_data.birthGender === 'male' ? '남성' : order.saju_data.birthGender === 'female' ? '여성' : '—'}</div>
+                                          </div>
+                                          <div className="col-span-full">
+                                            <div className="text-gray-500">이메일</div>
+                                            <div className="text-white mt-0.5 font-mono text-[11px]">{order.saju_data.email || order.user_email || '—'}</div>
+                                          </div>
+                                          {order.saju_data.notes && (
+                                            <div className="col-span-full">
+                                              <div className="text-gray-500">고객 메모</div>
+                                              <div className="text-white mt-0.5 whitespace-pre-wrap">{order.saju_data.notes}</div>
+                                            </div>
+                                          )}
+                                        </div>
+                                      ) : (
+                                        <div className="text-xs text-amber-200/80 bg-amber-950/40 rounded-lg p-3 leading-relaxed">
+                                          ⚠️ 이 주문에는 사주 정보가 저장되지 않았습니다.
+                                          <br />
+                                          고객에게 이메일(<span className="font-mono">{order.user_email}</span>)로 생년월일·생시·성별을 요청하거나, 체크아웃 폼 개선 전의 구 주문일 수 있습니다.
+                                        </div>
+                                      )}
                                     </div>
                                   )}
 
-                                  {/* 사주 심층 리포트 섹션 — 프리미엄 주문에만 */}
-                                  {order.report_status && order.report_status !== 'not_applicable' && (
+                                  {/* 사주 심층 리포트 섹션 — 프리미엄 상품 감지 (report_status null이어도 표시) */}
+                                  {isPremium && (() => {
+                                    // report_status가 null인 경우(DB 트리거 미적용 등) 'pending'으로 취급
+                                    const effectiveStatus = order.report_status || 'pending';
+                                    return (
                                     <div className="bg-purple-950/30 rounded-xl p-4 border border-purple-900/50">
                                       <div className="flex items-center justify-between mb-3">
                                         <h4 className="text-xs font-bold text-purple-300 flex items-center gap-2">
                                           📖 사주 심층 리포트
                                           <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                                            order.report_status === 'sent' ? 'bg-emerald-900 text-emerald-200' :
-                                            order.report_status === 'preparing' ? 'bg-amber-900 text-amber-200' :
+                                            effectiveStatus === 'sent' ? 'bg-emerald-900 text-emerald-200' :
+                                            effectiveStatus === 'preparing' ? 'bg-amber-900 text-amber-200' :
                                             'bg-gray-800 text-gray-400'
                                           }`}>
-                                            {order.report_status === 'pending' && '대기 중'}
-                                            {order.report_status === 'preparing' && '제작 중'}
-                                            {order.report_status === 'sent' && '발송 완료'}
-                                            {order.report_status === 'skipped' && '발송 취소'}
+                                            {effectiveStatus === 'pending' && '대기 중'}
+                                            {effectiveStatus === 'preparing' && '제작 중'}
+                                            {effectiveStatus === 'sent' && '발송 완료'}
+                                            {effectiveStatus === 'skipped' && '발송 취소'}
                                           </span>
                                         </h4>
                                         {order.report_sent_at && (
@@ -771,7 +787,7 @@ export default function AdminPage() {
                                         )}
                                       </div>
 
-                                      {order.report_status === 'pending' && (
+                                      {effectiveStatus === 'pending' && (
                                         <button
                                           onClick={() => handleStartReport(order.id)}
                                           disabled={togglingReport === order.id}
@@ -781,7 +797,7 @@ export default function AdminPage() {
                                         </button>
                                       )}
 
-                                      {(order.report_status === 'preparing' || order.report_status === 'sent') && (
+                                      {(effectiveStatus === 'preparing' || effectiveStatus === 'sent') && (
                                         <div className="space-y-2">
                                           <label className="block text-[11px] text-gray-400">리포트 PDF URL (Google Drive · NAS · Supabase Storage)</label>
                                           <div className="flex gap-2">
@@ -797,7 +813,7 @@ export default function AdminPage() {
                                               disabled={savingReport === order.id || !reportUrlInputs[order.id]?.trim()}
                                               className="text-xs px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 disabled:opacity-40 transition-colors whitespace-nowrap font-medium"
                                             >
-                                              {savingReport === order.id ? '발송 중…' : order.report_status === 'sent' ? '재발송' : '저장 후 발송'}
+                                              {savingReport === order.id ? '발송 중…' : effectiveStatus === 'sent' ? '재발송' : '저장 후 발송'}
                                             </button>
                                           </div>
                                           {order.report_file_url && (
@@ -808,7 +824,8 @@ export default function AdminPage() {
                                         </div>
                                       )}
                                     </div>
-                                  )}
+                                    );
+                                  })()}
 
                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {/* 주문 아이템 */}
@@ -870,7 +887,8 @@ export default function AdminPage() {
                                 </div>
                               </td>
                             </tr>
-                          )}
+                            );
+                          })()}
                         </>
                       ))}
                     </tbody>

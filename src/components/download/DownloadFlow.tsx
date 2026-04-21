@@ -117,12 +117,17 @@ export default function DownloadFlow({ initialFlow }: DownloadFlowProps = {}) {
     },
   }[flow];
 
-  // 로그인 유저의 티어 조회
+  // 로그인 유저의 티어 조회 — 로딩 완료 플래그로 race condition 방지
   useEffect(() => {
     if (user?.id) {
-      getUserTier(user.id).then(setTier);
+      setTierLoaded(false);
+      getUserTier(user.id).then((t) => {
+        setTier(t);
+        setTierLoaded(true);
+      });
     } else {
       setTier('free');
+      setTierLoaded(true); // 로그아웃 상태도 확정된 상태
     }
   }, [user?.id]);
 
@@ -135,12 +140,8 @@ export default function DownloadFlow({ initialFlow }: DownloadFlowProps = {}) {
   // 사주 개인화 가능 여부: 티어 기반 OR 방금 구매한 주문 검증
   const canUseSaju = TIER_FEATURES[tier].sajuPersonalization || orderVerified;
 
-  // 일간 365일 풀 버전 명시적 토글 — race condition 방지용 (tier 비동기 로딩 도중에도
-  // 사용자가 직접 제어 가능). 기본값은 canUseSaju 변경 시 자동 동기화.
-  const [dailyFullMode, setDailyFullMode] = useState(false);
-  useEffect(() => {
-    setDailyFullMode(canUseSaju);
-  }, [canUseSaju]);
+  // tier 로딩 완료 여부 — race condition 방지용 (PDF 생성 버튼 disable)
+  const [tierLoaded, setTierLoaded] = useState(false);
 
   const [mode, setMode]       = useState<PlannerOptions['mode']>('fortune');
   const [orientation, setOrientation] = useState<Orientation>('portrait');
@@ -208,13 +209,12 @@ export default function DownloadFlow({ initialFlow }: DownloadFlowProps = {}) {
     setProgress(null);
 
     // ── 진단 로그 — 브라우저 콘솔에서 확인 ──────────────────────
-    const finalDailyFull = dailyFullMode && canUseSaju;
     console.log('[download] 생성 요청 상태:', {
       tier,
+      tierLoaded,
       orderVerified,
       canUseSaju,
-      dailyFullMode,
-      finalDailyFull,
+      dailyFull: canUseSaju,
       userId: user?.id ?? '(로그아웃)',
       orderId: orderId ?? '(URL orderId 없음)',
       hasDailySelected: selectedPages.has('daily'),
@@ -232,8 +232,8 @@ export default function DownloadFlow({ initialFlow }: DownloadFlowProps = {}) {
         theme,
         mode,
         saju: mode === 'practice' ? undefined : (savedSaju ?? undefined),
-        // dailyFullMode 명시적 state 사용 — tier 비동기 로딩 race 방지
-        dailyFull: dailyFullMode && canUseSaju,
+        // 유료 권한 있으면 무조건 365일 생성. tier 로딩 완료 보장은 handleGenerate 버튼 disabled로 처리.
+        dailyFull: canUseSaju,
         fortuneData,
         onProgress: (current, total, label) => {
           setProgress({ current, total, label });
@@ -254,12 +254,12 @@ export default function DownloadFlow({ initialFlow }: DownloadFlowProps = {}) {
       setIsGenerating(false);
       setProgress(null);
     }
-  }, [orientation, selectedPages, name, year, theme, mode, savedSaju, fortuneData, canUseSaju, dailyFullMode, tier, orderVerified, user?.id, orderId]);
+  }, [orientation, selectedPages, name, year, theme, mode, savedSaju, fortuneData, canUseSaju, tier, tierLoaded, orderVerified, user?.id, orderId]);
 
   // ── 예상 페이지 수 계산 ──────────────────────────────────────────────────────
   const estimatedPages = [...selectedPages].reduce((acc, t) => {
     if (t === 'monthly') return acc + 12;
-    if (t === 'daily' && dailyFullMode && canUseSaju) return acc + 365;
+    if (t === 'daily' && canUseSaju) return acc + 365;
     if (t === 'weekly')  return acc + 52;
     return acc + 1;
   }, 0);
@@ -595,74 +595,50 @@ export default function DownloadFlow({ initialFlow }: DownloadFlowProps = {}) {
                 ))}
               </div>
 
-              {/* 개별 선택 */}
+              {/* 개별 선택 — 일간은 유료 구매자에게 자동으로 "365일 스케줄"로 표시 */}
               <div className="space-y-2">
                 {PAGE_OPTIONS.map(({ type, label, sublabel, icon }) => {
                   const checked = selectedPages.has(type);
                   const isDaily = type === 'daily';
-                  // 일간은 dailyFullMode(실제 생성 모드) 기반으로 레이블 표시
-                  const displayLabel = isDaily && dailyFullMode ? '일간 스케줄 (365일)' : label;
-                  const displaySublabel = isDaily && dailyFullMode
+                  // 일간 라벨/서브라벨: 유료 권한 있으면 자동 365일, 아니면 샘플 1p
+                  const displayLabel = isDaily && canUseSaju ? '일간 스케줄 (365일)' : label;
+                  const displaySublabel = isDaily && canUseSaju
                     ? '365 페이지 · 매일 일진·오행 자동'
                     : sublabel;
                   return (
-                    <div key={type}>
-                      <label
-                        className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                    <label
+                      key={type}
+                      className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                        checked
+                          ? 'border-ft-ink bg-ft-paper-alt'
+                          : 'border-ft-border bg-white hover:bg-ft-paper-alt'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        className="sr-only"
+                        checked={checked}
+                        onChange={() => togglePage(type)}
+                      />
+                      <span
+                        className={`w-5 h-5 rounded flex-shrink-0 flex items-center justify-center border-2 transition-colors ${
                           checked
-                            ? 'border-ft-ink bg-ft-paper-alt'
-                            : 'border-ft-border bg-white hover:bg-ft-paper-alt'
+                            ? 'bg-ft-ink border-ft-ink'
+                            : 'border-ft-border bg-transparent'
                         }`}
                       >
-                        <input
-                          type="checkbox"
-                          className="sr-only"
-                          checked={checked}
-                          onChange={() => togglePage(type)}
-                        />
-                        <span
-                          className={`w-5 h-5 rounded flex-shrink-0 flex items-center justify-center border-2 transition-colors ${
-                            checked
-                              ? 'bg-ft-ink border-ft-ink'
-                              : 'border-ft-border bg-transparent'
-                          }`}
-                        >
-                          {checked && (
-                            <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                          )}
-                        </span>
-                        <span className="text-lg leading-none">{icon}</span>
-                        <div className="flex-1 min-w-0">
-                          <span className="text-sm font-medium text-ft-body">{displayLabel}</span>
-                          <span className="ml-2 text-xs text-ft-muted">{displaySublabel}</span>
-                        </div>
-                      </label>
-                      {/* 일간이 체크됐고 유료 권한이 있으면 365일 풀 버전 토글 노출 */}
-                      {isDaily && checked && (
-                        <div className="ml-8 mt-1.5">
-                          <label
-                            className={`flex items-center gap-2 text-xs ${
-                              canUseSaju ? 'cursor-pointer text-ft-body' : 'text-gray-400'
-                            }`}
-                            title={canUseSaju ? undefined : '유료 사주 플래너 구매 후 이용 가능'}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={dailyFullMode && canUseSaju}
-                              disabled={!canUseSaju}
-                              onChange={(e) => setDailyFullMode(e.target.checked)}
-                              className="w-3.5 h-3.5 rounded border-ft-border accent-ft-ink"
-                            />
-                            <span>
-                              365일 풀 버전 (매일 개별 페이지)
-                              {!canUseSaju && <span className="ml-1 text-[10px]">🔒 유료 전용</span>}
-                            </span>
-                          </label>
-                        </div>
-                      )}
-                    </div>
+                        {checked && (
+                          <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                      </span>
+                      <span className="text-lg leading-none">{icon}</span>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm font-medium text-ft-body">{displayLabel}</span>
+                        <span className="ml-2 text-xs text-ft-muted">{displaySublabel}</span>
+                      </div>
+                    </label>
                   );
                 })}
               </div>
@@ -817,14 +793,22 @@ export default function DownloadFlow({ initialFlow }: DownloadFlowProps = {}) {
           {/* 메인 버튼 */}
           <button
             onClick={handleGenerate}
-            disabled={isGenerating || selectedPages.size === 0}
+            disabled={isGenerating || selectedPages.size === 0 || !tierLoaded}
             className={`w-full py-4 rounded-2xl font-bold text-base transition-all flex items-center justify-center gap-2.5 ${
-              isGenerating || selectedPages.size === 0
+              isGenerating || selectedPages.size === 0 || !tierLoaded
                 ? 'bg-ft-border text-ft-muted cursor-not-allowed'
                 : 'bg-ft-gold text-ft-ink hover:bg-ft-gold-h active:scale-[0.98] shadow-lg shadow-ft-gold/20'
             }`}
           >
-            {isGenerating ? (
+            {!tierLoaded ? (
+              <>
+                <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                권한 확인 중…
+              </>
+            ) : isGenerating ? (
               <>
                 <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />

@@ -366,25 +366,30 @@ function OrderCard({ order, index }: { order: MyOrder; index: number }) {
         </button>
       )}
 
-      {/* 사주 데이터가 있는 주문 → 바로 PDF 생성 */}
-      {order.saju_data && !order.file_url && order.status !== 'cancelled' && (
-        <button
-          onClick={handleGeneratePDF}
-          disabled={generating}
-          className="mt-3 flex items-center justify-center gap-2 w-full py-2.5 bg-ft-gold text-ft-ink font-bold rounded-xl text-sm hover:bg-ft-gold-h transition-colors disabled:opacity-50"
-        >
-          {generating ? (
-            <>
-              <SpinnerIcon />
-              PDF 생성 중...
-            </>
-          ) : (
-            <>
-              <DownloadIcon />
-              맞춤 플래너 PDF 생성
-            </>
-          )}
-        </button>
+      {/* 사주 데이터가 있는 주문 → 즉시 맞춤 플래너 PDF 생성·다운로드 */}
+      {order.saju_data && order.status !== 'cancelled' && !order.file_url && (
+        <div className="mt-3">
+          <button
+            onClick={handleGeneratePDF}
+            disabled={generating}
+            className="flex items-center justify-center gap-2 w-full py-2.5 bg-ft-gold text-ft-ink font-bold rounded-xl text-sm hover:bg-ft-gold-h transition-colors disabled:opacity-50"
+          >
+            {generating ? (
+              <>
+                <SpinnerIcon />
+                PDF 생성 중... (최대 30초)
+              </>
+            ) : (
+              <>
+                <DownloadIcon />
+                🗓️ 맞춤 플래너 PDF 생성 · 즉시 다운로드
+              </>
+            )}
+          </button>
+          <p className="text-[11px] text-ft-muted mt-1.5 text-center">
+            플래너는 브라우저에서 즉시 생성됩니다. 심층 리포트는 관리자 발송(별도 이메일).
+          </p>
+        </div>
       )}
 
       {/* 이메일 발송 완료 안내 (file_url 없이 completed) */}
@@ -412,7 +417,7 @@ function OrderCard({ order, index }: { order: MyOrder; index: number }) {
         </div>
       )}
 
-      {/* ── 프리미엄 사주 심층 리포트 상태 (Option C 수동 발송 파이프라인) ── */}
+      {/* ── 프리미엄 사주 심층 리포트 (관리자가 연결한 링크로 다운로드) ── */}
       {order.report_status && order.report_status !== 'not_applicable' && (
         <div className="mt-3 p-3 rounded-xl text-xs border flex items-start gap-2 bg-amber-50 text-amber-800 border-amber-200">
           <span className="text-base flex-shrink-0 leading-none">📖</span>
@@ -420,21 +425,21 @@ function OrderCard({ order, index }: { order: MyOrder; index: number }) {
             <p className="font-medium">
               사주 심층 리포트{' '}
               {order.report_status === 'sent' && <span className="text-emerald-700">· 발송 완료</span>}
-              {order.report_status === 'preparing' && <span>· 준비 중</span>}
-              {order.report_status === 'pending' && <span>· 대기 중</span>}
+              {order.report_status === 'preparing' && <span>· 제작 중</span>}
+              {order.report_status === 'pending' && <span>· 결제 완료, 제작 대기</span>}
               {order.report_status === 'skipped' && <span className="text-gray-500">· 발송 취소</span>}
             </p>
             {order.report_status === 'sent' && order.report_file_url && (
               <button
                 onClick={() => { setDownloadAgreed(false); setShowDownloadModal('report'); }}
-                className="mt-1 inline-block text-ft-ink underline text-left"
+                className="mt-1 inline-block text-ft-ink underline text-left font-semibold"
               >
-                리포트 PDF 다운로드 →
+                📥 리포트 PDF 다운로드 (관리자 발송 링크) →
               </button>
             )}
             {(order.report_status === 'pending' || order.report_status === 'preparing') && (
               <p className="mt-0.5 opacity-80">
-                결제일로부터 14일 이내에 가입 이메일로 별도 발송해드립니다. (개발 중 기능으로 얼리버드 무료 제공)
+                결제일로부터 14일 이내에 가입 이메일로 별도 발송해드립니다. 완료 시 이곳에도 다운로드 링크가 표시됩니다.
               </p>
             )}
           </div>
