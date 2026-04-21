@@ -49,6 +49,10 @@ interface MyOrder {
   created_at: string;
   saju_data: Record<string, string> | null;
   items: Array<{ product_name: string; price: number; qty: number }>;
+  // 프리미엄 사주 심층 리포트 발송 상태 (Option C 수동 발송 파이프라인)
+  report_status?: 'not_applicable' | 'pending' | 'preparing' | 'sent' | 'skipped';
+  report_file_url?: string | null;
+  report_sent_at?: string | null;
 }
 
 interface FortuneRecord {
@@ -402,6 +406,37 @@ function OrderCard({ order, index }: { order: MyOrder; index: number }) {
       {order.status === 'pending' && order.total > 0 && (
         <div className="mt-3 p-3 bg-yellow-50 rounded-xl text-xs text-yellow-700 border border-yellow-100">
           결제 확인 중입니다. 잠시 후 자동으로 처리됩니다.
+        </div>
+      )}
+
+      {/* ── 프리미엄 사주 심층 리포트 상태 (Option C 수동 발송 파이프라인) ── */}
+      {order.report_status && order.report_status !== 'not_applicable' && (
+        <div className="mt-3 p-3 rounded-xl text-xs border flex items-start gap-2 bg-amber-50 text-amber-800 border-amber-200">
+          <span className="text-base flex-shrink-0 leading-none">📖</span>
+          <div className="flex-1 min-w-0">
+            <p className="font-medium">
+              사주 심층 리포트{' '}
+              {order.report_status === 'sent' && <span className="text-emerald-700">· 발송 완료</span>}
+              {order.report_status === 'preparing' && <span>· 준비 중</span>}
+              {order.report_status === 'pending' && <span>· 대기 중</span>}
+              {order.report_status === 'skipped' && <span className="text-gray-500">· 발송 취소</span>}
+            </p>
+            {order.report_status === 'sent' && order.report_file_url && (
+              <a
+                href={order.report_file_url}
+                target="_blank"
+                rel="noopener"
+                className="mt-1 inline-block text-ft-ink underline"
+              >
+                리포트 PDF 다운로드 →
+              </a>
+            )}
+            {(order.report_status === 'pending' || order.report_status === 'preparing') && (
+              <p className="mt-0.5 opacity-80">
+                결제일로부터 14일 이내에 가입 이메일로 별도 발송해드립니다. (개발 중 기능으로 얼리버드 무료 제공)
+              </p>
+            )}
+          </div>
         </div>
       )}
     </div>

@@ -22,7 +22,7 @@ type ConfirmStatus = 'confirming' | 'done' | 'error';
 function SuccessContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { clearCart } = useCartStore();
+  const { items, clearCart } = useCartStore();
   const { user } = useAuthStore();
 
   const paymentKey   = searchParams.get('paymentKey') ?? '';
@@ -33,6 +33,8 @@ function SuccessContent() {
   const [status, setStatus] = useState<ConfirmStatus>('confirming');
   const [orderNumber, setOrderNumber] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  // clearCart 호출 전에 프리미엄 여부를 스냅샷으로 저장 (리포트 별도 발송 안내 카드용)
+  const [hasPremium, setHasPremium] = useState(false);
 
   useEffect(() => {
     if (!paymentKey || !orderId || !amount) {
@@ -91,7 +93,8 @@ function SuccessContent() {
 
         // 카트 기반 일반 주문 — 이미 /checkout에서 pending 상태로 DB에 생성되어 있고,
         // confirm-payment가 status를 'paid'로 전환하며 send-order-email을 트리거함.
-        // 여기서는 세션/카트 정리와 UI 상태만 변경.
+        // clearCart 전에 프리미엄 포함 여부 스냅샷 (리포트 별도 발송 안내용)
+        setHasPremium(items.some((i) => i.product.slug === 'saju-planner-premium'));
         sessionStorage.removeItem('checkout-form');
         clearCart();
         setOrderNumber(orderId);
@@ -152,9 +155,24 @@ function SuccessContent() {
 
       <div className="mt-6 bg-indigo-50 rounded-2xl p-4 text-left text-sm text-gray-600 space-y-2 border border-indigo-100">
         <p>📊 대시보드에서 결과 확인 및 PDF 다운로드가 가능합니다.</p>
-        <p>📧 맞춤 PDF는 이메일로도 발송됩니다.</p>
+        <p>📧 플래너 다운로드 링크가 이메일로 발송됩니다.</p>
         <p>💬 문의: <a href="mailto:sbaron680@gmail.com" className="text-ft-ink underline">sbaron680@gmail.com</a></p>
       </div>
+
+      {hasPremium && (
+        <div className="mt-4 bg-amber-50 border border-amber-200 rounded-2xl p-4 text-left">
+          <p className="text-sm font-bold text-ft-ink mb-1.5">
+            📖 사주 심층 리포트는 별도로 발송됩니다
+          </p>
+          <p className="text-xs text-gray-600 leading-relaxed">
+            프리미엄 구매 고객님께는 <b>결제일로부터 14일 이내</b>에 사주 구조·10년 대운·월별 세운이 담긴 심층 리포트 PDF를 이메일로 별도 발송해드립니다.
+            <br />
+            <span className="text-[11px] text-amber-700">
+              ⏳ 리포트 기능은 현재 개발 중으로, 얼리버드 고객에게 무료 업데이트로 제공됩니다.
+            </span>
+          </p>
+        </div>
+      )}
 
       <div className="mt-8 flex flex-col gap-3">
         <Link

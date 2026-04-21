@@ -77,6 +77,13 @@ Deno.serve(async (req: Request) => {
       return json({ ok: false, error: 'User email not found' }, 404);
     }
 
+    // 주문 아이템 조회 → 프리미엄 상품 포함 여부 판단 (리포트 별도 발송 안내용)
+    const { data: items } = await sb
+      .from('order_items')
+      .select('product_id')
+      .eq('order_id', order.id);
+    const hasPremium = (items ?? []).some((i) => i.product_id === 'saju-planner-premium');
+
     // 다운로드 링크 생성
     const downloadUrl = order.file_url
       ? `${SITE_URL}/download/view?order=${order.id}&token=${order.access_token}`
@@ -99,6 +106,7 @@ Deno.serve(async (req: Request) => {
           total: order.total,
           downloadUrl,
           hasFile: !!order.file_url,
+          hasPremium,
         }),
       }),
     });
@@ -127,14 +135,18 @@ Deno.serve(async (req: Request) => {
 
 // ── 이메일 HTML 템플릿 ───────────────────────────────────────────────────────
 
+// 프리미엄 사주 리포트 발송 SLA (일 단위) — 변경 포인트
+const REPORT_SLA_DAYS = 14;
+
 function buildEmailHtml(params: {
   userName: string;
   orderNumber: string;
   total: number;
   downloadUrl: string;
   hasFile: boolean;
+  hasPremium: boolean;
 }): string {
-  const { userName, orderNumber, total, downloadUrl, hasFile } = params;
+  const { userName, orderNumber, total, downloadUrl, hasFile, hasPremium } = params;
   const formattedTotal = total > 0 ? `₩${total.toLocaleString('ko-KR')}` : '무료';
 
   return `
@@ -181,6 +193,24 @@ function buildEmailHtml(params: {
       대시보드에서 바로 맞춤 플래너 PDF를 생성하고 다운로드할 수 있습니다.
     </p>
     `}
+
+    ${hasPremium ? `
+    <!-- 프리미엄 리포트 안내 블록 -->
+    <div style="margin-top:24px;padding:16px;background:#fdf6e3;border:1px solid #f0c040;border-radius:12px;">
+      <p style="font-size:14px;font-weight:700;color:#1a1a2e;margin:0 0 8px;">
+        📖 사주 심층 리포트는 별도로 발송됩니다
+      </p>
+      <p style="font-size:12.5px;color:#666;line-height:1.6;margin:0;">
+        프리미엄 구매 고객님께는 <b>결제일로부터 ${REPORT_SLA_DAYS}일 이내</b>에
+        사주 구조·10년 대운·월별 세운 분석이 담긴 심층 리포트 PDF를
+        이 이메일 주소로 별도 발송해드립니다.<br/>
+        <span style="font-size:11px;color:#999;">
+          리포트가 ${REPORT_SLA_DAYS}일을 초과해 도착하지 않으면
+          <a href="mailto:sbaron680@gmail.com" style="color:#1a1a2e;">고객지원</a>으로 문의해 주세요.
+        </span>
+      </p>
+    </div>
+    ` : ''}
   </div>
 
   <!-- 푸터 -->
