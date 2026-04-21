@@ -50,10 +50,11 @@ interface MyOrder {
   created_at: string;
   saju_data: Record<string, string> | null;
   items: Array<{ product_id?: string; product_name: string; price: number; qty: number }>;
-  // 프리미엄 사주 심층 리포트 발송 상태 (Option C 수동 발송 파이프라인)
-  report_status?: 'not_applicable' | 'pending' | 'preparing' | 'sent' | 'skipped';
+  // 프리미엄 사주 심층 리포트 (NAS 저장, 32일 보관 후 자동 삭제)
+  report_status?: 'not_applicable' | 'pending' | 'preparing' | 'sent' | 'skipped' | 'expired';
   report_file_url?: string | null;
   report_sent_at?: string | null;
+  report_expires_at?: string | null;
 }
 
 interface FortuneRecord {
@@ -392,33 +393,81 @@ function OrderCard({ order, index }: { order: MyOrder; index: number }) {
             )}
           </div>
 
-          {/* ── 2) 심층 리포트 PDF 영역 (프리미엄만) ──────────────── */}
-          {isPremium && (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-3">
-              <div className="flex items-center gap-2 mb-2 text-xs font-semibold text-amber-800">
-                <span>📖</span>
-                <span>사주 심층 리포트</span>
-                {effectiveReportStatus === 'sent' && <span className="text-emerald-700 font-normal">· 발송 완료</span>}
-                {effectiveReportStatus === 'preparing' && <span className="font-normal">· 제작 중</span>}
-                {effectiveReportStatus === 'pending' && !order.report_file_url && <span className="font-normal">· 제작 대기</span>}
-                {effectiveReportStatus === 'skipped' && <span className="text-gray-500 font-normal">· 발송 취소</span>}
+          {/* ── 2) 심층 리포트 PDF 영역 (프리미엄만, NAS 32일 보관) ── */}
+          {isPremium && (() => {
+            const isExpired = effectiveReportStatus === 'expired';
+            const expiresAt = order.report_expires_at ? new Date(order.report_expires_at) : null;
+            const daysLeft = expiresAt ? Math.max(0, Math.ceil((expiresAt.getTime() - Date.now()) / 86400000)) : null;
+            const expiryDateKo = expiresAt ? expiresAt.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' }) : null;
+            const progressPct = daysLeft !== null ? Math.max(0, Math.min(100, Math.round(((32 - daysLeft) / 32) * 100))) : null;
+            const warn = daysLeft !== null && daysLeft <= 7;
+
+            return (
+              <div className={`rounded-xl border p-3 ${isExpired ? 'border-gray-300 bg-gray-50' : 'border-amber-200 bg-amber-50'}`}>
+                <div className={`flex items-center gap-2 mb-2 text-xs font-semibold ${isExpired ? 'text-gray-500' : 'text-amber-800'}`}>
+                  <span>📖</span>
+                  <span>사주 심층 리포트</span>
+                  {effectiveReportStatus === 'sent' && <span className="text-emerald-700 font-normal">· 발송 완료</span>}
+                  {effectiveReportStatus === 'preparing' && <span className="font-normal">· AI 생성 중</span>}
+                  {effectiveReportStatus === 'pending' && !order.report_file_url && <span className="font-normal">· 제작 대기</span>}
+                  {effectiveReportStatus === 'skipped' && <span className="text-gray-500 font-normal">· 발송 취소</span>}
+                  {isExpired && <span className="text-red-500 font-normal">· 보관 기간 종료</span>}
+                </div>
+
+                {/* 만료 후 안내 */}
+                {isExpired && (
+                  <div className="p-3 rounded-lg bg-gray-100 border border-gray-200 text-xs text-gray-700 leading-relaxed">
+                    <p className="font-medium text-gray-800 mb-1">📁 리포트 파일이 보관 기간 종료로 삭제되었습니다</p>
+                    <p className="opacity-80">
+                      NAS 저장 정책에 따라 발송일로부터 32일 후 자동 삭제됩니다.
+                      재발급을 원하시면 <a href="mailto:sbaron680@gmail.com" className="underline">sbaron680@gmail.com</a>으로 문의해 주세요.
+                    </p>
+                  </div>
+                )}
+
+                {/* 다운로드 가능 (report_file_url 있음 + 만료 전) */}
+                {!isExpired && order.report_file_url && (
+                  <>
+                    <button
+                      onClick={() => { setDownloadAgreed(false); setShowDownloadModal('report'); }}
+                      className="flex items-center justify-center gap-2 w-full py-2.5 bg-amber-600 text-white font-bold rounded-xl text-sm hover:bg-amber-700 transition-colors"
+                    >
+                      <DownloadIcon />
+                      심층 리포트 PDF 다운로드
+                    </button>
+
+                    {/* 보관 기간 진행률 + 남은 일수 */}
+                    {daysLeft !== null && expiryDateKo && (
+                      <div className="mt-2.5">
+                        <div className="flex items-center justify-between text-[11px] mb-1">
+                          <span className={warn ? 'text-red-600 font-semibold' : 'text-amber-800'}>
+                            {daysLeft === 0 ? '⚠️ 오늘 만료' : warn ? `⚠️ ${daysLeft}일 후 만료` : `${daysLeft}일 남음`}
+                          </span>
+                          <span className="text-amber-700 opacity-70">{expiryDateKo}까지 보관</span>
+                        </div>
+                        <div className="w-full h-1.5 bg-amber-200/60 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all ${warn ? 'bg-red-500' : 'bg-amber-500'}`}
+                            style={{ width: `${progressPct}%` }}
+                          />
+                        </div>
+                        <p className="text-[10px] text-amber-700/70 mt-1">
+                          NAS 저장 정책 — 32일 후 자동 삭제. 내 기기에 받아 보관해 주세요.
+                        </p>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* 제작 대기 / 제작 중 */}
+                {!isExpired && !order.report_file_url && (
+                  <p className="text-xs text-amber-800 opacity-80 px-1 leading-relaxed">
+                    AI 자동 생성 중입니다. 결제 후 평균 5분 이내에 가입 이메일로 발송해 드립니다. 완료 시 이곳에 다운로드 링크가 표시됩니다.
+                  </p>
+                )}
               </div>
-              {/* report_file_url이 있으면 status와 무관하게 다운로드 가능 (관리자가 status='sent' 업데이트를 누락해도 동작) */}
-              {order.report_file_url ? (
-                <button
-                  onClick={() => { setDownloadAgreed(false); setShowDownloadModal('report'); }}
-                  className="flex items-center justify-center gap-2 w-full py-2.5 bg-amber-600 text-white font-bold rounded-xl text-sm hover:bg-amber-700 transition-colors"
-                >
-                  <DownloadIcon />
-                  심층 리포트 PDF 다운로드
-                </button>
-              ) : (
-                <p className="text-xs text-amber-800 opacity-80 px-1 leading-relaxed">
-                  결제일로부터 14일 이내에 가입 이메일로 별도 발송해드립니다. 완료 시 이곳에 다운로드 링크가 표시됩니다.
-                </p>
-              )}
-            </div>
-          )}
+            );
+          })()}
         </div>
       )}
 
