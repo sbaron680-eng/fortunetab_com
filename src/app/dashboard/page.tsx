@@ -326,14 +326,14 @@ function OrderCard({ order, index }: { order: MyOrder; index: number }) {
         </span>
       </div>
 
-      {/* 다운로드 버튼 (file_url이 있는 completed 주문) — 경고 모달 거쳐서 이동 */}
+      {/* 맞춤 플래너 다운로드 버튼 (file_url 있는 completed 주문) — 경고 모달 경유 */}
       {order.status === 'completed' && order.file_url && (
         <button
           onClick={() => { setDownloadAgreed(false); setShowDownloadModal('planner'); }}
           className="mt-3 flex items-center justify-center gap-2 w-full py-2.5 bg-ft-gold text-ft-ink font-bold rounded-xl text-sm hover:bg-ft-gold-h transition-colors"
         >
           <DownloadIcon />
-          PDF 다운로드
+          🗓️ 맞춤 플래너 PDF 다운로드
           {order.download_opened_at && (
             <span className="text-xs font-normal opacity-70">(열람 완료)</span>
           )}
@@ -396,9 +396,10 @@ function OrderCard({ order, index }: { order: MyOrder; index: number }) {
             {order.report_status === 'sent' && order.report_file_url && (
               <button
                 onClick={() => { setDownloadAgreed(false); setShowDownloadModal('report'); }}
-                className="mt-1 inline-block text-ft-ink underline text-left font-semibold"
+                className="mt-2 flex items-center justify-center gap-2 w-full py-2.5 bg-amber-600 text-white font-bold rounded-xl text-sm hover:bg-amber-700 transition-colors"
               >
-                📥 리포트 PDF 다운로드 (관리자 발송 링크) →
+                <DownloadIcon />
+                📖 심층 리포트 PDF 다운로드
               </button>
             )}
             {(order.report_status === 'pending' || order.report_status === 'preparing') && (
@@ -413,11 +414,11 @@ function OrderCard({ order, index }: { order: MyOrder; index: number }) {
       {/* ── 다운로드 경고 모달 — 환불·취소 금지 고지 ─────────────────────────── */}
       {showDownloadModal && (
         <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-black/50 flex items-start sm:items-center justify-center z-50 p-4 overflow-y-auto"
           onClick={() => setShowDownloadModal(null)}
         >
           <div
-            className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl"
+            className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl my-8 max-h-[calc(100vh-4rem)] overflow-y-auto"
             onClick={e => e.stopPropagation()}
           >
             <h3 className="text-lg font-bold text-ft-ink mb-3 flex items-center gap-2">

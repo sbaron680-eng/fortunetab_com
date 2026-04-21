@@ -14,6 +14,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/lib/store';
 import { fetchMyOrders } from '@/lib/orders';
+import { verifyOrderForSaju } from '@/lib/tier-gate';
 import {
   generatePlannerPDF,
   type PageType,
@@ -129,6 +130,20 @@ function OrderFlow({ order, otherOrders }: { order: MyOrder; otherOrders: MyOrde
   const { user } = useAuthStore();
   const YEARS = getYears();
 
+  // ── 티어 검증 ─────────────────────────────────────────────────────────────
+  // order_items의 product_id가 사주 유료 상품(basic/premium)인지 서버 검증.
+  // extras-free, common-planner 등 무료 주문번호로 우회 접근 차단.
+  const [tierVerified, setTierVerified] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    let cancelled = false;
+    verifyOrderForSaju(user.id, order.order_number).then((ok) => {
+      if (!cancelled) setTierVerified(ok);
+    });
+    return () => { cancelled = true; };
+  }, [user?.id, order.order_number]);
+
   const sajuData = order.saju_data ?? {};
   const defaultName = sajuData.name || user?.name ? `${sajuData.name || user?.name}의 플래너` : '나의 플래너';
   const defaultTheme = sajuData.theme || 'navy';
@@ -228,6 +243,18 @@ function OrderFlow({ order, otherOrders }: { order: MyOrder; otherOrders: MyOrde
 
   const progressPct = progress ? Math.round((progress.current / progress.total) * 100) : 0;
 
+  // 티어 검증 로딩/실패 처리
+  if (tierVerified === null) return <LoadingView />;
+  if (tierVerified === false) {
+    return (
+      <EmptyView
+        title="유료 사주 플래너 주문이 아닙니다"
+        message="이 주문은 사주 맞춤 플래너(basic/premium) 상품이 아닙니다. 무료 플래너는 /free-planner에서 바로 생성할 수 있습니다."
+        cta={{ href: '/free-planner', label: '무료 플래너로 이동 →' }}
+      />
+    );
+  }
+
   // 경고 모달 확인 후 실제 다운로드 트리거
   const triggerDownload = () => {
     if (!agreed || !showModal) return;
@@ -318,9 +345,9 @@ function OrderFlow({ order, otherOrders }: { order: MyOrder; otherOrders: MyOrde
             <p className="text-sm text-ft-body mb-3">관리자가 발송한 맞춤 사주 심층 리포트가 준비되었습니다.</p>
             <button
               onClick={() => { setAgreed(false); setShowModal('report'); }}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 transition-colors"
+              className="w-full flex items-center justify-center gap-2 py-3 bg-amber-600 text-white rounded-xl text-sm font-bold hover:bg-amber-700 transition-colors"
             >
-              📥 리포트 PDF 다운로드
+              📖 심층 리포트 PDF 다운로드
             </button>
           </section>
         )}
@@ -579,8 +606,8 @@ function OrderFlow({ order, otherOrders }: { order: MyOrder; otherOrders: MyOrde
 
       {/* ── 다운로드 경고 모달 ───────────────────────────────────────────────── */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowModal(null)}>
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/50 flex items-start sm:items-center justify-center z-50 p-4 overflow-y-auto" onClick={() => setShowModal(null)}>
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl my-8 max-h-[calc(100vh-4rem)] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-lg font-bold text-ft-ink mb-3 flex items-center gap-2">⚠️ 다운로드 전 안내</h3>
             <ul className="space-y-2.5 text-sm text-ft-body leading-relaxed mb-4">
               <li className="flex gap-2">

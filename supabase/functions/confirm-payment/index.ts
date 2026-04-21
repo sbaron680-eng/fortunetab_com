@@ -39,14 +39,15 @@ Deno.serve(async (req: Request) => {
       return json({ ok: false, error: 'paymentKey, orderId, amount는 필수입니다.' }, 400);
     }
 
-    // 결제 금액 서버 대조: DB 주문 금액과 요청 금액 비교
+    // 결제 금액 서버 대조: DB orders.total ↔ 요청 amount ↔ order_items 서버 재계산
+    // (클라이언트가 createOrder로 전달한 total이 조작됐을 수 있으므로 items+promotions로 재계산)
     if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
       const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
       const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-/.test(orderId);
       const col = isUuid ? 'id' : 'order_number';
       const { data: orderRow } = await sb
         .from('orders')
-        .select('total, status')
+        .select('id, total, status')
         .eq(col, orderId)
         .single();
 
@@ -56,8 +57,50 @@ Deno.serve(async (req: Request) => {
           return json({ ok: false, error: '이미 처리된 주문입니다.' }, 409);
         }
         if (orderRow.total !== amount) {
-          console.error(`[confirm-payment] 금액 불일치: DB=${orderRow.total}, 요청=${amount}`);
+          console.error(`[confirm-payment] DB↔요청 금액 불일치: DB=${orderRow.total}, 요청=${amount}`);
           return json({ ok: false, error: '결제 금액이 일치하지 않습니다.' }, 400);
+        }
+
+        // ★ 서버측 재계산: order_items × 활성 프로모션
+        const { data: items } = await sb
+          .from('order_items')
+          .select('product_id, price, qty')
+          .eq('order_id', orderRow.id);
+
+        if (!items || items.length === 0) {
+          console.error(`[confirm-payment] 주문 아이템 없음: ${orderRow.id}`);
+          return json({ ok: false, error: '주문 아이템을 찾을 수 없습니다.' }, 400);
+        }
+
+        const nowIso = new Date().toISOString();
+        const { data: promos } = await sb
+          .from('promotions')
+          .select('product_slug, discount_type, discount_value')
+          .eq('is_active', true)
+          .lte('starts_at', nowIso)
+          .or(`ends_at.is.null,ends_at.gte.${nowIso}`);
+
+        let expected = 0;
+        for (const it of items as Array<{ product_id: string; price: number; qty: number }>) {
+          const gross = (it.price ?? 0) * (it.qty ?? 1);
+          const promo = (promos ?? []).find((p) => p.product_slug === it.product_id)
+                     ?? (promos ?? []).find((p) => p.product_slug === null);
+          if (promo) {
+            const discounted = promo.discount_type === 'percent'
+              ? Math.round(gross * (1 - promo.discount_value / 100))
+              : Math.max(0, gross - promo.discount_value);
+            expected += discounted;
+          } else {
+            expected += gross;
+          }
+        }
+
+        // ±1원 오차 허용 (반올림)
+        if (Math.abs(expected - amount) > 1) {
+          console.error(
+            `[confirm-payment] 금액 조작 의심: 재계산=${expected}, 요청=${amount}, DB=${orderRow.total}, items=${JSON.stringify(items)}`
+          );
+          return json({ ok: false, error: '결제 금액 검증 실패. 장바구니를 새로고침 후 다시 시도해 주세요.' }, 400);
         }
       }
     }
