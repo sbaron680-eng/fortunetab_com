@@ -590,23 +590,34 @@ export default function AdminPage() {
                     <thead>
                       <tr className="border-b border-gray-800 text-xs text-gray-500">
                         <th className="text-left p-4 font-medium w-8"></th>
-                        <th className="text-left p-4 font-medium">주문번호</th>
-                        <th className="text-left p-4 font-medium">고객</th>
+                        <th className="text-left p-4 font-medium">주문번호 · 상품</th>
+                        <th className="text-left p-4 font-medium">고객 · 사주</th>
                         <th className="text-left p-4 font-medium">상태</th>
                         <th className="text-right p-4 font-medium">금액</th>
-                        <th className="text-left p-4 font-medium">다운로드</th>
+                        <th className="text-left p-4 font-medium">🗓️ 플래너 PDF</th>
+                        <th className="text-left p-4 font-medium">📖 심층 리포트</th>
                         <th className="text-left p-4 font-medium">열람</th>
                         <th className="text-left p-4 font-medium">일시</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredOrders.map(order => (
+                      {filteredOrders.map(order => {
+                        // 행 렌더 시점에 주문 아이템 기반 파생 상태
+                        const rowItems = orderItems[order.id] ?? [];
+                        const rowIsPremium = rowItems.some(i => i.product_id === 'saju-planner-premium');
+                        // 아이템이 아직 로드 전이라면 report_status로 대체 판별 (pending이면 premium으로 간주)
+                        const rowIsPremiumFallback = rowIsPremium || (order.report_status && order.report_status !== 'not_applicable');
+                        const rowProductLabel = rowItems[0]?.product_name ?? '';
+                        const effStatus = order.report_status || (rowIsPremiumFallback ? 'pending' : 'not_applicable');
+                        const s = order.saju_data;
+
+                        return (
                         <>
                           <tr
                             key={order.id}
                             className={`border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors cursor-pointer ${
                               expandedOrder === order.id ? 'bg-gray-800/20' : ''
-                            }`}
+                            } ${rowIsPremiumFallback ? 'ring-1 ring-purple-900/30' : ''}`}
                             onClick={() => handleExpandOrder(order.id)}
                           >
                             {/* 확장 화살표 */}
@@ -619,13 +630,31 @@ export default function AdminPage() {
                               </svg>
                             </td>
 
-                            {/* 주문번호 */}
-                            <td className="p-4">
-                              <span className="font-mono text-xs text-gray-300">{order.order_number}</span>
+                            {/* 주문번호 + 상품 */}
+                            <td className="p-4 min-w-[180px]">
+                              <div className="font-mono text-xs text-gray-300">{order.order_number}</div>
+                              {rowProductLabel && (
+                                <div className="text-[11px] text-gray-500 mt-0.5 truncate max-w-[180px]">{rowProductLabel}</div>
+                              )}
+                              {rowIsPremiumFallback && (
+                                <span className="inline-block mt-1 px-1.5 py-0.5 rounded bg-purple-900/40 text-purple-300 text-[10px] font-bold">PREMIUM</span>
+                              )}
                             </td>
 
-                            {/* 고객 */}
-                            <td className="p-4 text-xs text-gray-400">{order.user_email}</td>
+                            {/* 고객 + 사주 요약 — 확장 없이 바로 표시 */}
+                            <td className="p-4 min-w-[180px]">
+                              <div className="text-xs text-gray-400 truncate max-w-[180px]">{order.user_email}</div>
+                              {s && (s.birthDate || s.birthTime || s.name) ? (
+                                <div className="mt-1 flex flex-wrap gap-1 text-[10px]">
+                                  {s.name && <span className="px-1.5 py-0.5 rounded bg-amber-950/60 text-amber-200">👤 {s.name}</span>}
+                                  {s.birthDate && <span className="px-1.5 py-0.5 rounded bg-amber-950/60 text-amber-200 font-mono">📅 {s.birthDate}</span>}
+                                  {s.birthTime && <span className="px-1.5 py-0.5 rounded bg-amber-950/60 text-amber-200">🕐 {s.birthTime}</span>}
+                                  {s.birthGender && <span className="px-1.5 py-0.5 rounded bg-amber-950/60 text-amber-200">{s.birthGender === 'male' ? '♂' : '♀'}</span>}
+                                </div>
+                              ) : s ? null : rowIsPremiumFallback ? (
+                                <div className="mt-1 text-[10px] text-amber-500">⚠️ 사주 정보 없음</div>
+                              ) : null}
+                            </td>
 
                             {/* 상태 */}
                             <td className="p-4" onClick={e => e.stopPropagation()}>
@@ -639,8 +668,8 @@ export default function AdminPage() {
                                   onChange={e => handleStatusChange(order.id, e.target.value as OrderStatus)}
                                   className="text-xs bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-gray-300 focus:outline-none disabled:opacity-50"
                                 >
-                                  {(Object.keys(STATUS_LABELS) as OrderStatus[]).map(s => (
-                                    <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+                                  {(Object.keys(STATUS_LABELS) as OrderStatus[]).map(st => (
+                                    <option key={st} value={st}>{STATUS_LABELS[st]}</option>
                                   ))}
                                 </select>
                               </div>
@@ -651,35 +680,108 @@ export default function AdminPage() {
                               {order.total > 0 ? `₩${order.total.toLocaleString()}` : '무료'}
                             </td>
 
-                            {/* 다운로드 링크 */}
-                            <td className="p-4 min-w-[200px]" onClick={e => e.stopPropagation()}>
+                            {/* 🗓️ 플래너 PDF — file_url 업로드 + 사용자 측 버튼 미리보기 */}
+                            <td className="p-4 min-w-[240px]" onClick={e => e.stopPropagation()}>
                               {order.file_url ? (
-                                <div className="flex items-center gap-2">
-                                  <span className="text-xs text-emerald-400">✓ 설정됨</span>
-                                  <button
-                                    onClick={() => copyTrackingUrl(order.id, order.access_token)}
-                                    className="text-xs px-2 py-1 bg-indigo-900/50 text-indigo-300 rounded-lg hover:bg-indigo-900/80 transition-colors"
-                                  >
-                                    링크 복사
-                                  </button>
+                                <div className="space-y-1">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-xs text-emerald-400">✓ 업로드</span>
+                                    <button
+                                      onClick={() => copyTrackingUrl(order.id, order.access_token)}
+                                      className="text-[10px] px-1.5 py-0.5 bg-indigo-900/50 text-indigo-300 rounded hover:bg-indigo-900/80 transition-colors"
+                                    >
+                                      링크복사
+                                    </button>
+                                    <a
+                                      href={order.file_url}
+                                      target="_blank"
+                                      rel="noopener"
+                                      className="text-[10px] px-1.5 py-0.5 bg-gray-700 text-gray-300 rounded hover:bg-gray-600 transition-colors"
+                                    >
+                                      원본↗
+                                    </a>
+                                  </div>
+                                  <div className="text-[10px] text-gray-500">
+                                    → 사용자: <span className="text-emerald-300">🗓️ 다운로드 버튼</span>
+                                  </div>
                                 </div>
                               ) : (
-                                <div className="flex items-center gap-1.5">
-                                  <input
-                                    type="url"
-                                    placeholder="Google Drive URL"
-                                    value={fileUrlInputs[order.id] ?? ''}
-                                    onChange={e => setFileUrlInputs(prev => ({ ...prev, [order.id]: e.target.value }))}
-                                    className="text-xs bg-gray-800 border border-gray-700 rounded-lg px-2 py-1.5 text-gray-300 focus:outline-none focus:ring-1 focus:ring-indigo-500 flex-1 min-w-0"
-                                  />
-                                  <button
-                                    onClick={() => handleSaveFileUrl(order.id)}
-                                    disabled={!fileUrlInputs[order.id] || savingFileUrl === order.id}
-                                    className="text-xs px-2.5 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-500 disabled:opacity-40"
-                                  >
-                                    {savingFileUrl === order.id ? '…' : '저장'}
-                                  </button>
+                                <div className="space-y-1">
+                                  <div className="flex items-center gap-1">
+                                    <input
+                                      type="url"
+                                      placeholder="Google Drive URL"
+                                      value={fileUrlInputs[order.id] ?? ''}
+                                      onChange={e => setFileUrlInputs(prev => ({ ...prev, [order.id]: e.target.value }))}
+                                      className="text-[11px] bg-gray-800 border border-gray-700 rounded px-2 py-1 text-gray-300 focus:outline-none focus:ring-1 focus:ring-indigo-500 flex-1 min-w-0"
+                                    />
+                                    <button
+                                      onClick={() => handleSaveFileUrl(order.id)}
+                                      disabled={!fileUrlInputs[order.id] || savingFileUrl === order.id}
+                                      className="text-[11px] px-2 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-500 disabled:opacity-40"
+                                    >
+                                      {savingFileUrl === order.id ? '…' : '저장'}
+                                    </button>
+                                  </div>
+                                  <div className="text-[10px] text-gray-500">
+                                    → 사용자: <span className="text-amber-300">🗓️ 생성 페이지로 이동</span>
+                                  </div>
                                 </div>
+                              )}
+                            </td>
+
+                            {/* 📖 심층 리포트 — 프리미엄만, 빠른 액션 포함 */}
+                            <td className="p-4 min-w-[240px]" onClick={e => e.stopPropagation()}>
+                              {rowIsPremiumFallback ? (
+                                <div className="space-y-1">
+                                  <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                                    effStatus === 'sent' ? 'bg-emerald-900 text-emerald-200' :
+                                    effStatus === 'preparing' ? 'bg-amber-900 text-amber-200' :
+                                    effStatus === 'skipped' ? 'bg-gray-800 text-gray-400' :
+                                    'bg-purple-900/60 text-purple-200'
+                                  }`}>
+                                    {effStatus === 'pending' && '🕓 대기'}
+                                    {effStatus === 'preparing' && '🔨 제작 중'}
+                                    {effStatus === 'sent' && '✅ 발송 완료'}
+                                    {effStatus === 'skipped' && '⊘ 취소됨'}
+                                  </span>
+                                  {effStatus === 'pending' && (
+                                    <button
+                                      onClick={() => handleStartReport(order.id)}
+                                      disabled={togglingReport === order.id}
+                                      className="block w-full text-[11px] px-2 py-1 bg-purple-600 text-white rounded hover:bg-purple-500 disabled:opacity-40 font-medium"
+                                    >
+                                      {togglingReport === order.id ? '변경 중…' : '▶️ 제작 시작'}
+                                    </button>
+                                  )}
+                                  {(effStatus === 'preparing' || effStatus === 'sent') && (
+                                    <div className="flex items-center gap-1">
+                                      <input
+                                        type="url"
+                                        placeholder="리포트 PDF URL"
+                                        value={reportUrlInputs[order.id] ?? order.report_file_url ?? ''}
+                                        onChange={e => setReportUrlInputs(prev => ({ ...prev, [order.id]: e.target.value }))}
+                                        className="text-[11px] bg-gray-800 border border-gray-700 rounded px-2 py-1 text-gray-300 focus:outline-none focus:ring-1 focus:ring-purple-500 flex-1 min-w-0 font-mono"
+                                      />
+                                      <button
+                                        onClick={() => handleSendReport(order.id)}
+                                        disabled={savingReport === order.id || !reportUrlInputs[order.id]?.trim()}
+                                        className="text-[11px] px-2 py-1 bg-emerald-600 text-white rounded hover:bg-emerald-500 disabled:opacity-40 font-medium whitespace-nowrap"
+                                      >
+                                        {savingReport === order.id ? '…' : effStatus === 'sent' ? '재발송' : '발송'}
+                                      </button>
+                                    </div>
+                                  )}
+                                  <div className="text-[10px] text-gray-500">
+                                    → 사용자: {effStatus === 'sent' && order.report_file_url ? (
+                                      <span className="text-emerald-300">📖 리포트 다운로드</span>
+                                    ) : (
+                                      <span className="text-gray-500">📖 제작 대기</span>
+                                    )}
+                                  </div>
+                                </div>
+                              ) : (
+                                <span className="text-[10px] text-gray-600">—</span>
                               )}
                             </td>
 
@@ -713,7 +815,7 @@ export default function AdminPage() {
                             const isSajuOrder = items.some(i => i.product_id.startsWith('saju-planner-'));
                             return (
                             <tr key={`${order.id}-detail`}>
-                              <td colSpan={8} className="bg-gray-800/30 p-0">
+                              <td colSpan={9} className="bg-gray-800/30 p-0">
                                 <div className="p-5 space-y-4">
                                   {/* 사주 정보 — 사주 상품이면 항상 섹션 표시 (데이터 없어도 안내) */}
                                   {isSajuOrder && (
@@ -890,7 +992,8 @@ export default function AdminPage() {
                             );
                           })()}
                         </>
-                      ))}
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
