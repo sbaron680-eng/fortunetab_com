@@ -283,6 +283,22 @@ function OrderCard({ order, index }: { order: MyOrder; index: number }) {
   const [showDownloadModal, setShowDownloadModal] = useState<'planner' | 'report' | null>(null);
   const [downloadAgreed, setDownloadAgreed] = useState(false);
 
+  // 프리미엄 상품 구매 여부 — items 이름으로 판별.
+  // RPC get_my_orders가 report_status를 반환하지 않아도 섹션이 사라지지 않게 함.
+  const isPremium = order.items.some((it) =>
+    it.product_name?.includes('프리미엄') || it.product_name?.toLowerCase().includes('premium')
+  );
+
+  // 리포트 섹션 표시: 프리미엄 상품이면 항상 / 일반 주문은 report_status가 명시적일 때만
+  const showReportSection =
+    isPremium || (order.report_status && order.report_status !== 'not_applicable');
+
+  // 상태 표시용: report_status가 없거나 not_applicable이면 프리미엄 주문은 'pending'으로 간주
+  const effectiveReportStatus =
+    order.report_status && order.report_status !== 'not_applicable'
+      ? order.report_status
+      : (isPremium ? 'pending' : 'not_applicable');
+
   return (
     <div
       className="p-5 hover-lift animate-stagger-in"
@@ -382,32 +398,34 @@ function OrderCard({ order, index }: { order: MyOrder; index: number }) {
       )}
 
       {/* ── 프리미엄 사주 심층 리포트 (관리자가 연결한 링크로 다운로드) ── */}
-      {order.report_status && order.report_status !== 'not_applicable' && (
-        <div className="mt-3 p-3 rounded-xl text-xs border flex items-start gap-2 bg-amber-50 text-amber-800 border-amber-200">
-          <span className="text-base flex-shrink-0 leading-none">📖</span>
-          <div className="flex-1 min-w-0">
-            <p className="font-medium">
-              사주 심층 리포트{' '}
-              {order.report_status === 'sent' && <span className="text-emerald-700">· 발송 완료</span>}
-              {order.report_status === 'preparing' && <span>· 제작 중</span>}
-              {order.report_status === 'pending' && <span>· 결제 완료, 제작 대기</span>}
-              {order.report_status === 'skipped' && <span className="text-gray-500">· 발송 취소</span>}
-            </p>
-            {order.report_status === 'sent' && order.report_file_url && (
-              <button
-                onClick={() => { setDownloadAgreed(false); setShowDownloadModal('report'); }}
-                className="mt-2 flex items-center justify-center gap-2 w-full py-2.5 bg-amber-600 text-white font-bold rounded-xl text-sm hover:bg-amber-700 transition-colors"
-              >
-                <DownloadIcon />
-                📖 심층 리포트 PDF 다운로드
-              </button>
-            )}
-            {(order.report_status === 'pending' || order.report_status === 'preparing') && (
-              <p className="mt-0.5 opacity-80">
-                결제일로부터 14일 이내에 가입 이메일로 별도 발송해드립니다. 완료 시 이곳에도 다운로드 링크가 표시됩니다.
+      {showReportSection && (
+        <div className="mt-3 p-3 rounded-xl text-xs border bg-amber-50 text-amber-800 border-amber-200">
+          <div className="flex items-start gap-2 mb-2">
+            <span className="text-base flex-shrink-0 leading-none">📖</span>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium">
+                사주 심층 리포트{' '}
+                {effectiveReportStatus === 'sent' && <span className="text-emerald-700">· 발송 완료</span>}
+                {effectiveReportStatus === 'preparing' && <span>· 제작 중</span>}
+                {effectiveReportStatus === 'pending' && <span>· 결제 완료, 제작 대기</span>}
+                {effectiveReportStatus === 'skipped' && <span className="text-gray-500">· 발송 취소</span>}
               </p>
-            )}
+              {(effectiveReportStatus === 'pending' || effectiveReportStatus === 'preparing') && (
+                <p className="mt-0.5 opacity-80">
+                  결제일로부터 14일 이내에 가입 이메일로 별도 발송해드립니다. 완료 시 이곳에도 다운로드 링크가 표시됩니다.
+                </p>
+              )}
+            </div>
           </div>
+          {effectiveReportStatus === 'sent' && order.report_file_url && (
+            <button
+              onClick={() => { setDownloadAgreed(false); setShowDownloadModal('report'); }}
+              className="mt-1 flex items-center justify-center gap-2 w-full py-2.5 bg-amber-600 text-white font-bold rounded-xl text-sm hover:bg-amber-700 transition-colors"
+            >
+              <DownloadIcon />
+              📖 심층 리포트 PDF 다운로드
+            </button>
+          )}
         </div>
       )}
 
