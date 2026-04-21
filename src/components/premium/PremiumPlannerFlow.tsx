@@ -38,10 +38,19 @@ interface MyOrder {
   download_opened_at: string | null;
   created_at: string;
   saju_data: Record<string, string> | null;
-  items: Array<{ product_name: string; price: number; qty: number }>;
+  items: Array<{ product_id?: string; product_name: string; price: number; qty: number }>;
   report_status?: 'not_applicable' | 'pending' | 'preparing' | 'sent' | 'skipped';
   report_file_url?: string | null;
   report_sent_at?: string | null;
+}
+
+function hasSajuPaidItem(items: MyOrder['items']): boolean {
+  return items.some((it) => {
+    const pid = it.product_id;
+    if (pid === 'saju-planner-basic' || pid === 'saju-planner-premium') return true;
+    const n = it.product_name ?? '';
+    return n.includes('사주 플래너') && (n.includes('기본') || n.includes('프리미엄') || n.toLowerCase().includes('basic') || n.toLowerCase().includes('premium'));
+  });
 }
 
 // ── 페이지 선택 옵션 ────────────────────────────────────────────────────────
@@ -131,17 +140,14 @@ function OrderFlow({ order, otherOrders }: { order: MyOrder; otherOrders: MyOrde
   const YEARS = getYears();
 
   // ── 티어 검증 ─────────────────────────────────────────────────────────────
-  // order_items의 product_id가 사주 유료 상품(basic/premium)인지 서버 검증.
-  // extras-free, common-planner 등 무료 주문번호로 우회 접근 차단.
-  const [tierVerified, setTierVerified] = useState<boolean | null>(null);
+  // 1차: items의 product_id/product_name으로 즉시 판별 (RPC RLS 실패해도 우회)
+  // 2차: 서버 verifyOrderForSaju로 백업 검증 (백그라운드)
+  const clientTierOk = hasSajuPaidItem(order.items);
 
   useEffect(() => {
     if (!user?.id) return;
-    let cancelled = false;
-    verifyOrderForSaju(user.id, order.order_number).then((ok) => {
-      if (!cancelled) setTierVerified(ok);
-    });
-    return () => { cancelled = true; };
+    // 서버 검증은 감사 로그 목적 — 실패해도 client tier 체크를 우선
+    verifyOrderForSaju(user.id, order.order_number).catch(() => { /* 무시 */ });
   }, [user?.id, order.order_number]);
 
   const sajuData = order.saju_data ?? {};
@@ -243,9 +249,8 @@ function OrderFlow({ order, otherOrders }: { order: MyOrder; otherOrders: MyOrde
 
   const progressPct = progress ? Math.round((progress.current / progress.total) * 100) : 0;
 
-  // 티어 검증 로딩/실패 처리
-  if (tierVerified === null) return <LoadingView />;
-  if (tierVerified === false) {
+  // 티어 검증 실패 — 무료 플래너로 안내
+  if (!clientTierOk) {
     return (
       <EmptyView
         title="유료 사주 플래너 주문이 아닙니다"

@@ -48,7 +48,7 @@ interface MyOrder {
   download_opened_at: string | null;
   created_at: string;
   saju_data: Record<string, string> | null;
-  items: Array<{ product_name: string; price: number; qty: number }>;
+  items: Array<{ product_id?: string; product_name: string; price: number; qty: number }>;
   // 프리미엄 사주 심층 리포트 발송 상태 (Option C 수동 발송 파이프라인)
   report_status?: 'not_applicable' | 'pending' | 'preparing' | 'sent' | 'skipped';
   report_file_url?: string | null;
@@ -279,21 +279,28 @@ function OrdersTab({ orders }: { orders: MyOrder[] }) {
 }
 
 function OrderCard({ order, index }: { order: MyOrder; index: number }) {
-  // 다운로드 경고 모달 (환불·취소 금지 고지 동의) — Option C 관련
+  // 다운로드 경고 모달 (환불·취소 금지 고지 동의)
   const [showDownloadModal, setShowDownloadModal] = useState<'planner' | 'report' | null>(null);
   const [downloadAgreed, setDownloadAgreed] = useState(false);
 
-  // 프리미엄 상품 구매 여부 — items 이름으로 판별.
-  // RPC get_my_orders가 report_status를 반환하지 않아도 섹션이 사라지지 않게 함.
-  const isPremium = order.items.some((it) =>
-    it.product_name?.includes('프리미엄') || it.product_name?.toLowerCase().includes('premium')
-  );
+  // 유료 사주 상품(basic/premium) 구매 여부 — product_id 우선, product_name fallback
+  const isSajuPaid = order.items.some((it) => {
+    const pid = it.product_id;
+    if (pid === 'saju-planner-basic' || pid === 'saju-planner-premium') return true;
+    const n = it.product_name ?? '';
+    return n.includes('사주 플래너') && (n.includes('프리미엄') || n.includes('기본') || n.toLowerCase().includes('premium') || n.toLowerCase().includes('basic'));
+  });
 
-  // 리포트 섹션 표시: 프리미엄 상품이면 항상 / 일반 주문은 report_status가 명시적일 때만
-  const showReportSection =
-    isPremium || (order.report_status && order.report_status !== 'not_applicable');
+  // 프리미엄 상품(심층 리포트 포함) 구매 여부
+  const isPremium = order.items.some((it) => {
+    if (it.product_id === 'saju-planner-premium') return true;
+    const n = it.product_name ?? '';
+    return n.includes('프리미엄') || n.toLowerCase().includes('premium');
+  });
 
-  // 상태 표시용: report_status가 없거나 not_applicable이면 프리미엄 주문은 'pending'으로 간주
+  const isActiveOrder = order.status !== 'cancelled' && order.status !== 'pending';
+
+  // 표시 리포트 상태: 명시적 값 우선, 프리미엄이면 'pending' fallback
   const effectiveReportStatus =
     order.report_status && order.report_status !== 'not_applicable'
       ? order.report_status
@@ -342,90 +349,108 @@ function OrderCard({ order, index }: { order: MyOrder; index: number }) {
         </span>
       </div>
 
-      {/* 맞춤 플래너 다운로드 버튼 (file_url 있는 completed 주문) — 경고 모달 경유 */}
-      {order.status === 'completed' && order.file_url && (
+      {/* ── 유료 사주 플래너 주문의 액션 영역 ─────────────────────────────── */}
+      {/* basic/premium 상품 구매자는 맞춤 플래너 + (premium이면) 심층 리포트 두 섹션이 항상 나란히 표시됨 */}
+      {isSajuPaid && isActiveOrder && (
+        <div className="mt-4 space-y-3">
+
+          {/* ── 1) 맞춤 플래너 PDF 영역 ──────────────────────────── */}
+          <div className="rounded-xl border border-ft-border bg-ft-paper-alt p-3">
+            <div className="flex items-center gap-2 mb-2 text-xs font-semibold text-ft-ink">
+              <span>🗓️</span>
+              <span>맞춤 플래너 PDF</span>
+              {order.download_opened_at && order.file_url && (
+                <span className="text-ft-muted font-normal">· 열람 완료</span>
+              )}
+            </div>
+            {order.file_url ? (
+              <button
+                onClick={() => { setDownloadAgreed(false); setShowDownloadModal('planner'); }}
+                className="flex items-center justify-center gap-2 w-full py-2.5 bg-ft-gold text-ft-ink font-bold rounded-xl text-sm hover:bg-ft-gold-h transition-colors"
+              >
+                <DownloadIcon />
+                맞춤 플래너 PDF 다운로드
+              </button>
+            ) : order.saju_data ? (
+              <>
+                <Link
+                  href={`/premium-planner?order=${order.id}`}
+                  className="flex items-center justify-center gap-2 w-full py-2.5 bg-ft-gold text-ft-ink font-bold rounded-xl text-sm hover:bg-ft-gold-h transition-colors"
+                >
+                  <DownloadIcon />
+                  맞춤 플래너 생성 페이지로 이동
+                </Link>
+                <p className="text-[11px] text-ft-muted mt-1.5 text-center">
+                  연도·테마·포함 페이지를 선택해 브라우저에서 즉시 PDF 생성.
+                </p>
+              </>
+            ) : (
+              <div className="p-2 bg-indigo-50 rounded-lg text-xs text-indigo-700 border border-indigo-100">
+                사주 분석 후 맞춤 제작 중입니다. 완료 시 이메일로 PDF가 발송됩니다.
+              </div>
+            )}
+          </div>
+
+          {/* ── 2) 심층 리포트 PDF 영역 (프리미엄만) ──────────────── */}
+          {isPremium && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-3">
+              <div className="flex items-center gap-2 mb-2 text-xs font-semibold text-amber-800">
+                <span>📖</span>
+                <span>사주 심층 리포트</span>
+                {effectiveReportStatus === 'sent' && <span className="text-emerald-700 font-normal">· 발송 완료</span>}
+                {effectiveReportStatus === 'preparing' && <span className="font-normal">· 제작 중</span>}
+                {effectiveReportStatus === 'pending' && !order.report_file_url && <span className="font-normal">· 제작 대기</span>}
+                {effectiveReportStatus === 'skipped' && <span className="text-gray-500 font-normal">· 발송 취소</span>}
+              </div>
+              {/* report_file_url이 있으면 status와 무관하게 다운로드 가능 (관리자가 status='sent' 업데이트를 누락해도 동작) */}
+              {order.report_file_url ? (
+                <button
+                  onClick={() => { setDownloadAgreed(false); setShowDownloadModal('report'); }}
+                  className="flex items-center justify-center gap-2 w-full py-2.5 bg-amber-600 text-white font-bold rounded-xl text-sm hover:bg-amber-700 transition-colors"
+                >
+                  <DownloadIcon />
+                  심층 리포트 PDF 다운로드
+                </button>
+              ) : (
+                <p className="text-xs text-amber-800 opacity-80 px-1 leading-relaxed">
+                  결제일로부터 14일 이내에 가입 이메일로 별도 발송해드립니다. 완료 시 이곳에 다운로드 링크가 표시됩니다.
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── 무료 주문·기타 주문의 상태 안내 ────────────────────────────────── */}
+      {/* 이메일 발송 완료 안내 (사주 상품 아닌 유료 주문) */}
+      {!isSajuPaid && order.status === 'completed' && !order.file_url && (
+        <div className="mt-3 p-3 bg-emerald-50 rounded-xl text-xs text-emerald-700 border border-emerald-100 flex items-start gap-2">
+          <EmailIcon />
+          <div>
+            <p className="font-medium">플래너가 이메일로 발송되었습니다</p>
+            <p className="mt-0.5 opacity-80">받은편지함을 확인해 주세요. 스팸함도 함께 확인해 주시기 바랍니다.</p>
+          </div>
+        </div>
+      )}
+
+      {/* 일반 주문의 file_url 다운로드 (비사주 유료 상품) */}
+      {!isSajuPaid && order.status === 'completed' && order.file_url && (
         <button
           onClick={() => { setDownloadAgreed(false); setShowDownloadModal('planner'); }}
           className="mt-3 flex items-center justify-center gap-2 w-full py-2.5 bg-ft-gold text-ft-ink font-bold rounded-xl text-sm hover:bg-ft-gold-h transition-colors"
         >
           <DownloadIcon />
-          🗓️ 맞춤 플래너 PDF 다운로드
+          🗓️ PDF 다운로드
           {order.download_opened_at && (
             <span className="text-xs font-normal opacity-70">(열람 완료)</span>
           )}
         </button>
       )}
 
-      {/* 사주 데이터가 있는 주문 → 프리미엄 플래너 생성 페이지로 이동 */}
-      {order.saju_data && order.status !== 'cancelled' && !order.file_url && (
-        <div className="mt-3">
-          <Link
-            href={`/premium-planner?order=${order.id}`}
-            className="flex items-center justify-center gap-2 w-full py-2.5 bg-ft-gold text-ft-ink font-bold rounded-xl text-sm hover:bg-ft-gold-h transition-colors"
-          >
-            <DownloadIcon />
-            🗓️ 맞춤 플래너 생성 페이지로 이동
-          </Link>
-          <p className="text-[11px] text-ft-muted mt-1.5 text-center">
-            연도·테마·포함 페이지를 선택해 브라우저에서 즉시 PDF 생성. 심층 리포트는 관리자 발송(별도 이메일).
-          </p>
-        </div>
-      )}
-
-      {/* 이메일 발송 완료 안내 (file_url 없이 completed) */}
-      {order.status === 'completed' && !order.file_url && !order.saju_data && (
-        <div className="mt-3 p-3 bg-emerald-50 rounded-xl text-xs text-emerald-700 border border-emerald-100 flex items-start gap-2">
-          <EmailIcon />
-          <div>
-            <p className="font-medium">맞춤 플래너가 이메일로 발송되었습니다</p>
-            <p className="mt-0.5 opacity-80">받은편지함을 확인해 주세요. 스팸함도 함께 확인해 주시기 바랍니다.</p>
-          </div>
-        </div>
-      )}
-
-      {/* 제작 중 안내 */}
-      {(order.status === 'paid' || order.status === 'processing') && !order.saju_data && (
-        <div className="mt-3 p-3 bg-indigo-50 rounded-xl text-xs text-indigo-700 border border-indigo-100">
-          사주 분석 후 맞춤 제작 중입니다. 완료 시 이메일로 PDF가 발송됩니다.
-        </div>
-      )}
-
       {/* 대기 중 안내 */}
       {order.status === 'pending' && order.total > 0 && (
         <div className="mt-3 p-3 bg-yellow-50 rounded-xl text-xs text-yellow-700 border border-yellow-100">
           결제 확인 중입니다. 잠시 후 자동으로 처리됩니다.
-        </div>
-      )}
-
-      {/* ── 프리미엄 사주 심층 리포트 (관리자가 연결한 링크로 다운로드) ── */}
-      {showReportSection && (
-        <div className="mt-3 p-3 rounded-xl text-xs border bg-amber-50 text-amber-800 border-amber-200">
-          <div className="flex items-start gap-2 mb-2">
-            <span className="text-base flex-shrink-0 leading-none">📖</span>
-            <div className="flex-1 min-w-0">
-              <p className="font-medium">
-                사주 심층 리포트{' '}
-                {effectiveReportStatus === 'sent' && <span className="text-emerald-700">· 발송 완료</span>}
-                {effectiveReportStatus === 'preparing' && <span>· 제작 중</span>}
-                {effectiveReportStatus === 'pending' && <span>· 결제 완료, 제작 대기</span>}
-                {effectiveReportStatus === 'skipped' && <span className="text-gray-500">· 발송 취소</span>}
-              </p>
-              {(effectiveReportStatus === 'pending' || effectiveReportStatus === 'preparing') && (
-                <p className="mt-0.5 opacity-80">
-                  결제일로부터 14일 이내에 가입 이메일로 별도 발송해드립니다. 완료 시 이곳에도 다운로드 링크가 표시됩니다.
-                </p>
-              )}
-            </div>
-          </div>
-          {effectiveReportStatus === 'sent' && order.report_file_url && (
-            <button
-              onClick={() => { setDownloadAgreed(false); setShowDownloadModal('report'); }}
-              className="mt-1 flex items-center justify-center gap-2 w-full py-2.5 bg-amber-600 text-white font-bold rounded-xl text-sm hover:bg-amber-700 transition-colors"
-            >
-              <DownloadIcon />
-              📖 심층 리포트 PDF 다운로드
-            </button>
-          )}
         </div>
       )}
 
