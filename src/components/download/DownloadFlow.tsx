@@ -200,6 +200,17 @@ export default function DownloadFlow({ initialFlow }: DownloadFlowProps = {}) {
     setError(null);
     setProgress(null);
 
+    // ── 진단 로그 — 브라우저 콘솔에서 확인 ──────────────────────
+    console.log('[download] 생성 요청 상태:', {
+      tier,
+      orderVerified,
+      canUseSaju,
+      dailyFullWillBe: canUseSaju,
+      userId: user?.id ?? '(로그아웃)',
+      orderId: orderId ?? '(URL orderId 없음)',
+      hasDailySelected: selectedPages.has('daily'),
+    });
+
     try {
       await generatePlannerPDF({
         orientation,
@@ -235,7 +246,7 @@ export default function DownloadFlow({ initialFlow }: DownloadFlowProps = {}) {
       setIsGenerating(false);
       setProgress(null);
     }
-  }, [orientation, selectedPages, name, year, theme, mode, savedSaju, fortuneData]);
+  }, [orientation, selectedPages, name, year, theme, mode, savedSaju, fortuneData, canUseSaju, tier, orderVerified, user?.id, orderId]);
 
   // ── 예상 페이지 수 계산 ──────────────────────────────────────────────────────
   const estimatedPages = [...selectedPages].reduce((acc, t) => {
@@ -532,6 +543,33 @@ export default function DownloadFlow({ initialFlow }: DownloadFlowProps = {}) {
             <span className="w-1.5 h-4 bg-ft-gold rounded-full inline-block" />
             포함할 템플릿
           </h2>
+
+          {/* 유료 사주 플래너 구매자 표시 — 일간 365p 활성화 여부 가시화 */}
+          {flow !== 'extras' && (
+            <div className={`mt-3 mb-4 px-3 py-2 rounded-lg text-xs flex items-center justify-between gap-2 ${
+              canUseSaju
+                ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                : 'bg-gray-50 text-gray-600 border border-gray-200'
+            }`}>
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-base flex-shrink-0 leading-none">
+                  {canUseSaju ? '✅' : 'ℹ️'}
+                </span>
+                <span className="truncate">
+                  {canUseSaju ? (
+                    <>유료 사주 플래너 권한 확인됨 — <b>일간 365일 풀 버전</b> 생성 가능</>
+                  ) : (
+                    <>무료 다운로드 상태 — 일간은 <b>샘플 1p</b>만 생성됩니다</>
+                  )}
+                </span>
+              </div>
+              {!canUseSaju && (
+                <a href="/products/saju-planner-basic" className="text-ft-ink underline flex-shrink-0 whitespace-nowrap">
+                  구매하기 →
+                </a>
+              )}
+            </div>
+          )}
 
           {/* 운세/실천 플로우 — 메인 5종 선택만 */}
           {flow !== 'extras' && (
