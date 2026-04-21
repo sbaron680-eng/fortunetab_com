@@ -233,36 +233,61 @@ function calcYongsin(elemCount: Record<ElemKo, number>): ElemKo {
 }
 
 // ─── 메인 사주 계산 ────────────────────────────────────────────────────
+// ★ v2 Fortune Engine으로 위임 (2026-04-22 스위칭)
+// - 절기 12개 정확 반영 (v1은 입춘만 간이 처리 → 경칩/청명/입하 등 경계일 출생자 월주 오류)
+// - 야자시(23:00~) 경계 정밀 처리
+// - 지장간 가중치 포함 용신 판별 (왕상휴수사 계수 + 신강약 판별)
+// v1 공개 API 시그니처는 유지 — 호출처 영향 없음.
+
+import { calculateSaju as calculateSajuV2 } from './fortune/saju-core';
+
+/** v1 시간 문자열('자시'~'해시') → v2 hour(0~23) 매핑. 각 시진의 대표값(중간). */
+const TIME_TO_HOUR: Record<string, number> = {
+  '자시': 23,  // 23:00~01:00 → 23 (야자시 포함. v2 hourToBranchIdx가 hour>=23 || <1을 자시로 처리)
+  '축시': 1,   // 01:00~03:00
+  '인시': 3,   // 03:00~05:00
+  '묘시': 5,   // 05:00~07:00
+  '진시': 7,   // 07:00~09:00
+  '사시': 9,   // 09:00~11:00
+  '오시': 11,  // 11:00~13:00
+  '미시': 13,  // 13:00~15:00
+  '신시': 15,  // 15:00~17:00
+  '유시': 17,  // 17:00~19:00
+  '술시': 19,  // 19:00~21:00
+  '해시': 21,  // 21:00~23:00
+};
+
+const EMPTY_HOUR_PILLAR: Pillar = {
+  stemIdx: -1, branchIdx: -1,
+  stemKo: '?', branchKo: '?',
+  stemHj: '?', branchHj: '?',
+  stemElem: '토', branchElem: '토',
+};
+
 export function calculateSaju(
   birthYear: number,
   birthMonth: number,
   birthDay: number,
   birthTime: string = '모름',
 ): SajuResult {
-  const yearPillar  = calcYearPillar(birthYear, birthMonth, birthDay);
-  const monthPillar = calcMonthPillar(birthYear, birthMonth, birthDay, yearPillar.stemIdx);
-  const dayPillar   = calcDayPillar(birthYear, birthMonth, birthDay);
+  const hourNum = TIME_TO_HOUR[birthTime]; // undefined면 v2에서 hour=null 반환
+  const v2 = calculateSajuV2(birthYear, birthMonth, birthDay, hourNum);
 
-  const branchIdx = TIME_TO_BRANCH[birthTime] ?? -1;
-  const hasHour = branchIdx !== -1;
-  const hourPillar = calcHourPillar(branchIdx, dayPillar.stemIdx);
-
-  const allPillars = [yearPillar, monthPillar, dayPillar, hourPillar];
-  const elemCount  = calcElemCount(allPillars, hasHour);
-  const dayElem    = dayPillar.stemElem;
-  const yongsin    = calcYongsin(elemCount);
-
+  // v2 SajuResult (hour: Pillar | null) → v1 SajuResult (hour: Pillar + hasHour)
+  const hasHour = v2.hour !== null;
   return {
-    year:  yearPillar,
-    month: monthPillar,
-    day:   dayPillar,
-    hour:  hourPillar,
-    elemCount,
-    dayElem,
-    yongsin,
+    year:  v2.year,
+    month: v2.month,
+    day:   v2.day,
+    hour:  v2.hour ?? EMPTY_HOUR_PILLAR,
+    elemCount: v2.elemCount,
+    dayElem: v2.dayElem,
+    yongsin: v2.yongsin,
     hasHour,
   };
 }
+
+// ─── [Deprecated] v1 내부 계산 함수 보존 (외부 import 없으나 안정성 위해 남김) ───
 
 // ─── 2026년 월별 오행 ─────────────────────────────────────────────────
 // 丙午年 2026년 각 월의 오행 (月支 기준)

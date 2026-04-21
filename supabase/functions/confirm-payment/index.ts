@@ -139,11 +139,10 @@ Deno.serve(async (req: Request) => {
 
     console.log(`[confirm-payment] 승인 성공: ${orderId} (${paymentType === 'PAYPAL' ? `$${amount}` : `${amount}원`})`);
 
-    // DB 주문 상태 업데이트: pending → paid
+    // DB 주문 상태 업데이트: pending → paid + 비동기 파이프라인 트리거
     if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
       try {
         const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-        // orderId가 UUID면 id로, 아니면 order_number로 매칭
         const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-/.test(orderId);
         const col = isUuid ? 'id' : 'order_number';
         const { data: updatedOrder } = await sb
@@ -154,8 +153,15 @@ Deno.serve(async (req: Request) => {
           .single();
         console.log(`[confirm-payment] DB 상태 업데이트: ${col}=${orderId} → paid`);
 
-        // 이메일 발송 트리거 (비동기, 실패해도 결제 응답에 영향 없음)
         if (updatedOrder?.id) {
+          // 프리미엄 상품 여부 판별 — generate-premium-report 트리거 조건
+          const { data: items } = await sb
+            .from('order_items')
+            .select('product_id')
+            .eq('order_id', updatedOrder.id);
+          const hasPremium = (items ?? []).some((i) => i.product_id === 'saju-planner-premium');
+
+          // ── fire-and-forget 1: 맞춤 플래너 안내 이메일 ──────────────────
           fetch(`${SUPABASE_URL}/functions/v1/send-order-email`, {
             method: 'POST',
             headers: {
@@ -166,6 +172,23 @@ Deno.serve(async (req: Request) => {
           }).catch(emailErr => {
             console.error('[confirm-payment] 이메일 트리거 실패:', emailErr);
           });
+
+          // ── fire-and-forget 2: 프리미엄이면 심층 리포트 자동 생성 파이프라인 ──
+          // 브라우저 종료·세션 이탈과 무관하게 서버가 완성까지 처리.
+          // n8n 워크플로가 Claude API × PDF 렌더 × Storage 업로드 × send-report-email 순차 실행.
+          if (hasPremium) {
+            fetch(`${SUPABASE_URL}/functions/v1/generate-premium-report`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+              },
+              body: JSON.stringify({ order_id: updatedOrder.id }),
+            }).catch(reportErr => {
+              console.error('[confirm-payment] 리포트 생성 트리거 실패:', reportErr);
+            });
+            console.log(`[confirm-payment] 프리미엄 리포트 자동 생성 트리거: ${updatedOrder.id}`);
+          }
         }
       } catch (dbErr) {
         console.error('[confirm-payment] DB 업데이트 실패 (결제는 성공):', dbErr);
