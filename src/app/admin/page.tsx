@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store';
+import { supabase } from '@/lib/supabase';
 import {
   fetchAllOrders, updateOrderStatus, setOrderFileUrl,
   fetchOrderItems, updateOrderMemo,
@@ -51,6 +52,11 @@ interface AdminOrder {
   download_count: number;
   created_at: string;
   admin_memo?: string | null;
+  // 사주 리포트 수동 발송 파이프라인 (Option C)
+  saju_data?: Record<string, string> | null;
+  report_status?: 'not_applicable' | 'pending' | 'preparing' | 'sent' | 'skipped' | null;
+  report_file_url?: string | null;
+  report_sent_at?: string | null;
 }
 
 interface OrderItemRow {
@@ -141,8 +147,27 @@ export default function AdminPage() {
     if (!user) { router.replace('/auth/login'); return; }
     if (!user.isAdmin) { router.replace('/'); return; }
 
-    fetchAllOrders().then((data) => {
-      setOrders(data as AdminOrder[]);
+    fetchAllOrders().then(async (data) => {
+      const base = data as AdminOrder[];
+      // RPC가 반환하지 않는 saju_data + report_* 필드를 추가 쿼리로 보강
+      const ids = base.map(o => o.id);
+      if (ids.length > 0) {
+        const { data: extra } = await supabase
+          .from('orders')
+          .select('id, saju_data, report_status, report_file_url, report_sent_at')
+          .in('id', ids);
+        const extraMap = new Map((extra ?? []).map(e => [e.id as string, e]));
+        for (const o of base) {
+          const x = extraMap.get(o.id);
+          if (x) {
+            o.saju_data = x.saju_data as Record<string, string> | null;
+            o.report_status = x.report_status as AdminOrder['report_status'];
+            o.report_file_url = x.report_file_url as string | null;
+            o.report_sent_at = x.report_sent_at as string | null;
+          }
+        }
+      }
+      setOrders(base);
       setFetchingOrders(false);
     });
   }, [user, isAuthReady, router]);
@@ -272,6 +297,62 @@ export default function AdminPage() {
     const ok = await updateOrderMemo(orderId, memo);
     if (ok) setOrders(prev => prev.map(o => o.id === orderId ? { ...o, admin_memo: memo } : o));
     setSavingMemo(null);
+  };
+
+  // ── 리포트 생성 시작 버튼 → report_status='preparing' ───────────────────────
+  const [togglingReport, setTogglingReport] = useState<string | null>(null);
+  const handleStartReport = async (orderId: string) => {
+    setTogglingReport(orderId);
+    const { error } = await supabase
+      .from('orders')
+      .update({ report_status: 'preparing' })
+      .eq('id', orderId);
+    if (!error) {
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, report_status: 'preparing' } : o));
+    }
+    setTogglingReport(null);
+  };
+
+  // ── 리포트 URL 저장 + 자동 발송 (send-report-email Edge Function 호출) ──────
+  const [reportUrlInputs, setReportUrlInputs] = useState<Record<string, string>>({});
+  const [savingReport, setSavingReport] = useState<string | null>(null);
+  const handleSendReport = async (orderId: string) => {
+    const url = reportUrlInputs[orderId]?.trim();
+    if (!url) return;
+    setSavingReport(orderId);
+    try {
+      // 1. DB에 report_file_url 업데이트
+      const { error: upErr } = await supabase
+        .from('orders')
+        .update({ report_file_url: url })
+        .eq('id', orderId);
+      if (upErr) throw upErr;
+
+      // 2. send-report-email Edge Function 호출 — 발송 성공 시 status='sent' + sent_at 자동 기록 (함수 내부)
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+      const res = await fetch(`${supabaseUrl}/functions/v1/send-report-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token ?? ''}`,
+        },
+        body: JSON.stringify({ order_id: orderId }),
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || '이메일 발송 실패');
+
+      setOrders(prev =>
+        prev.map(o =>
+          o.id === orderId
+            ? { ...o, report_file_url: url, report_status: 'sent', report_sent_at: new Date().toISOString() }
+            : o,
+        ),
+      );
+      setReportUrlInputs(prev => ({ ...prev, [orderId]: '' }));
+    } catch (e) {
+      alert(`리포트 발송 실패: ${e instanceof Error ? e.message : '알 수 없는 오류'}`);
+    }
+    setSavingReport(null);
   };
 
   const copyTrackingUrl = (orderId: string, token: string) => {
@@ -629,6 +710,106 @@ export default function AdminPage() {
                             <tr key={`${order.id}-detail`}>
                               <td colSpan={8} className="bg-gray-800/30 p-0">
                                 <div className="p-5 space-y-4">
+                                  {/* 사주 정보 (프리미엄 리포트 생성 시 참고) */}
+                                  {order.saju_data && (
+                                    <div className="bg-amber-950/30 rounded-xl p-4 border border-amber-900/50">
+                                      <h4 className="text-xs font-bold text-amber-300 mb-3 flex items-center gap-2">
+                                        🔮 고객 사주 정보 <span className="text-gray-500 font-normal">(리포트 생성 참고)</span>
+                                      </h4>
+                                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                                        <div>
+                                          <div className="text-gray-500">이름</div>
+                                          <div className="text-white mt-0.5 font-medium">{order.saju_data.name || '—'}</div>
+                                        </div>
+                                        <div>
+                                          <div className="text-gray-500">생년월일</div>
+                                          <div className="text-white mt-0.5 font-mono">{order.saju_data.birthDate || '—'}</div>
+                                        </div>
+                                        <div>
+                                          <div className="text-gray-500">생시</div>
+                                          <div className="text-white mt-0.5">{order.saju_data.birthTime || '—'}</div>
+                                        </div>
+                                        <div>
+                                          <div className="text-gray-500">성별</div>
+                                          <div className="text-white mt-0.5">{order.saju_data.birthGender === 'male' ? '남성' : order.saju_data.birthGender === 'female' ? '여성' : '—'}</div>
+                                        </div>
+                                        <div className="col-span-full">
+                                          <div className="text-gray-500">이메일</div>
+                                          <div className="text-white mt-0.5 font-mono text-[11px]">{order.saju_data.email || order.user_email || '—'}</div>
+                                        </div>
+                                        {order.saju_data.notes && (
+                                          <div className="col-span-full">
+                                            <div className="text-gray-500">고객 메모</div>
+                                            <div className="text-white mt-0.5 whitespace-pre-wrap">{order.saju_data.notes}</div>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* 사주 심층 리포트 섹션 — 프리미엄 주문에만 */}
+                                  {order.report_status && order.report_status !== 'not_applicable' && (
+                                    <div className="bg-purple-950/30 rounded-xl p-4 border border-purple-900/50">
+                                      <div className="flex items-center justify-between mb-3">
+                                        <h4 className="text-xs font-bold text-purple-300 flex items-center gap-2">
+                                          📖 사주 심층 리포트
+                                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                            order.report_status === 'sent' ? 'bg-emerald-900 text-emerald-200' :
+                                            order.report_status === 'preparing' ? 'bg-amber-900 text-amber-200' :
+                                            'bg-gray-800 text-gray-400'
+                                          }`}>
+                                            {order.report_status === 'pending' && '대기 중'}
+                                            {order.report_status === 'preparing' && '제작 중'}
+                                            {order.report_status === 'sent' && '발송 완료'}
+                                            {order.report_status === 'skipped' && '발송 취소'}
+                                          </span>
+                                        </h4>
+                                        {order.report_sent_at && (
+                                          <span className="text-[10px] text-gray-500">
+                                            {new Date(order.report_sent_at).toLocaleString('ko-KR', { dateStyle: 'short', timeStyle: 'short' })}
+                                          </span>
+                                        )}
+                                      </div>
+
+                                      {order.report_status === 'pending' && (
+                                        <button
+                                          onClick={() => handleStartReport(order.id)}
+                                          disabled={togglingReport === order.id}
+                                          className="w-full text-xs py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-500 disabled:opacity-40 transition-colors font-medium"
+                                        >
+                                          {togglingReport === order.id ? '변경 중…' : '▶️ 리포트 제작 시작 (상태를 "제작 중"으로 변경)'}
+                                        </button>
+                                      )}
+
+                                      {(order.report_status === 'preparing' || order.report_status === 'sent') && (
+                                        <div className="space-y-2">
+                                          <label className="block text-[11px] text-gray-400">리포트 PDF URL (Google Drive · NAS · Supabase Storage)</label>
+                                          <div className="flex gap-2">
+                                            <input
+                                              type="url"
+                                              value={reportUrlInputs[order.id] ?? order.report_file_url ?? ''}
+                                              onChange={e => setReportUrlInputs(prev => ({ ...prev, [order.id]: e.target.value }))}
+                                              placeholder="https://..."
+                                              className="flex-1 bg-gray-800 text-white text-xs rounded-lg px-3 py-2 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-purple-500 font-mono"
+                                            />
+                                            <button
+                                              onClick={() => handleSendReport(order.id)}
+                                              disabled={savingReport === order.id || !reportUrlInputs[order.id]?.trim()}
+                                              className="text-xs px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 disabled:opacity-40 transition-colors whitespace-nowrap font-medium"
+                                            >
+                                              {savingReport === order.id ? '발송 중…' : order.report_status === 'sent' ? '재발송' : '저장 후 발송'}
+                                            </button>
+                                          </div>
+                                          {order.report_file_url && (
+                                            <a href={order.report_file_url} target="_blank" rel="noopener" className="inline-block text-[11px] text-purple-400 hover:text-purple-300 underline">
+                                              현재 파일 확인 →
+                                            </a>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+
                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {/* 주문 아이템 */}
                                     <div className="bg-gray-900 rounded-xl p-4 border border-gray-800">

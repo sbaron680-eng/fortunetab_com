@@ -273,6 +273,9 @@ function OrdersTab({ orders }: { orders: MyOrder[] }) {
 
 function OrderCard({ order, index }: { order: MyOrder; index: number }) {
   const [generating, setGenerating] = useState(false);
+  // 다운로드 경고 모달 (환불·취소 금지 고지 동의) — Option C 관련
+  const [showDownloadModal, setShowDownloadModal] = useState<'planner' | 'report' | null>(null);
+  const [downloadAgreed, setDownloadAgreed] = useState(false);
 
   // 사주 데이터가 있는 주문의 클라이언트 PDF 생성
   const handleGeneratePDF = useCallback(async () => {
@@ -349,10 +352,10 @@ function OrderCard({ order, index }: { order: MyOrder; index: number }) {
         </span>
       </div>
 
-      {/* 다운로드 버튼 (file_url이 있는 completed 주문) */}
+      {/* 다운로드 버튼 (file_url이 있는 completed 주문) — 경고 모달 거쳐서 이동 */}
       {order.status === 'completed' && order.file_url && (
-        <a
-          href={`/download/view?order=${order.id}&token=${order.access_token}`}
+        <button
+          onClick={() => { setDownloadAgreed(false); setShowDownloadModal('planner'); }}
           className="mt-3 flex items-center justify-center gap-2 w-full py-2.5 bg-ft-gold text-ft-ink font-bold rounded-xl text-sm hover:bg-ft-gold-h transition-colors"
         >
           <DownloadIcon />
@@ -360,7 +363,7 @@ function OrderCard({ order, index }: { order: MyOrder; index: number }) {
           {order.download_opened_at && (
             <span className="text-xs font-normal opacity-70">(열람 완료)</span>
           )}
-        </a>
+        </button>
       )}
 
       {/* 사주 데이터가 있는 주문 → 바로 PDF 생성 */}
@@ -422,20 +425,101 @@ function OrderCard({ order, index }: { order: MyOrder; index: number }) {
               {order.report_status === 'skipped' && <span className="text-gray-500">· 발송 취소</span>}
             </p>
             {order.report_status === 'sent' && order.report_file_url && (
-              <a
-                href={order.report_file_url}
-                target="_blank"
-                rel="noopener"
-                className="mt-1 inline-block text-ft-ink underline"
+              <button
+                onClick={() => { setDownloadAgreed(false); setShowDownloadModal('report'); }}
+                className="mt-1 inline-block text-ft-ink underline text-left"
               >
                 리포트 PDF 다운로드 →
-              </a>
+              </button>
             )}
             {(order.report_status === 'pending' || order.report_status === 'preparing') && (
               <p className="mt-0.5 opacity-80">
                 결제일로부터 14일 이내에 가입 이메일로 별도 발송해드립니다. (개발 중 기능으로 얼리버드 무료 제공)
               </p>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ── 다운로드 경고 모달 — 환불·취소 금지 고지 ─────────────────────────── */}
+      {showDownloadModal && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={() => setShowDownloadModal(null)}
+        >
+          <div
+            className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl"
+            onClick={e => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-bold text-ft-ink mb-3 flex items-center gap-2">
+              ⚠️ 다운로드 전 안내
+            </h3>
+            <div className="space-y-2.5 text-sm text-ft-body leading-relaxed mb-4">
+              <p className="flex gap-2">
+                <span className="text-red-600 font-bold flex-shrink-0">·</span>
+                <span>
+                  다운로드 후에는 <b className="text-ft-ink">환불·취소가 불가</b>합니다
+                  (디지털 상품 특성상).
+                </span>
+              </p>
+              <p className="flex gap-2">
+                <span className="text-red-600 font-bold flex-shrink-0">·</span>
+                <span>
+                  파일 내용에 문제가 있거나 맞춤 정보가 잘못된 경우,
+                  다운로드하지 마시고 <a className="underline text-ft-ink" href="mailto:sbaron680@gmail.com">sbaron680@gmail.com</a>
+                  으로 먼저 문의해 주세요.
+                </span>
+              </p>
+              <p className="flex gap-2">
+                <span className="text-red-600 font-bold flex-shrink-0">·</span>
+                <span>
+                  본 PDF는 개인 사용 목적으로만 이용 가능하며, 재배포·상업적 이용을 금합니다.
+                </span>
+              </p>
+              {showDownloadModal === 'report' && (
+                <p className="flex gap-2">
+                  <span className="text-red-600 font-bold flex-shrink-0">·</span>
+                  <span>
+                    사주 분석은 <b>참고 용도</b>이며 전문 상담을 대체하지 않습니다.
+                  </span>
+                </p>
+              )}
+            </div>
+
+            <label className="flex items-start gap-2 cursor-pointer mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+              <input
+                type="checkbox"
+                checked={downloadAgreed}
+                onChange={e => setDownloadAgreed(e.target.checked)}
+                className="mt-0.5 w-4 h-4 accent-ft-ink"
+              />
+              <span className="text-xs text-ft-ink leading-relaxed">
+                위 내용을 확인했으며, 환불·취소가 불가함에 동의합니다.
+              </span>
+            </label>
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowDownloadModal(null)}
+                className="flex-1 py-2.5 bg-white border border-ft-border rounded-xl text-sm text-ft-body hover:bg-gray-50"
+              >
+                취소
+              </button>
+              <button
+                disabled={!downloadAgreed}
+                onClick={() => {
+                  if (!downloadAgreed) return;
+                  const url = showDownloadModal === 'planner'
+                    ? `/download/view?order=${order.id}&token=${order.access_token}`
+                    : order.report_file_url ?? '';
+                  if (url) window.open(url, showDownloadModal === 'report' ? '_blank' : '_self');
+                  setShowDownloadModal(null);
+                }}
+                className="flex-1 py-2.5 bg-ft-gold text-ft-ink font-bold rounded-xl text-sm hover:bg-ft-gold-h disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                동의하고 다운로드
+              </button>
+            </div>
           </div>
         </div>
       )}

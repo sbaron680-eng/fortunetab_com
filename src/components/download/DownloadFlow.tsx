@@ -135,6 +135,13 @@ export default function DownloadFlow({ initialFlow }: DownloadFlowProps = {}) {
   // 사주 개인화 가능 여부: 티어 기반 OR 방금 구매한 주문 검증
   const canUseSaju = TIER_FEATURES[tier].sajuPersonalization || orderVerified;
 
+  // 일간 365일 풀 버전 명시적 토글 — race condition 방지용 (tier 비동기 로딩 도중에도
+  // 사용자가 직접 제어 가능). 기본값은 canUseSaju 변경 시 자동 동기화.
+  const [dailyFullMode, setDailyFullMode] = useState(false);
+  useEffect(() => {
+    setDailyFullMode(canUseSaju);
+  }, [canUseSaju]);
+
   const [mode, setMode]       = useState<PlannerOptions['mode']>('fortune');
   const [orientation, setOrientation] = useState<Orientation>('portrait');
   const [selectedPages, setSelectedPages] = useState<Set<PageType>>(
@@ -201,11 +208,13 @@ export default function DownloadFlow({ initialFlow }: DownloadFlowProps = {}) {
     setProgress(null);
 
     // ── 진단 로그 — 브라우저 콘솔에서 확인 ──────────────────────
+    const finalDailyFull = dailyFullMode && canUseSaju;
     console.log('[download] 생성 요청 상태:', {
       tier,
       orderVerified,
       canUseSaju,
-      dailyFullWillBe: canUseSaju,
+      dailyFullMode,
+      finalDailyFull,
       userId: user?.id ?? '(로그아웃)',
       orderId: orderId ?? '(URL orderId 없음)',
       hasDailySelected: selectedPages.has('daily'),
@@ -223,9 +232,8 @@ export default function DownloadFlow({ initialFlow }: DownloadFlowProps = {}) {
         theme,
         mode,
         saju: mode === 'practice' ? undefined : (savedSaju ?? undefined),
-        // 유료 사주 사용자(티어 basic/premium 또는 방금 결제 검증된 주문) →
-        // 일간 페이지를 365일치로 생성. 무료 사용자는 샘플 1p만.
-        dailyFull: canUseSaju,
+        // dailyFullMode 명시적 state 사용 — tier 비동기 로딩 race 방지
+        dailyFull: dailyFullMode && canUseSaju,
         fortuneData,
         onProgress: (current, total, label) => {
           setProgress({ current, total, label });
@@ -246,12 +254,12 @@ export default function DownloadFlow({ initialFlow }: DownloadFlowProps = {}) {
       setIsGenerating(false);
       setProgress(null);
     }
-  }, [orientation, selectedPages, name, year, theme, mode, savedSaju, fortuneData, canUseSaju, tier, orderVerified, user?.id, orderId]);
+  }, [orientation, selectedPages, name, year, theme, mode, savedSaju, fortuneData, canUseSaju, dailyFullMode, tier, orderVerified, user?.id, orderId]);
 
   // ── 예상 페이지 수 계산 ──────────────────────────────────────────────────────
   const estimatedPages = [...selectedPages].reduce((acc, t) => {
     if (t === 'monthly') return acc + 12;
-    if (t === 'daily' && canUseSaju) return acc + 365;
+    if (t === 'daily' && dailyFullMode && canUseSaju) return acc + 365;
     if (t === 'weekly')  return acc + 52;
     return acc + 1;
   }, 0);
@@ -591,43 +599,70 @@ export default function DownloadFlow({ initialFlow }: DownloadFlowProps = {}) {
               <div className="space-y-2">
                 {PAGE_OPTIONS.map(({ type, label, sublabel, icon }) => {
                   const checked = selectedPages.has(type);
-                  // 유료 사주 사용자는 일간이 365일 풀 버전 → 레이블·페이지 수 동적 변경
-                  const displayLabel = type === 'daily' && canUseSaju ? '일간 스케줄 (365일)' : label;
-                  const displaySublabel = type === 'daily' && canUseSaju ? '365 페이지 · 매일 일진·오행 자동' : sublabel;
+                  const isDaily = type === 'daily';
+                  // 일간은 dailyFullMode(실제 생성 모드) 기반으로 레이블 표시
+                  const displayLabel = isDaily && dailyFullMode ? '일간 스케줄 (365일)' : label;
+                  const displaySublabel = isDaily && dailyFullMode
+                    ? '365 페이지 · 매일 일진·오행 자동'
+                    : sublabel;
                   return (
-                    <label
-                      key={type}
-                      className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
-                        checked
-                          ? 'border-ft-ink bg-ft-paper-alt'
-                          : 'border-ft-border bg-white hover:bg-ft-paper-alt'
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        className="sr-only"
-                        checked={checked}
-                        onChange={() => togglePage(type)}
-                      />
-                      <span
-                        className={`w-5 h-5 rounded flex-shrink-0 flex items-center justify-center border-2 transition-colors ${
+                    <div key={type}>
+                      <label
+                        className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
                           checked
-                            ? 'bg-ft-ink border-ft-ink'
-                            : 'border-ft-border bg-transparent'
+                            ? 'border-ft-ink bg-ft-paper-alt'
+                            : 'border-ft-border bg-white hover:bg-ft-paper-alt'
                         }`}
                       >
-                        {checked && (
-                          <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                        )}
-                      </span>
-                      <span className="text-lg leading-none">{icon}</span>
-                      <div className="flex-1 min-w-0">
-                        <span className="text-sm font-medium text-ft-body">{displayLabel}</span>
-                        <span className="ml-2 text-xs text-ft-muted">{displaySublabel}</span>
-                      </div>
-                    </label>
+                        <input
+                          type="checkbox"
+                          className="sr-only"
+                          checked={checked}
+                          onChange={() => togglePage(type)}
+                        />
+                        <span
+                          className={`w-5 h-5 rounded flex-shrink-0 flex items-center justify-center border-2 transition-colors ${
+                            checked
+                              ? 'bg-ft-ink border-ft-ink'
+                              : 'border-ft-border bg-transparent'
+                          }`}
+                        >
+                          {checked && (
+                            <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          )}
+                        </span>
+                        <span className="text-lg leading-none">{icon}</span>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-medium text-ft-body">{displayLabel}</span>
+                          <span className="ml-2 text-xs text-ft-muted">{displaySublabel}</span>
+                        </div>
+                      </label>
+                      {/* 일간이 체크됐고 유료 권한이 있으면 365일 풀 버전 토글 노출 */}
+                      {isDaily && checked && (
+                        <div className="ml-8 mt-1.5">
+                          <label
+                            className={`flex items-center gap-2 text-xs ${
+                              canUseSaju ? 'cursor-pointer text-ft-body' : 'text-gray-400'
+                            }`}
+                            title={canUseSaju ? undefined : '유료 사주 플래너 구매 후 이용 가능'}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={dailyFullMode && canUseSaju}
+                              disabled={!canUseSaju}
+                              onChange={(e) => setDailyFullMode(e.target.checked)}
+                              className="w-3.5 h-3.5 rounded border-ft-border accent-ft-ink"
+                            />
+                            <span>
+                              365일 풀 버전 (매일 개별 페이지)
+                              {!canUseSaju && <span className="ml-1 text-[10px]">🔒 유료 전용</span>}
+                            </span>
+                          </label>
+                        </div>
+                      )}
+                    </div>
                   );
                 })}
               </div>
