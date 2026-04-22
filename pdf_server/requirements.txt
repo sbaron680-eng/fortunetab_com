@@ -5,3 +5,6 @@ python-multipart>=0.0.9
 korean-lunar-calendar>=0.3.1
 pypdf>=6.0.0
 openai>=1.0.0
+# 심층 리포트 렌더링 (Phase 2)
+weasyprint>=62.0
+jinja2>=3.1.4

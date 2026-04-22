@@ -33,6 +33,12 @@ try:
 except ImportError:
     ai_router = None
 
+# 심층 리포트 렌더 라우터 (WeasyPrint)
+try:
+    from reports.routes import router as reports_router
+except ImportError:
+    reports_router = None
+
 # 한국 음력 변환
 try:
     from korean_lunar_calendar import KoreanLunarCalendar
@@ -78,6 +84,10 @@ app = FastAPI(
 # AI 라우터 등록
 if ai_router:
     app.include_router(ai_router)
+
+# 심층 리포트 라우터 등록 (POST /reports/render)
+if reports_router:
+    app.include_router(reports_router)
 
 app.add_middleware(
     CORSMiddleware,

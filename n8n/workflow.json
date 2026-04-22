@@ -1,0 +1,320 @@
+{
+  "name": "FortuneTab Premium Report Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "fortunetab-report",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": true,
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "node-webhook",
+      "name": "Webhook · from Supabase",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 320],
+      "webhookId": "fortunetab-report"
+    },
+    {
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "// 이 코드는 n8n/hmac-verify.js를 복붙한 것입니다. 원본 수정 시 동기화 필요.\nconst crypto = require('crypto');\nconst WEBHOOK_SECRET = $env.WEBHOOK_SHARED_SECRET ?? $vars?.WEBHOOK_SHARED_SECRET ?? '';\nif (!WEBHOOK_SECRET) throw new Error('WEBHOOK_SHARED_SECRET 미설정');\n\nconst input = $input.item.json ?? {};\nconst headers = input.headers ?? {};\nconst signature = headers['x-webhook-signature'] ?? headers['X-Webhook-Signature'] ?? '';\nif (!signature) throw new Error('X-Webhook-Signature 헤더 누락');\n\nlet bodyStr;\nconst binary = $input.item.binary?.data;\nif (binary?.data) {\n  bodyStr = Buffer.from(binary.data, 'base64').toString('utf8');\n} else if (typeof input.body === 'string') {\n  bodyStr = input.body;\n} else if (input.body && typeof input.body === 'object') {\n  bodyStr = JSON.stringify(input.body);\n} else {\n  bodyStr = JSON.stringify(input);\n}\n\nconst expected = crypto.createHmac('sha256', WEBHOOK_SECRET).update(bodyStr, 'utf8').digest('hex');\nconst a = Buffer.from(signature, 'hex');\nconst b = Buffer.from(expected, 'hex');\nif (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {\n  throw new Error(`HMAC 불일치 got=${signature.slice(0,12)}... expected=${expected.slice(0,12)}...`);\n}\nconst payload = typeof input.body === 'object' ? input.body : JSON.parse(bodyStr);\nreturn [{ json: payload }];"
+      },
+      "id": "node-hmac",
+      "name": "HMAC 검증",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 320]
+    },
+    {
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "// Claude ReportInput 구성 (5개 Sonnet 호출 공통 입력)\n// n8n/claude-prompts.js 의 buildSonnetRequest에 전달할 형식.\nconst p = $input.item.json;\nconst currentDate = new Date().toISOString().slice(0, 10);\nconst currentYear = new Date().getFullYear();\n\nconst reportInput = {\n  order_number: p.order_number,\n  user: {\n    name: p.user?.name ?? (p.saju_data?.name) ?? '고객',\n    gender: p.user?.gender ?? p.saju_data?.birthGender ?? 'male',\n    birth_date: p.user?.birth_date ?? p.saju_data?.birthDate ?? null,\n    birth_time: p.user?.birth_hour ?? p.saju_data?.birthTime ?? '자시',\n  },\n  current_year: currentYear,\n  current_date: currentDate,\n};\n\nif (!reportInput.user.birth_date) {\n  throw new Error('birth_date 없음. Edge Function payload 확인 필요.');\n}\n\nreturn [{\n  json: {\n    order_id: p.order_id,\n    order_number: p.order_number,\n    callback: p.callback,\n    report_input: reportInput,\n  },\n}];"
+      },
+      "id": "node-input-builder",
+      "name": "ReportInput 구성",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 320]
+    },
+    {
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "// ═════════════════════════════════════════════════════════════════\n// n8n/claude-prompts.js 의 핵심 함수만 인라인\n// (원본 수정 시 이 블록도 반드시 동기화)\n// ═════════════════════════════════════════════════════════════════\nconst MODEL_SONNET = 'claude-sonnet-4-6';\nconst BANNED = ['퓨처매핑','Future Mapping','면역맵','Immunity Map','120% 행복','120% happy','STEP 1','STEP 2','STEP 3','STEP 4','STEP 5','STEP 6'];\nconst FT_TERMS = ['Fortune Score','GROW 4법','발굴 세션','운명 흐름','수확 장면','지금 목소리','실행 브레이크','첫 싹','First Sprout'];\n\nconst SYSTEM_PROMPT = `당신은 한국 전통 사주명리학에 깊이 있는 해석가입니다.\n동양 명리(사주팔자·십신·신살·대운)를 기반으로, 개인의 구체적 상황에 닿는 조언을 합니다.\n\n[해석 원칙]\n1. 단정적 예언 금지. \"~할 수 있습니다\", \"~하는 경향이 있습니다\" 식으로 개연성 표현.\n2. 사주 분석은 참고 용도이며 전문 상담/의료/법률 결정을 대체하지 않음.\n3. 부정적 프레임 회피. 어려움도 \"어떻게 활용할 것인가\"로.\n4. 구체적 실천 가능한 조언. 추상적 미사여구 지양.\n5. 한국어 경어체. 독자를 \"당신\"으로.\n\n[금지어]\n${BANNED.map(t=>`- \"${t}\"`).join('\\n')}\n\n[FortuneTab 독자 용어 권장]\n${FT_TERMS.map(t=>`- ${t}`).join('\\n')}\n\n[출력 규칙]\n- 반드시 JSON 객체 하나만. 마크다운/코드펜스/설명 금지.\n- 모든 텍스트는 한국어. 한자 병기 가능 (예: \"庚申(경신)\").\n- 문장 완결형.`;\n\nfunction buildProfileBlock(input) {\n  const { user, current_year, current_date } = input;\n  const timeKo = typeof user.birth_time === 'number' ? `${user.birth_time}시 (24시간제)` : user.birth_time;\n  const genderKo = user.gender === 'male' ? '남자' : '여자';\n  return `[분석 대상]\\n- 이름: ${user.name}\\n- 성별: ${genderKo}\\n- 생년월일: ${user.birth_date} (양력)\\n- 출생 시간: ${timeKo}\\n\\n[기준 시점]\\n- 올해: ${current_year}년\\n- 오늘: ${current_date}\\n\\n[필수 계산 — 해석 전 내부에서]\\n1. 양력 ${user.birth_date} ${timeKo} 사주팔자 계산 (절기·자시 구분).\\n2. 일간 확정, 오행 분포, 용신 후보.\\n3. 대운 배열 + 현재 나이 대운 + 올해 세운.`;\n}\n\n// 각 섹션 프롬프트 (축약본 · 원본은 claude-prompts.js 참조)\nconst SECTION_PROMPTS = {\n  saju_core: `[작업] 이 사람의 사주 구조 분석.\\n[출력 JSON]\\n{\\n  \"four_pillars\": {\"year\":{\"hj\":\"\",\"ko\":\"\",\"element\":\"\"},\"month\":{...},\"day\":{...},\"hour\":{...}|null},\\n  \"day_master\": {\"stem\":\"\",\"element\":\"\",\"strength\":\"신강|신약|중화\",\"description\":\"2-3문장\"},\\n  \"five_elements\": {\"wood\":0,\"fire\":0,\"earth\":0,\"metal\":0,\"water\":0},\\n  \"yongsin\": {\"element\":\"\",\"reason\":\"1-2문장\"},\\n  \"sipsin_highlight\": [{\"position\":\"\",\"name\":\"\",\"meaning\":\"\"}],\\n  \"narrative\": \"500자 내외\"\\n}`,\n  annual_outlook: `[작업] 현재 대운 10년 + 올해 세운 분석.\\n[출력 JSON]\\n{\\n  \"current_daeun\": {\"period\":\"\",\"pillar_hj\":\"\",\"pillar_ko\":\"\",\"theme\":\"\",\"opportunities\":[],\"challenges\":[],\"transition_signs\":\"\"},\\n  \"next_daeun_preview\": {\"period\":\"\",\"pillar_hj\":\"\",\"one_line\":\"\"},\\n  \"annual_flow\": {\"year\":2026,\"seun_pillar\":\"\",\"theme\":\"\",\"quarters\":{\"q1\":\"\",\"q2\":\"\",\"q3\":\"\",\"q4\":\"\"},\"key_months\":[{\"month\":0,\"why\":\"\",\"action\":\"\"}]},\\n  \"narrative\": \"600자 내외\"\\n}`,\n  monthly_seun: `[작업] 1~12월 세운 분석. months 배열 정확히 12개.\\n[출력 JSON]\\n{\"months\":[{\"month\":1,\"seun_pillar_ko\":\"\",\"energy\":\"20자 이내\",\"focus\":\"\",\"watch_out\":\"\",\"keyword\":\"2-4자\",\"color_tone\":\"\"}]}`,\n  action_guide: `[작업] GROW 4법 실행 가이드.\\n[출력 JSON]\\n{\\n  \"grow_four\":{\"goal\":{\"title\":\"\",\"items\":[]},\"reality\":{\"title\":\"\",\"items\":[]},\"options\":{\"title\":\"\",\"items\":[]},\"will\":{\"title\":\"\",\"items\":[]}},\\n  \"weekly_habits\":[{\"day\":\"\",\"habit\":\"\"}],\\n  \"first_sprout\":\"3분 이내 실행 가능한 1문장\"\\n}`,\n  insight_highlight: `[작업] TOP 3 통찰 + 경고 + 한 줄 요약.\\n[출력 JSON]\\n{\\n  \"top_insights\":[{\"title\":\"12자 이내\",\"body\":\"100자 내외\"}],\\n  \"watchouts\":[{\"area\":\"\",\"caution\":\"\",\"timing\":\"\"}],\\n  \"one_line\":\"30자 이내\"\\n}`,\n};\n\nfunction buildSonnetRequest(section, input) {\n  return {\n    model: MODEL_SONNET,\n    max_tokens: section === 'monthly_seun' ? 6000 : 3500,\n    temperature: 0.7,\n    system: [\n      { type: 'text', text: SYSTEM_PROMPT },\n      { type: 'text', text: buildProfileBlock(input), cache_control: { type: 'ephemeral' } },\n    ],\n    messages: [{ role: 'user', content: SECTION_PROMPTS[section] }],\n  };\n}\n\nconst input = $input.item.json.report_input;\nconst sections = ['saju_core', 'annual_outlook', 'monthly_seun', 'action_guide', 'insight_highlight'];\n\nreturn sections.map(s => ({\n  json: {\n    section: s,\n    order_id: $input.item.json.order_id,\n    order_number: $input.item.json.order_number,\n    callback: $input.item.json.callback,\n    request: buildSonnetRequest(s, input),\n  },\n}));"
+      },
+      "id": "node-build-requests",
+      "name": "5개 Sonnet 요청 생성",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 320]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key", "value": "={{ $env.ANTHROPIC_API_KEY }}" },
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "anthropic-beta", "value": "prompt-caching-2024-07-31" },
+            { "name": "content-type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.request) }}",
+        "options": {
+          "timeout": 120000,
+          "retry": { "maxRetries": 2 }
+        }
+      },
+      "id": "node-claude-sonnet",
+      "name": "Claude Sonnet 4.6",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1120, 320]
+    },
+    {
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "// 5개 Sonnet 응답 집계\nconst items = $input.all();\nconst sections = {};\nlet orderId = null, orderNumber = null, callback = null;\n\nfor (const it of items) {\n  const section = it.json.section;\n  orderId = it.json.order_id;\n  orderNumber = it.json.order_number;\n  callback = it.json.callback;\n\n  const api = it.json; // HTTP Request 응답이 직접 병합됨\n  const text = api.content?.[0]?.text ?? api.body?.content?.[0]?.text ?? '';\n  const cleaned = text.replace(/^```json\\s*/i,'').replace(/^```\\s*/i,'').replace(/```\\s*$/i,'').trim();\n\n  try {\n    sections[section] = JSON.parse(cleaned);\n  } catch (e) {\n    throw new Error(`섹션 '${section}' JSON 파싱 실패: ${e.message}\\n응답 앞부분: ${cleaned.slice(0,200)}`);\n  }\n}\n\nreturn [{\n  json: {\n    order_id: orderId,\n    order_number: orderNumber,\n    callback,\n    sections,\n  },\n}];"
+      },
+      "id": "node-aggregate-sonnet",
+      "name": "Sonnet 결과 집계",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1340, 320]
+    },
+    {
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "// Haiku 검수 요청 생성\nconst MODEL_HAIKU = 'claude-haiku-4-5-20251001';\nconst BANNED = ['퓨처매핑','Future Mapping','면역맵','Immunity Map','120% 행복','120% happy'];\n\nconst HAIKU_SYSTEM = `당신은 FortuneTab 리포트 편집 검수자입니다.\n[검증] 1) 금지어 [${BANNED.join(', ')}] 교체  2) 단정적 예언 완화  3) 스키마 유효성  4) monthly_seun 12개  5) top_insights 3개\n[출력 JSON only]\n{\"ok\":true|false,\"issues\":[{\"section\":\"\",\"problem\":\"\",\"severity\":\"low|med|high\"}],\"fixed_sections\":{}}`;\n\nconst sections = $input.item.json.sections;\nconst userPrompt = `[검수 대상]\\n${JSON.stringify(sections, null, 2)}`;\n\nreturn [{\n  json: {\n    order_id: $input.item.json.order_id,\n    order_number: $input.item.json.order_number,\n    callback: $input.item.json.callback,\n    sections,\n    request: {\n      model: MODEL_HAIKU,\n      max_tokens: 8000,\n      temperature: 0.2,\n      system: HAIKU_SYSTEM,\n      messages: [{ role: 'user', content: userPrompt }],\n    },\n  },\n}];"
+      },
+      "id": "node-build-haiku",
+      "name": "Haiku 검수 요청 생성",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1560, 320]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key", "value": "={{ $env.ANTHROPIC_API_KEY }}" },
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "content-type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.request) }}",
+        "options": {
+          "timeout": 60000,
+          "retry": { "maxRetries": 1 }
+        }
+      },
+      "id": "node-claude-haiku",
+      "name": "Claude Haiku 검수",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1780, 320]
+    },
+    {
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "// Haiku 결과 적용 + 최종 섹션 확정\nconst apiResp = $input.item.json;\nconst text = apiResp.content?.[0]?.text ?? '';\nconst cleaned = text.replace(/^```json\\s*/i,'').replace(/^```\\s*/i,'').replace(/```\\s*$/i,'').trim();\n\nlet review = { ok: true, fixed_sections: {}, issues: [] };\ntry { review = JSON.parse(cleaned); }\ncatch (e) { console.warn('[haiku-review] 파싱 실패, 원본 섹션 사용:', e.message); }\n\nconst prev = $('Haiku 검수 요청 생성').first().json;\nconst merged = { ...prev.sections, ...(review.fixed_sections ?? {}) };\n\nreturn [{\n  json: {\n    order_id: prev.order_id,\n    order_number: prev.order_number,\n    callback: prev.callback,\n    review_issues: review.issues ?? [],\n    sections: merged,\n  },\n}];"
+      },
+      "id": "node-apply-haiku",
+      "name": "Haiku 결과 적용",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2000, 320]
+    },
+    {
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "// pdf_server /reports/render 요청 페이로드 구성\nconst s = $input.item.json.sections;\nconst orig = $('ReportInput 구성').first().json.report_input;\n\nconst payload = {\n  order_id: $input.item.json.order_id,\n  order_number: $input.item.json.order_number,\n  user: orig.user,\n  meta: {\n    current_year: orig.current_year,\n    issued_at: new Date().toLocaleDateString('ko-KR', { year:'numeric', month:'long', day:'numeric' }),\n  },\n  saju_core: s.saju_core,\n  annual_outlook: s.annual_outlook,\n  monthly_seun: s.monthly_seun,\n  action_guide: s.action_guide,\n  insight_highlight: s.insight_highlight,\n};\n\nreturn [{\n  json: {\n    order_id: $input.item.json.order_id,\n    order_number: $input.item.json.order_number,\n    callback: $input.item.json.callback,\n    sections: s,\n    review_issues: $input.item.json.review_issues,\n    render_payload: payload,\n  },\n}];"
+      },
+      "id": "node-build-render",
+      "name": "렌더 페이로드 구성",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [240, 520]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.PDF_SERVER_URL }}/reports/render",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "X-Render-Secret", "value": "={{ $env.REPORT_RENDER_SECRET ?? '' }}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.render_payload) }}",
+        "options": {
+          "timeout": 60000,
+          "response": {
+            "response": { "responseFormat": "file", "outputPropertyName": "pdf" }
+          }
+        }
+      },
+      "id": "node-render-pdf",
+      "name": "pdf_server /reports/render",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 520]
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/volume1/reports/{{ $json.order_id }}.pdf",
+        "dataPropertyName": "pdf",
+        "options": {}
+      },
+      "id": "node-write-file",
+      "name": "NAS 저장 /volume1/reports",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [680, 520]
+    },
+    {
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "// Supabase REST PATCH 페이로드 (orders.report_file_url + report_json)\nconst order_id = $('렌더 페이로드 구성').first().json.order_id;\nconst sections = $('렌더 페이로드 구성').first().json.sections;\nconst reviewIssues = $('렌더 페이로드 구성').first().json.review_issues;\n\n// NAS 파일의 외부 접근 URL — 사용자 환경 맞춤 (예: 리버스 프록시 /r/<order>.pdf)\nconst NAS_PUBLIC_BASE = $env.NAS_REPORT_PUBLIC_BASE ?? 'https://reports.fortunetab.com/r';\nconst publicUrl = `${NAS_PUBLIC_BASE}/${order_id}.pdf`;\n\nreturn [{\n  json: {\n    order_id,\n    callback: $('렌더 페이로드 구성').first().json.callback,\n    patch_body: {\n      report_file_url: publicUrl,\n      report_json: { ...sections, _review_issues: reviewIssues ?? [] },\n    },\n  },\n}];"
+      },
+      "id": "node-build-patch",
+      "name": "Supabase PATCH 구성",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 520]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://cwnzezlgtcqkmnyojhbd.supabase.co/rest/v1/orders?id=eq.{{ $json.order_id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $json.callback.service_role_bearer }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $json.callback.service_role_bearer }}" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.patch_body) }}",
+        "options": { "timeout": 30000 }
+      },
+      "id": "node-supabase-patch",
+      "name": "Supabase UPDATE orders",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1120, 520]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Supabase PATCH 구성').first().json.callback.send_email_url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $('Supabase PATCH 구성').first().json.callback.service_role_bearer }}" },
+            { "name": "apikey", "value": "={{ $('Supabase PATCH 구성').first().json.callback.service_role_bearer }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ order_id: $('Supabase PATCH 구성').first().json.order_id }) }}",
+        "options": { "timeout": 30000 }
+      },
+      "id": "node-send-email",
+      "name": "send-report-email 콜백",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1340, 520]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: true, order_id: $('Supabase PATCH 구성').first().json.order_id }) }}",
+        "options": { "responseCode": 200 }
+      },
+      "id": "node-respond",
+      "name": "Webhook 응답",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1560, 520]
+    }
+  ],
+  "connections": {
+    "Webhook · from Supabase": {
+      "main": [[{ "node": "HMAC 검증", "type": "main", "index": 0 }]]
+    },
+    "HMAC 검증": {
+      "main": [[{ "node": "ReportInput 구성", "type": "main", "index": 0 }]]
+    },
+    "ReportInput 구성": {
+      "main": [[{ "node": "5개 Sonnet 요청 생성", "type": "main", "index": 0 }]]
+    },
+    "5개 Sonnet 요청 생성": {
+      "main": [[{ "node": "Claude Sonnet 4.6", "type": "main", "index": 0 }]]
+    },
+    "Claude Sonnet 4.6": {
+      "main": [[{ "node": "Sonnet 결과 집계", "type": "main", "index": 0 }]]
+    },
+    "Sonnet 결과 집계": {
+      "main": [[{ "node": "Haiku 검수 요청 생성", "type": "main", "index": 0 }]]
+    },
+    "Haiku 검수 요청 생성": {
+      "main": [[{ "node": "Claude Haiku 검수", "type": "main", "index": 0 }]]
+    },
+    "Claude Haiku 검수": {
+      "main": [[{ "node": "Haiku 결과 적용", "type": "main", "index": 0 }]]
+    },
+    "Haiku 결과 적용": {
+      "main": [[{ "node": "렌더 페이로드 구성", "type": "main", "index": 0 }]]
+    },
+    "렌더 페이로드 구성": {
+      "main": [[{ "node": "pdf_server /reports/render", "type": "main", "index": 0 }]]
+    },
+    "pdf_server /reports/render": {
+      "main": [[{ "node": "NAS 저장 /volume1/reports", "type": "main", "index": 0 }]]
+    },
+    "NAS 저장 /volume1/reports": {
+      "main": [[{ "node": "Supabase PATCH 구성", "type": "main", "index": 0 }]]
+    },
+    "Supabase PATCH 구성": {
+      "main": [[{ "node": "Supabase UPDATE orders", "type": "main", "index": 0 }]]
+    },
+    "Supabase UPDATE orders": {
+      "main": [[{ "node": "send-report-email 콜백", "type": "main", "index": 0 }]]
+    },
+    "send-report-email 콜백": {
+      "main": [[{ "node": "Webhook 응답", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "description": "FortuneTab 유료 사주 심층 리포트 자동 생성 파이프라인 (Phase 2).\n결제→confirm-payment→generate-premium-report→이 워크플로→pdf_server→send-report-email.\n상세 설치 가이드: n8n/README.md"
+  }
+}
