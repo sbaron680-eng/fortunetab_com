@@ -306,7 +306,7 @@ function buildSonnetRequest(section, input) {
   }
   return {
     model: MODEL_SONNET,
-    max_tokens: section === 'monthly_seun' ? 6000 : 3500,
+    max_tokens: section === 'monthly_seun' ? 8000 : 5000,
     temperature: 0.7,
     system: [
       { type: 'text', text: SYSTEM_PROMPT },
