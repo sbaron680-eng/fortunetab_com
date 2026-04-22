@@ -8,10 +8,12 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { generatePDF } from './generate.js';
 import { handleFortune, type FortuneRequest } from './fortune.js';
+import { handleRenderReport, handleReportHealth } from './reports.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
-app.use(express.json());
+// 기본 express.json() 은 100kb 제한 — 심층 리포트 페이로드는 5개 섹션 JSON 합쳐 100kb 초과 가능
+app.use(express.json({ limit: '2mb' }));
 app.use(cors({ origin: ['http://localhost:3000', 'https://fortunetab.com'] }));
 
 let generating = false;
@@ -65,6 +67,10 @@ app.get('/download/:fileName', (req, res) => {
     }
   });
 });
+
+// ── 심층 리포트 렌더 (Phase 2: n8n → Claude 5섹션 JSON → PDF) ──
+app.get('/reports/health', handleReportHealth);
+app.post('/reports/render', handleRenderReport);
 
 // ── 토스페이먼츠 결제 승인 API ────────────────────────────────────
 app.post('/payments/confirm', async (req, res) => {

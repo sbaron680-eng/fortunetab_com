@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>FortuneTab 심층 리포트 — {{ user.name }}</title>
+<style>
+  /* ═════════════════════════════════════════════════════════════════════
+     FortuneTab 심층 리포트 · WeasyPrint용 CSS
+     A4 세로, 5 섹션 (cover / insight / saju_core / annual / monthly / action)
+     폰트: NAS Docker에 NanumGothic 또는 Noto Sans CJK KR 사전 설치 전제.
+     ═════════════════════════════════════════════════════════════════════ */
+
+  @page {
+    size: A4 portrait;
+    margin: 18mm 16mm 20mm 16mm;
+    @bottom-center {
+      content: "FortuneTab · " counter(page) " / " counter(pages);
+      font-family: "NanumGothic", "Noto Sans CJK KR", sans-serif;
+      font-size: 9pt;
+      color: #999;
+    }
+  }
+  @page cover {
+    margin: 0;
+    @bottom-center { content: ""; }
+  }
+
+  * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  html, body {
+    font-family: "NanumGothic", "Noto Sans CJK KR", "Malgun Gothic", sans-serif;
+    font-size: 10.5pt;
+    color: #1a1a2e;
+    line-height: 1.65;
+    margin: 0;
+    padding: 0;
+  }
+
+  h1, h2, h3, h4 { font-weight: 700; color: #1a1a2e; margin: 0 0 6pt; }
+  h1 { font-size: 22pt; letter-spacing: -0.3pt; }
+  h2 { font-size: 16pt; border-left: 4pt solid #f0c040; padding-left: 10pt; margin-bottom: 14pt; }
+  h3 { font-size: 12pt; color: #4b4e8a; margin-top: 14pt; }
+  p  { margin: 0 0 8pt; }
+
+  .muted { color: #888; }
+  .gold  { color: #b8860b; font-weight: 700; }
+  .hanja { color: #555; font-size: 0.92em; }
+
+  /* ─── 페이지 분리 ─────────────────────────────────────────────────── */
+  .page-break { page-break-before: always; }
+
+  /* ─── 커버 ────────────────────────────────────────────────────────── */
+  section.cover {
+    page: cover;
+    page-break-after: always;
+    height: 297mm;
+    width: 210mm;
+    background: linear-gradient(160deg, #1e1b4b 0%, #312e81 70%, #4338ca 100%);
+    color: #fff;
+    padding: 45mm 22mm;
+    position: relative;
+  }
+  .cover .moon {
+    position: absolute; top: 28mm; right: 22mm;
+    width: 28mm; height: 28mm; border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #fde68a, #f59e0b);
+    box-shadow: 0 0 14mm 2mm rgba(253, 224, 71, 0.25);
+  }
+  .cover .eyebrow {
+    font-size: 10pt; letter-spacing: 4pt; color: #fcd34d; text-transform: uppercase;
+  }
+  .cover .title {
+    font-size: 28pt; font-weight: 800; margin-top: 6mm; line-height: 1.3;
+  }
+  .cover .title .name { color: #fcd34d; }
+  .cover .meta {
+    position: absolute; bottom: 30mm; left: 22mm; right: 22mm;
+    border-top: 1pt solid rgba(253, 224, 71, 0.35); padding-top: 6mm;
+    font-size: 10pt; color: #d1d5db;
+    display: flex; justify-content: space-between;
+  }
+  .cover .disclaimer {
+    position: absolute; bottom: 14mm; left: 22mm; right: 22mm;
+    font-size: 8.5pt; color: #9ca3af; text-align: center;
+  }
+
+  /* ─── 공통 섹션 헤더 ──────────────────────────────────────────────── */
+  .section-head { margin-bottom: 14pt; }
+  .section-head .label {
+    font-size: 9.5pt; letter-spacing: 2pt; color: #b8860b; text-transform: uppercase;
+  }
+
+  /* ─── 통찰 (TOP 3 + 경고) ─────────────────────────────────────────── */
+  .oneliner {
+    background: #fdf6e3; border: 1pt solid #f0c040; border-radius: 6pt;
+    padding: 14pt 16pt; margin-bottom: 14pt;
+    font-size: 12pt; font-weight: 700; text-align: center;
+    color: #78350f;
+  }
+  .insight-card {
+    background: #f8f7f2; border-left: 3pt solid #f0c040;
+    padding: 10pt 14pt; margin-bottom: 8pt; border-radius: 3pt;
+  }
+  .insight-card .t { font-weight: 700; color: #1a1a2e; margin-bottom: 3pt; }
+  .insight-card .b { font-size: 10pt; color: #4b4b4b; }
+
+  .watchout {
+    background: #fff7ed; border-left: 3pt solid #f97316;
+    padding: 8pt 12pt; margin-top: 6pt; font-size: 9.5pt;
+    border-radius: 3pt;
+  }
+  .watchout .area { font-weight: 700; color: #9a3412; }
+
+  /* ─── 사주 구조 ──────────────────────────────────────────────────── */
+  .pillars {
+    display: table; width: 100%; border-collapse: collapse; margin-bottom: 14pt;
+  }
+  .pillars .pillar {
+    display: table-cell; width: 25%; text-align: center;
+    border: 1pt solid #e5e7eb; padding: 10pt 6pt; background: #fafafa;
+  }
+  .pillars .pillar .ph { font-size: 9pt; color: #6b7280; margin-bottom: 6pt; }
+  .pillars .pillar .hj { font-size: 20pt; font-weight: 700; color: #1a1a2e; }
+  .pillars .pillar .ko { font-size: 10pt; color: #4b5563; margin-top: 2pt; }
+  .pillars .pillar .el { font-size: 9pt; color: #b8860b; margin-top: 4pt; }
+
+  .kv-grid { display: table; width: 100%; margin-bottom: 10pt; }
+  .kv-grid .kv { display: table-cell; padding: 6pt 10pt; background: #f5f5f0; width: 50%; }
+  .kv-grid .kv .k { font-size: 9pt; color: #6b7280; }
+  .kv-grid .kv .v { font-size: 11pt; font-weight: 700; color: #1a1a2e; margin-top: 2pt; }
+
+  .elements-bar {
+    display: table; width: 100%; margin: 8pt 0 14pt; table-layout: fixed;
+  }
+  .elements-bar .el-cell {
+    display: table-cell; text-align: center; padding: 6pt 2pt;
+    font-size: 9pt;
+  }
+  .elements-bar .el-cell .num {
+    font-size: 14pt; font-weight: 700; color: #fff;
+    display: block; padding: 8pt 0; border-radius: 4pt 4pt 0 0;
+  }
+  .elements-bar .el-cell .name { color: #4b5563; padding-top: 3pt; }
+  .el-wood  .num { background: #059669; }
+  .el-fire  .num { background: #dc2626; }
+  .el-earth .num { background: #b45309; }
+  .el-metal .num { background: #6b7280; }
+  .el-water .num { background: #1e40af; }
+
+  /* ─── 대운 / 연운 ─────────────────────────────────────────────────── */
+  .daeun-box {
+    background: #f5f3ff; border: 1pt solid #c7d2fe; border-radius: 5pt;
+    padding: 12pt 14pt; margin-bottom: 10pt;
+  }
+  .daeun-box .period { font-size: 11pt; font-weight: 700; color: #4338ca; }
+  .daeun-box .theme { margin: 4pt 0 8pt; color: #312e81; }
+
+  .quarter-grid { display: table; width: 100%; table-layout: fixed; }
+  .quarter-grid .q {
+    display: table-cell; width: 25%; padding: 8pt; vertical-align: top;
+    border: 1pt solid #e5e7eb; font-size: 9.5pt;
+  }
+  .quarter-grid .q .qlabel { font-size: 9pt; color: #b8860b; font-weight: 700; margin-bottom: 3pt; }
+
+  ul.keylist { padding-left: 16pt; margin: 4pt 0 8pt; }
+  ul.keylist li { margin-bottom: 3pt; font-size: 10pt; }
+
+  /* ─── 월별 세운 ───────────────────────────────────────────────────── */
+  .month-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6pt 10pt;
+  }
+  .month-card {
+    border: 1pt solid #e5e7eb; border-radius: 4pt; padding: 8pt 10pt;
+    background: #fafafa;
+    page-break-inside: avoid;
+  }
+  .month-card .head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 4pt;
+  }
+  .month-card .num { font-size: 14pt; font-weight: 800; color: #4338ca; }
+  .month-card .pillar { font-size: 9pt; color: #6b7280; }
+  .month-card .keyword {
+    display: inline-block; background: #fdf6e3; color: #78350f;
+    padding: 2pt 6pt; border-radius: 3pt; font-size: 9pt; font-weight: 700;
+    margin-bottom: 4pt;
+  }
+  .month-card .energy { font-size: 10pt; font-weight: 700; margin-bottom: 4pt; }
+  .month-card .focus,
+  .month-card .watch { font-size: 9.5pt; color: #4b5563; margin-bottom: 2pt; }
+  .month-card .watch { color: #9a3412; }
+
+  /* ─── 행동 가이드 (GROW 4법) ─────────────────────────────────────── */
+  .grow-grid { display: table; width: 100%; table-layout: fixed; margin-bottom: 12pt; }
+  .grow-cell {
+    display: table-cell; width: 50%; padding: 10pt; vertical-align: top;
+    border: 1pt solid #e5e7eb;
+  }
+  .grow-cell .title { font-weight: 700; color: #4338ca; margin-bottom: 6pt; font-size: 10.5pt; }
+
+  .first-sprout {
+    background: linear-gradient(90deg, #fff7ed 0%, #fef3c7 100%);
+    border: 1pt solid #f59e0b; border-radius: 5pt;
+    padding: 14pt 16pt; margin-top: 10pt;
+    font-size: 11pt;
+  }
+  .first-sprout .label { font-size: 9pt; letter-spacing: 2pt; color: #9a3412; font-weight: 700; }
+  .first-sprout .body { margin-top: 4pt; color: #78350f; font-weight: 700; }
+
+  .weekly-habits { margin-top: 10pt; font-size: 9.5pt; }
+  .weekly-habits .row { padding: 4pt 0; border-bottom: 1pt dotted #e5e7eb; }
+  .weekly-habits .day { display: inline-block; width: 28pt; font-weight: 700; color: #4338ca; }
+
+  /* ─── 푸터 면책 ───────────────────────────────────────────────────── */
+  .foot-disclaimer {
+    margin-top: 18pt; padding-top: 8pt; border-top: 1pt solid #e5e7eb;
+    font-size: 8.5pt; color: #9ca3af; text-align: center; line-height: 1.5;
+  }
+
+  .narrative {
+    background: #fbfaf5; border-radius: 4pt; padding: 12pt 14pt;
+    font-size: 10pt; line-height: 1.8; color: #2d2d2d;
+    white-space: pre-wrap;
+  }
+</style>
+</head>
+<body>
+
+{# ═══════════════════════════════════════════════════════════════════════
+   PAGE 1 — 커버
+   ═══════════════════════════════════════════════════════════════════════ #}
+<section class="cover">
+  <div class="moon"></div>
+  <div class="eyebrow">FORTUNETAB · 사주 심층 리포트</div>
+  <div class="title">
+    <span class="name">{{ user.name }}</span>님의<br>
+    {{ meta.current_year }}년 운명 흐름
+  </div>
+  <div class="meta">
+    <div>
+      <div class="muted">주문번호</div>
+      <div>{{ order_number }}</div>
+    </div>
+    <div>
+      <div class="muted">발행일</div>
+      <div>{{ meta.issued_at }}</div>
+    </div>
+    <div>
+      <div class="muted">생년월일시</div>
+      <div>{{ user.birth_date }} · {{ user.birth_time }}</div>
+    </div>
+  </div>
+  <div class="disclaimer">
+    본 분석은 참고 용도이며, 전문 상담이나 의료·법률 결정을 대체하지 않습니다.
+  </div>
+</section>
+
+{# ═══════════════════════════════════════════════════════════════════════
+   PAGE 2 — 핵심 통찰 (insight_highlight)
+   ═══════════════════════════════════════════════════════════════════════ #}
+<section>
+  <div class="section-head">
+    <div class="label">01 · INSIGHT</div>
+    <h2>올해의 한 줄, 그리고 세 가지 통찰</h2>
+  </div>
+
+  <div class="oneliner">{{ insight_highlight.one_line }}</div>
+
+  {% for it in insight_highlight.top_insights %}
+  <div class="insight-card">
+    <div class="t">{{ loop.index }}. {{ it.title }}</div>
+    <div class="b">{{ it.body }}</div>
+  </div>
+  {% endfor %}
+
+  <h3 style="margin-top:18pt;">주의할 지점</h3>
+  {% for w in insight_highlight.watchouts %}
+  <div class="watchout">
+    <span class="area">{{ w.area }}</span> · {{ w.caution }}
+    {% if w.timing %}<span class="muted"> · {{ w.timing }}</span>{% endif %}
+  </div>
+  {% endfor %}
+</section>
+
+{# ═══════════════════════════════════════════════════════════════════════
+   PAGE 3 — 사주 구조 (saju_core)
+   ═══════════════════════════════════════════════════════════════════════ #}
+<section class="page-break">
+  <div class="section-head">
+    <div class="label">02 · SAJU STRUCTURE</div>
+    <h2>사주 구조 · 당신의 원형</h2>
+  </div>
+
+  <div class="pillars">
+    {% for p in [saju_core.four_pillars.year, saju_core.four_pillars.month, saju_core.four_pillars.day, saju_core.four_pillars.hour] %}
+      {% set labels = ['연주(年)','월주(月)','일주(日)','시주(時)'] %}
+      <div class="pillar">
+        <div class="ph">{{ labels[loop.index0] }}</div>
+        {% if p %}
+          <div class="hj">{{ p.hj }}</div>
+          <div class="ko">{{ p.ko }}</div>
+          <div class="el">{{ p.element }}</div>
+        {% else %}
+          <div class="hj muted">—</div>
+          <div class="ko muted">시간 미입력</div>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="kv-grid">
+    <div class="kv">
+      <div class="k">일간 (나를 나타내는 천간)</div>
+      <div class="v">{{ saju_core.day_master.stem }} · {{ saju_core.day_master.element }}</div>
+    </div>
+    <div class="kv">
+      <div class="k">일간 강약</div>
+      <div class="v">{{ saju_core.day_master.strength }}</div>
+    </div>
+  </div>
+
+  <h3>오행 분포</h3>
+  <div class="elements-bar">
+    {% for row in [
+      ['wood', '목(木)', 'el-wood'],
+      ['fire', '화(火)', 'el-fire'],
+      ['earth', '토(土)', 'el-earth'],
+      ['metal', '금(金)', 'el-metal'],
+      ['water', '수(水)', 'el-water']
+    ] %}
+    <div class="el-cell {{ row[2] }}">
+      <span class="num">{{ saju_core.five_elements[row[0]] }}</span>
+      <div class="name">{{ row[1] }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="kv-grid">
+    <div class="kv">
+      <div class="k">용신(用神)</div>
+      <div class="v gold">{{ saju_core.yongsin.element }}</div>
+    </div>
+    <div class="kv">
+      <div class="k">용신 선정 근거</div>
+      <div class="v" style="font-size:9.5pt;">{{ saju_core.yongsin.reason }}</div>
+    </div>
+  </div>
+
+  {% if saju_core.sipsin_highlight %}
+  <h3>십신 포인트</h3>
+  <ul class="keylist">
+    {% for s in saju_core.sipsin_highlight %}
+    <li><b>{{ s.position }}</b> · {{ s.name }} — {{ s.meaning }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  <h3>일간 해석</h3>
+  <div class="narrative">{{ saju_core.day_master.description }}</div>
+
+  <h3 style="margin-top:16pt;">큰 그림</h3>
+  <div class="narrative">{{ saju_core.narrative }}</div>
+</section>
+
+{# ═══════════════════════════════════════════════════════════════════════
+   PAGE 4 — 연간 · 대운 (annual_outlook)
+   ═══════════════════════════════════════════════════════════════════════ #}
+<section class="page-break">
+  <div class="section-head">
+    <div class="label">03 · ANNUAL · DAEUN</div>
+    <h2>{{ meta.current_year }}년 흐름 · 10년 대운</h2>
+  </div>
+
+  <div class="daeun-box">
+    <div class="period">현재 대운 · {{ annual_outlook.current_daeun.period }} · {{ annual_outlook.current_daeun.pillar_hj }}({{ annual_outlook.current_daeun.pillar_ko }})</div>
+    <div class="theme">{{ annual_outlook.current_daeun.theme }}</div>
+
+    <h3 style="margin-top:10pt;">기회</h3>
+    <ul class="keylist">
+      {% for o in annual_outlook.current_daeun.opportunities %}<li>{{ o }}</li>{% endfor %}
+    </ul>
+
+    {% if annual_outlook.current_daeun.challenges %}
+    <h3>과제</h3>
+    <ul class="keylist">
+      {% for c in annual_outlook.current_daeun.challenges %}<li>{{ c }}</li>{% endfor %}
+    </ul>
+    {% endif %}
+
+    {% if annual_outlook.current_daeun.transition_signs %}
+    <h3>전환의 신호</h3>
+    <p style="font-size:10pt;">{{ annual_outlook.current_daeun.transition_signs }}</p>
+    {% endif %}
+  </div>
+
+  {% if annual_outlook.next_daeun_preview %}
+  <div class="daeun-box" style="background:#f0fdf4; border-color:#86efac;">
+    <div class="period" style="color:#166534;">다음 대운 예고 · {{ annual_outlook.next_daeun_preview.period }} · {{ annual_outlook.next_daeun_preview.pillar_hj }}</div>
+    <div class="theme" style="color:#14532d;">{{ annual_outlook.next_daeun_preview.one_line }}</div>
+  </div>
+  {% endif %}
+
+  <h3 style="margin-top:14pt;">{{ annual_outlook.annual_flow.year }}년 세운 · {{ annual_outlook.annual_flow.seun_pillar }}</h3>
+  <p><b class="gold">주제:</b> {{ annual_outlook.annual_flow.theme }}</p>
+
+  <div class="quarter-grid">
+    {% for row in [['q1', '1분기 · 1~3월'], ['q2', '2분기 · 4~6월'], ['q3', '3분기 · 7~9월'], ['q4', '4분기 · 10~12월']] %}
+    <div class="q">
+      <div class="qlabel">{{ row[1] }}</div>
+      <div>{{ annual_outlook.annual_flow.quarters[row[0]] }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% if annual_outlook.annual_flow.key_months %}
+  <h3>주요 시기</h3>
+  <ul class="keylist">
+    {% for km in annual_outlook.annual_flow.key_months %}
+    <li><b>{{ km.month }}월</b> — {{ km.why }} <span class="muted">(권장: {{ km.action }})</span></li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  <h3 style="margin-top:14pt;">내러티브</h3>
+  <div class="narrative">{{ annual_outlook.narrative }}</div>
+</section>
+
+{# ═══════════════════════════════════════════════════════════════════════
+   PAGE 5~6 — 월별 세운 12개 (monthly_seun)
+   ═══════════════════════════════════════════════════════════════════════ #}
+<section class="page-break">
+  <div class="section-head">
+    <div class="label">04 · MONTHLY FLOW</div>
+    <h2>{{ meta.current_year }}년 월별 세운</h2>
+  </div>
+
+  <div class="month-grid">
+    {% for m in monthly_seun.months %}
+    <div class="month-card">
+      <div class="head">
+        <span class="num">{{ m.month }}월</span>
+        <span class="pillar">{{ m.seun_pillar_ko }}</span>
+      </div>
+      <div class="keyword">#{{ m.keyword }}</div>
+      <div class="energy">{{ m.energy }}</div>
+      <div class="focus"><b>집중:</b> {{ m.focus }}</div>
+      <div class="watch"><b>주의:</b> {{ m.watch_out }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+{# ═══════════════════════════════════════════════════════════════════════
+   PAGE 7 — 행동 가이드 (action_guide)
+   ═══════════════════════════════════════════════════════════════════════ #}
+<section class="page-break">
+  <div class="section-head">
+    <div class="label">05 · ACTION · GROW 4법</div>
+    <h2>실행 가이드 · 첫 싹에서 결실까지</h2>
+  </div>
+
+  <div class="grow-grid">
+    <div class="grow-cell">
+      <div class="title">G · {{ action_guide.grow_four.goal.title }}</div>
+      <ul class="keylist">
+        {% for i in action_guide.grow_four.goal.items %}<li>{{ i }}</li>{% endfor %}
+      </ul>
+    </div>
+    <div class="grow-cell">
+      <div class="title">R · {{ action_guide.grow_four.reality.title }}</div>
+      <ul class="keylist">
+        {% for i in action_guide.grow_four.reality.items %}<li>{{ i }}</li>{% endfor %}
+      </ul>
+    </div>
+  </div>
+  <div class="grow-grid">
+    <div class="grow-cell">
+      <div class="title">O · {{ action_guide.grow_four.options.title }}</div>
+      <ul class="keylist">
+        {% for i in action_guide.grow_four.options.items %}<li>{{ i }}</li>{% endfor %}
+      </ul>
+    </div>
+    <div class="grow-cell">
+      <div class="title">W · {{ action_guide.grow_four.will.title }}</div>
+      <ul class="keylist">
+        {% for i in action_guide.grow_four.will.items %}<li>{{ i }}</li>{% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  {% if action_guide.weekly_habits %}
+  <h3>주간 리듬</h3>
+  <div class="weekly-habits">
+    {% for h in action_guide.weekly_habits %}
+    <div class="row"><span class="day">{{ h.day }}</span>{{ h.habit }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="first-sprout">
+    <div class="label">🌱 FIRST SPROUT · 첫 싹</div>
+    <div class="body">{{ action_guide.first_sprout }}</div>
+  </div>
+
+  <div class="foot-disclaimer">
+    본 분석은 참고 용도이며, 전문 상담이나 의료·법률·재무 의사결정을 대체하지 않습니다.<br>
+    © FortuneTab · fortunetab.com · 발행 {{ meta.issued_at }}
+  </div>
+</section>
+
+</body>
+</html>

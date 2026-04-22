@@ -13,6 +13,8 @@ services:
     environment:
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - TOSS_SECRET_KEY=${TOSS_SECRET_KEY}
+      - TOSS_PAYPAL_SECRET_KEY=${TOSS_PAYPAL_SECRET_KEY}
+      - REPORT_RENDER_SECRET=${REPORT_RENDER_SECRET}
       - PDF_SERVER_HOST=0.0.0.0
       - PDF_SERVER_PORT=4001
     restart: unless-stopped
@@ -22,4 +24,4 @@ services:
 networks:
   fortunetab:
     external: true
-    name: n8n_default  # n8n이 사용하는 Docker 네트워크에 합류
+    name: n8n-docker_n8n_network  # 실제 n8n 네트워크 이름 (2026-04-22 확인)
