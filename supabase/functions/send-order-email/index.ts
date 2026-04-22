@@ -135,8 +135,9 @@ Deno.serve(async (req: Request) => {
 
 // ── 이메일 HTML 템플릿 ───────────────────────────────────────────────────────
 
-// 프리미엄 사주 리포트 발송 SLA (일 단위) — 변경 포인트
-const REPORT_SLA_DAYS = 14;
+// 유료 PDF NAS 보관 기간 (일) · 리포트 자동 생성 ETA 문구
+const STORAGE_DAYS = 32;
+const REPORT_ETA = '평균 5~10분 이내';
 
 function buildEmailHtml(params: {
   userName: string;
@@ -147,7 +148,7 @@ function buildEmailHtml(params: {
   hasPremium: boolean;
 }): string {
   const { userName, orderNumber, total, downloadUrl, hasFile, hasPremium } = params;
-  const formattedTotal = total > 0 ? `₩${total.toLocaleString('ko-KR')}` : '무료';
+  const formattedTotal = total > 0 ? `&#8361;${total.toLocaleString('ko-KR')}` : '무료';
 
   return `
 <!DOCTYPE html>
@@ -186,7 +187,7 @@ function buildEmailHtml(params: {
 
     ${hasFile ? `
     <p style="font-size:11px;color:#999;text-align:center;margin-top:12px;">
-      ⏰ PDF 파일은 발송일로부터 30일간 보관됩니다. 수신 후 즉시 다운로드해 주세요.
+      ⏰ PDF 파일은 NAS에서 <b>${STORAGE_DAYS}일간 보관</b>되며, 이후 자동 삭제됩니다. 수신 후 가급적 빠르게 다운로드해 주세요.
     </p>
     ` : `
     <p style="font-size:11px;color:#999;text-align:center;margin-top:12px;">
@@ -201,11 +202,11 @@ function buildEmailHtml(params: {
         📖 사주 심층 리포트는 별도로 발송됩니다
       </p>
       <p style="font-size:12.5px;color:#666;line-height:1.6;margin:0;">
-        프리미엄 구매 고객님께는 <b>결제일로부터 ${REPORT_SLA_DAYS}일 이내</b>에
-        사주 구조·10년 대운·월별 세운 분석이 담긴 심층 리포트 PDF를
-        이 이메일 주소로 별도 발송해드립니다.<br/>
+        프리미엄 구매 고객님께는 <b>${REPORT_ETA}</b>
+        사주 구조·10년 대운·월별 세운 분석이 담긴 심층 리포트 PDF가
+        <b>AI로 자동 생성되어</b> 이 이메일 주소로 별도 발송됩니다.<br/>
         <span style="font-size:11px;color:#999;">
-          리포트가 ${REPORT_SLA_DAYS}일을 초과해 도착하지 않으면
+          30분이 지나도 리포트가 도착하지 않으면
           <a href="mailto:sbaron680@gmail.com" style="color:#1a1a2e;">고객지원</a>으로 문의해 주세요.
         </span>
       </p>
