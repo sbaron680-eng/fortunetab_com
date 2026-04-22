@@ -204,8 +204,8 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "apikey", "value": "={{ $json.callback.service_role_bearer }}" },
-            { "name": "Authorization", "value": "=Bearer {{ $json.callback.service_role_bearer }}" },
+            { "name": "apikey", "value": "={{ $env.SUPABASE_FT_SERVICE_ROLE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_FT_SERVICE_ROLE_KEY }}" },
             { "name": "Content-Type", "value": "application/json" },
             { "name": "Prefer", "value": "return=minimal" }
           ]
@@ -228,8 +228,8 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Authorization", "value": "=Bearer {{ $('Supabase PATCH 구성').first().json.callback.service_role_bearer }}" },
-            { "name": "apikey", "value": "={{ $('Supabase PATCH 구성').first().json.callback.service_role_bearer }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_FT_SERVICE_ROLE_KEY }}" },
+            { "name": "apikey", "value": "={{ $env.SUPABASE_FT_SERVICE_ROLE_KEY }}" },
             { "name": "Content-Type", "value": "application/json" }
           ]
         },

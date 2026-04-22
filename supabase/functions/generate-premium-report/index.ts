@@ -123,7 +123,6 @@ Deno.serve(async (req: Request) => {
       },
       callback: {
         send_email_url: `${SUPABASE_URL}/functions/v1/send-report-email`,
-        service_role_bearer: SUPABASE_SERVICE_ROLE_KEY,
       },
       requested_at: new Date().toISOString(),
     };
