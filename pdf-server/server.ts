@@ -5,6 +5,7 @@ dotenv.config({ path: join(dirname(toPath(import.meta.url)), '.env') });
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { generatePDF } from './generate.js';
 import { handleFortune, type FortuneRequest } from './fortune.js';
@@ -71,6 +72,58 @@ app.get('/download/:fileName', (req, res) => {
 // ── 심층 리포트 렌더 (Phase 2: n8n → Claude 5섹션 JSON → PDF) ──
 app.get('/reports/health', handleReportHealth);
 app.post('/reports/render', handleRenderReport);
+
+// ── 심층 리포트 정적 서빙 (Cloudflare Tunnel → reports.fortunetab.com/r/:id.pdf) ──
+//
+// 설계 원칙:
+//   - n8n이 /volume1/docker/fortunetab/reports/{uuid}.pdf 에 저장한 파일을 돌려준다.
+//     (이 컨테이너 관점에서는 REPORT_DIR 볼륨 마운트 = /reports)
+//   - 이메일로 전달되는 링크이므로 URL 유출 전제. UUID v4는 122 bits 엔트로피라 무차별대입 불가능.
+//   - 32일 후 NAS 크론으로 파일 삭제 → 404. 서명 URL까지는 오버킬.
+//
+// 보안 관점:
+//   - path traversal (../, 절대경로, NULL byte)
+//   - 확장자 위조 (.pdf.exe, .pdf/foo 등)
+//   - 심볼릭 링크로 REPORT_DIR 밖 파일 탈취
+//   - 디렉토리 리스팅 차단
+//   - 존재 여부 노출 최소화 (타이밍/메시지)
+//
+// 테스트법:
+//   - 정상: curl -I http://localhost:4001/r/6ea5f16e-4d53-449b-8679-06c94dff4fed.pdf → 200 application/pdf
+//   - 형식 위반: curl -I http://localhost:4001/r/not-uuid.pdf → 404
+//   - traversal: curl -I http://localhost:4001/r/..%2F..%2Fetc%2Fpasswd.pdf → 404
+//
+// 예상 오류:
+//   1) REPORT_DIR 마운트 누락 → ENOENT (compose.yml에 /volume1/docker/fortunetab/reports 바인드 확인)
+//   2) 한글 파일명 깨짐 → 현재 UUID만 허용하므로 불가능
+//   3) Content-Disposition 없으면 브라우저가 인라인 표시 vs 다운로드 — 이메일 UX는 다운로드 선호
+const REPORT_DIR = process.env.REPORT_DIR || '/reports';
+const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+app.get('/r/:id.pdf', (req, res) => {
+  const id = req.params.id;
+
+  if (!UUID_V4.test(id)) { res.status(404).end(); return; }
+
+  const baseDir = path.resolve(REPORT_DIR);
+  const filePath = path.resolve(baseDir, `${id}.pdf`);
+  if (!filePath.startsWith(baseDir + path.sep)) { res.status(404).end(); return; }
+
+  try {
+    const st = fs.lstatSync(filePath);
+    if (!st.isFile() || st.isSymbolicLink()) { res.status(404).end(); return; }
+  } catch { res.status(404).end(); return; }
+
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename="fortunetab_report_${id}.pdf"`);
+  // no-store: capability URL — 공유 기기 히스토리·디스크 캐시로 유출되지 않도록 브라우저 캐시도 차단
+  res.setHeader('Cache-Control', 'private, no-store');
+  // no-referrer: PDF 내 링크 클릭 시 Referer 헤더로 capability URL이 제3자 로그에 유출되는 것을 막음
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  // nosniff: 레거시 PDF 뷰어가 콘텐츠 타입을 재추론해 XSS로 활용되는 것을 차단
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.sendFile(filePath);
+});
 
 // ── 토스페이먼츠 결제 승인 API ────────────────────────────────────
 app.post('/payments/confirm', async (req, res) => {

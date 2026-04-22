@@ -167,7 +167,7 @@ function buildReportEmailHtml(params: {
     </a>
 
     <p style="font-size:11px;color:#999;text-align:center;margin-top:12px;">
-      ⏰ 리포트 파일은 발송일로부터 90일간 보관됩니다.
+      ⏰ 리포트 파일은 발송일로부터 32일간 보관된 후 자동 삭제됩니다. 수신 후 가급적 빠르게 다운로드해 주세요.
     </p>
 
     <!-- 안내 -->
