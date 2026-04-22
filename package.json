@@ -31,6 +31,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "pptxgenjs": "^4.0.1",
+    "supabase": "^2.93.0",
     "tailwindcss": "^4.2.1",
     "typescript": "^5.6.3",
     "vitest": "^4.1.2",
