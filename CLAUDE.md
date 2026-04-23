@@ -26,10 +26,24 @@ AI가 동양 사주명리와 서양 점성술을 융합 해석하여, 대화를 
 
 | 서비스 | Phase | 크레딧 | 상태 |
 |--------|-------|--------|------|
-| AI Chat Session | 1 (MVP) | 5 | 구현 중 |
-| AI Auto Report | 2 | 15~25 | 계획 |
+| AI Chat Session | 1 (MVP) | 5 | 인프라 연결 완료, 통합 테스트 대기 |
+| AI Auto Report (프리미엄 사주) | 2 | 주문 기반 | ✅ 상용 가능 (110초 e2e 검증 완료, 2026-04-22) |
 | AI Coaching Journey | 3 | 구독 | 계획 |
 | AI Decision Tool | 4 | 8 | 계획 |
+
+### Phase 2 자동화 파이프라인 (상용 가동 중)
+
+```
+결제 → confirm-payment Edge Function (CAS 원자성)
+     → generate-premium-report Edge Function (HMAC 서명)
+     → n8n 워크플로 (NAS Docker, webhook.fortunetab.com)
+       ├── 5 Sonnet 병렬 섹션 생성 + 1 Haiku 교정
+       ├── pdf-server (Puppeteer + Chromium)
+       ├── NAS 저장 (/reports/<uuid>_<token>.pdf, 32일 만료)
+       └── send-report-email (Resend) → 사용자
+```
+- 평균 110초 end-to-end, ~$0.15/주문, PDF ~700KB (7 pages)
+- 공개 URL: `reports.fortunetab.com/r/<order_id>_<access_token>.pdf` (capability 토큰 인증)
 
 ---
 
@@ -45,7 +59,8 @@ AI가 동양 사주명리와 서양 점성술을 융합 해석하여, 대화를 
 | 결제 | 토스페이먼츠 (국내) + Lemon Squeezy (글로벌, 계획) |
 | 배포 | Cloudflare Pages (@opennextjs/cloudflare) |
 | 상태관리 | Zustand |
-| PDF | jsPDF (플래너) + @react-pdf/renderer (세션 리포트) |
+| PDF | jsPDF (플래너, 클라이언트 생성) + @react-pdf/renderer (세션 리포트) + Puppeteer/pdf-server (프리미엄 사주 리포트, NAS Docker) |
+| 자동화 | n8n (NAS Docker, webhook.fortunetab.com) — Phase 2 리포트 파이프라인 |
 
 ---
 
@@ -70,10 +85,11 @@ src/
 │   ├── saju/               # 사주 입력
 │   ├── session/            # AI 세션
 │   ├── settings/           # 설정
-│   ├── api/
-│   │   ├── credits/        # 크레딧 조회
-│   │   └── payments/       # 결제 (+ credits 하위)
 │   └── (정적 페이지)       # privacy, terms, refund
+│
+│   ⚠ `app/api/*` Route Handler는 next.config.ts의 `output: 'export'`와
+│      호환 불가. 모든 서버 로직은 supabase/functions/*/index.ts (Deno
+│      Edge Runtime)에 배치한다.
 ├── components/
 │   ├── cart/               # CartDrawer
 │   ├── chat/               # ChatWindow, MessageBubble, ChatInput
@@ -114,9 +130,20 @@ src/
 │   ├── rate-limit.ts       # Rate limiting
 │   ├── analytics.ts        # 분석
 │   └── lemonsqueezy.ts     # Lemon Squeezy API (글로벌 결제)
-pdf_server/                 # PDF 생성 서버 (NAS Docker)
-pdf-planner/                # PDF 플래너 로직
-supabase/                   # 마이그레이션 + RLS
+pdf-server/                 # Node.js + Puppeteer PDF 렌더러 (NAS Docker, 상용 사용)
+pdf_server/                 # (레거시 Python WeasyPrint 보조용, 로컬 개발 전용)
+pdf-planner/                # PDF 플래너 로직 (jsPDF 기반, 클라이언트 사이드)
+n8n/                        # n8n 워크플로 정의 (workflow.json, hmac-verify.js, claude-prompts.js)
+supabase/
+├── migrations/             # DB 스키마 + RLS (00001~00009)
+└── functions/              # Deno Edge Functions (서버 로직의 유일한 자리)
+    ├── chat/                 # AI Chat SSE 스트리밍 (Phase 1)
+    ├── generate/             # 3역할 JSON 생성 (명발굴 세션)
+    ├── generate-premium-report/  # Phase 2 리포트 파이프라인 진입점
+    ├── checkout/             # Lemon Squeezy 체크아웃
+    ├── confirm-payment/      # Toss 결제 승인 (CAS 원자성)
+    ├── send-order-email/     # 주문 안내 이메일
+    └── send-report-email/    # 리포트 발송 이메일
 ```
 
 ---
