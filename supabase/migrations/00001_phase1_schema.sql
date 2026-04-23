@@ -43,7 +43,8 @@ CREATE TABLE public.credits (
 CREATE UNIQUE INDEX credits_user_service_idx ON public.credits(user_id, service);
 
 -- ============================================================
--- 4. subscriptions — 구독 (Lemon Squeezy)
+-- 4. subscriptions — 구독
+-- (ls_* 컬럼은 레거시 예약. 현재 결제는 토스페이먼츠 + PayPal, 미사용)
 -- ============================================================
 CREATE TABLE public.subscriptions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

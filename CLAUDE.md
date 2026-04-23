@@ -56,7 +56,7 @@ AI가 동양 사주명리와 서양 점성술을 융합 해석하여, 대화를 
 | CSS | Tailwind CSS v4 |
 | DB/Auth | Supabase (PostgreSQL + Auth + RLS) |
 | AI | Claude Sonnet 4.6 (대화) / Haiku (Phase 4) |
-| 결제 | 토스페이먼츠 (국내) + Lemon Squeezy (글로벌, 계획) |
+| 결제 | 토스페이먼츠 (국내 카드 + PayPal 채널 통합) |
 | 배포 | Cloudflare Pages (@opennextjs/cloudflare) |
 | 상태관리 | Zustand |
 | PDF | jsPDF (플래너, 클라이언트 생성) + @react-pdf/renderer (세션 리포트) + Puppeteer/pdf-server (프리미엄 사주 리포트, NAS Docker) |
@@ -127,8 +127,7 @@ src/
 │   ├── supabase.ts         # DB 클라이언트
 │   ├── supabase-server.ts  # 서버 클라이언트
 │   ├── rate-limit.ts       # Rate limiting
-│   ├── analytics.ts        # 분석
-│   └── lemonsqueezy.ts     # Lemon Squeezy API (글로벌 결제)
+│   └── analytics.ts        # 분석
 pdf-server/                 # Node.js + Puppeteer PDF 렌더러 (NAS Docker, 상용 사용)
 pdf_server/                 # (레거시 Python WeasyPrint 보조용, 로컬 개발 전용)
 pdf-planner/                # PDF 플래너 로직 (jsPDF 기반, 클라이언트 사이드)
@@ -140,7 +139,6 @@ supabase/
     ├── chat/                 # AI Chat SSE 스트리밍 (Phase 1)
     ├── generate/             # 3역할 JSON 생성 (명발굴 세션)
     ├── generate-premium-report/  # Phase 2 리포트 파이프라인 진입점
-    ├── checkout/             # Lemon Squeezy 체크아웃
     ├── confirm-payment/      # Toss 결제 승인 (CAS 원자성)
     ├── send-order-email/     # 주문 안내 이메일
     └── send-report-email/    # 리포트 발송 이메일

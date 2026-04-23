@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { useI18n } from '@/lib/i18n/client';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
@@ -17,46 +16,9 @@ const SUBSCRIPTIONS = [
 ] as const;
 
 export default function CreditPackages() {
-  const [loading, setLoading] = useState<string | null>(null);
-  const [error, setError] = useState('');
   const { t, locale } = useI18n();
-
-  const handlePurchase = async (packageId: string) => {
-    setLoading(packageId);
-    setError('');
-
-    try {
-      const { supabase } = await import('@/lib/supabase');
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        setError('Please log in');
-        return;
-      }
-
-      const res = await fetch('/api/payments/credits', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({ package: packageId, locale }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || 'Purchase failed');
-      }
-
-      const { url } = await res.json();
-      window.location.href = url;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t.common.error);
-    } finally {
-      setLoading(null);
-    }
-  };
-
   const isKo = locale === 'ko';
+  const comingSoon = isKo ? '준비중' : 'Coming soon';
 
   return (
     <div className="space-y-8">
@@ -85,13 +47,12 @@ export default function CreditPackages() {
                 {isKo ? pkg.priceKRW : pkg.priceUSD}
               </p>
               <Button
-                variant={pkg.popular ? 'primary' : 'secondary'}
+                variant="secondary"
                 size="md"
                 className="w-full mt-4"
-                loading={loading === pkg.id}
-                onClick={() => handlePurchase(pkg.id)}
+                disabled
               >
-                {t.credits.buy}
+                {comingSoon}
               </Button>
             </Card>
           ))}
@@ -120,17 +81,14 @@ export default function CreditPackages() {
                 variant="secondary"
                 size="md"
                 className="w-full mt-4"
-                loading={loading === sub.id}
-                onClick={() => handlePurchase(sub.id)}
+                disabled
               >
-                {t.credits.buy}
+                {comingSoon}
               </Button>
             </Card>
           ))}
         </div>
       </div>
-
-      {error && <p className="text-center text-sm text-ft-red">{error}</p>}
     </div>
   );
 }

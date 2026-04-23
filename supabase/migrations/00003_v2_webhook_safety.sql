@@ -4,7 +4,7 @@
 
 -- 1. Webhook 멱등성 테이블
 CREATE TABLE IF NOT EXISTS public.processed_webhook_events (
-  id text PRIMARY KEY,                -- Lemon Squeezy event ID
+  id text PRIMARY KEY,                -- 외부 결제 이벤트 ID (멱등성)
   event_name text NOT NULL,
   user_id uuid NOT NULL,
   processed_at timestamptz DEFAULT now()

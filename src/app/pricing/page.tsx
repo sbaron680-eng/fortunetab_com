@@ -1,8 +1,6 @@
 'use client';
 
-import { useState } from 'react';
 import { useAuthStore } from '@/lib/store';
-import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 
 // ─── 요금제 데이터 ──────────────────────────────────────────────────
@@ -81,35 +79,6 @@ const PLANS: Plan[] = [
 
 export default function PricingPage() {
   const { user } = useAuthStore();
-  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
-
-  async function handleSelect(planId: Plan['id']) {
-    if (!user) return;
-
-    setLoadingPlan(planId);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-      if (!token) throw new Error('로그인이 필요합니다');
-
-      const res = await fetch('/api/payments/checkout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ plan: planId }),
-      });
-
-      if (!res.ok) throw new Error('결제 페이지 생성 실패');
-      const { url } = await res.json();
-      window.location.href = url;
-    } catch {
-      // 에러 처리는 간단히
-    } finally {
-      setLoadingPlan(null);
-    }
-  }
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-ft-paper py-16 px-4">
@@ -171,18 +140,14 @@ export default function PricingPage() {
                 ))}
               </ul>
 
-              {/* CTA */}
+              {/* CTA — 결제 연동 준비 중 */}
               {user ? (
                 <button
-                  onClick={() => handleSelect(plan.id)}
-                  disabled={loadingPlan === plan.id}
-                  className={`w-full py-3 rounded-xl font-semibold text-sm transition-colors disabled:opacity-40 btn-press ${
-                    plan.highlight
-                      ? 'bg-ft-ink text-white hover:bg-ft-ink/90'
-                      : 'bg-ft-paper text-ft-ink border border-ft-border hover:bg-ft-border/30'
-                  }`}
+                  type="button"
+                  disabled
+                  className="w-full py-3 rounded-xl font-semibold text-sm bg-ft-paper text-ft-muted border border-ft-border cursor-not-allowed"
                 >
-                  {loadingPlan === plan.id ? '처리 중...' : '선택하기'}
+                  준비중
                 </button>
               ) : (
                 <Link
@@ -193,7 +158,7 @@ export default function PricingPage() {
                       : 'bg-ft-paper text-ft-ink border border-ft-border hover:bg-ft-border/30'
                   }`}
                 >
-                  로그인 후 선택
+                  로그인 후 확인
                 </Link>
               )}
             </div>
@@ -203,7 +168,7 @@ export default function PricingPage() {
         {/* 하단 안내 */}
         <div className="mt-12 text-center text-xs text-ft-muted space-y-1">
           <p>모든 사주 분석은 AI(인공지능)를 통해 제공됩니다. 참고 용도이며 전문 상담을 대체하지 않습니다.</p>
-          <p>결제는 Lemon Squeezy를 통해 안전하게 처리됩니다.</p>
+          <p>결제는 토스페이먼츠(국내카드·PayPal)를 통해 안전하게 처리됩니다.</p>
           <p>구독은 언제든 해지할 수 있으며, 해지 후에도 현재 결제 기간까지 이용 가능합니다.</p>
           <p>
             <Link href="/refund" className="underline">환불 정책</Link>
