@@ -154,11 +154,15 @@ Deno.serve(async (req: Request) => {
         // UUID v4 strict — path traversal/확장자 위조/FT- prefix 혼동 차단
       const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(orderId);
         const col = isUuid ? 'id' : 'order_number';
+        // CAS + TOCTOU 방어: 사전 검증한 amount와 DB total이 UPDATE 시점에도
+        // 여전히 일치하는지 확인. 어드민이 promotions 수정 등으로 total을 바꿔
+        // pre-Toss 검증 이후에 값이 달라지면 이 UPDATE는 0행 반환 → 트리거 생략.
         const { data: updatedOrder, error: updErr } = await sb
           .from('orders')
           .update({ status: 'paid', payment_key: paymentKey })
           .eq(col, orderId)
           .eq('status', 'pending')   // ★ CAS: 이미 처리됐으면 0행 반환
+          .eq('total', amount)       // ★ TOCTOU: 검증 당시 금액 불변 확인
           .select('id')
           .maybeSingle();
 

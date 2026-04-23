@@ -272,6 +272,9 @@ Deno.serve(async (req: Request) => {
   const decoder = new TextDecoder();
   let assistantFullText = '';
 
+  // 부분 응답이 "완성된 답변"으로 볼 가치가 있는 최소 길이. 이보다 짧고 에러가 있으면 환불.
+  const MIN_USEFUL_RESPONSE_CHARS = 100;
+
   const outStream = new ReadableStream<Uint8Array>({
     async start(controller) {
       // 초기 이벤트: maxMessages 고지
@@ -279,6 +282,7 @@ Deno.serve(async (req: Request) => {
 
       const reader = claudeStream.getReader();
       let buffer = '';
+      let streamErrored = false;
       try {
         while (true) {
           const { done, value } = await reader.read();
@@ -301,6 +305,7 @@ Deno.serve(async (req: Request) => {
                     controller.enqueue(encoder.encode(sseEvent({ text })));
                   }
                 } else if (evt.type === 'error') {
+                  streamErrored = true;
                   controller.enqueue(encoder.encode(sseEvent({ error: evt.error?.message ?? 'stream error' })));
                 }
               } catch { /* partial JSON — 무시 */ }
@@ -308,30 +313,38 @@ Deno.serve(async (req: Request) => {
           }
         }
       } catch (e) {
+        streamErrored = true;
         const msg = e instanceof Error ? e.message : 'stream error';
         controller.enqueue(encoder.encode(sseEvent({ error: msg })));
       } finally {
         controller.close();
       }
 
-      // 10. 스트림 종료 처리:
-      //     - 텍스트가 있으면 assistant 메시지 DB 저장
-      //     - 텍스트가 비어있으면(스트림 조기 단절) 사전 증가시킨 +2 중 assistant 몫 +1 롤백
-      if (assistantFullText) {
+      // 10. 스트림 종료 처리 — 3차 감사 M4/M5 대응:
+      //     - 정상 응답(텍스트 ≥ 100자 && no error): assistant 저장, insert 실패 시 +1 롤백
+      //     - 부분 응답 + 에러: 유용하지 않은 수준이면 +1 환불 (사용자 체감 공정성)
+      //     - 텍스트 0: 기존대로 +1 환불
+      const isUsefulResponse = assistantFullText.length >= MIN_USEFUL_RESPONSE_CHARS && !streamErrored;
+
+      if (isUsefulResponse) {
         const { error } = await sbAdmin.from('chat_messages').insert({
           session_id: body.sessionId,
           role: 'assistant',
           content: assistantFullText,
           metadata: { model: MODEL, token_count: assistantFullText.length },
         });
-        if (error) console.error('[chat] assistant msg insert 실패:', error);
+        if (error) {
+          // assistant insert 실패 — 다음 턴에 orphan user 메시지가 되지 않도록 +1 롤백
+          // (user 메시지는 DB에 남지만 쿼터만 보전)
+          console.error('[chat] assistant msg insert 실패:', error.message ?? '-');
+          await sbAdmin.rpc('decrement_message_count', {
+            p_session_id: body.sessionId, p_user_id: userId, p_decrement: 1,
+          });
+        }
       } else {
-        // 스트림은 열렸지만 텍스트 0 — Claude가 중간에 끊어졌거나 rate-limited.
-        // 유저 메시지는 이미 DB에 있으니 +1만 유지, assistant 슬롯 +1 반환.
+        // 빈 스트림 OR 부분 응답 + 에러 — assistant 몫 +1 반환
         await sbAdmin.rpc('decrement_message_count', {
-          p_session_id: body.sessionId,
-          p_user_id: userId,
-          p_decrement: 1,
+          p_session_id: body.sessionId, p_user_id: userId, p_decrement: 1,
         });
       }
     },
