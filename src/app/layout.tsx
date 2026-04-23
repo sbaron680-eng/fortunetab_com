@@ -8,6 +8,7 @@ import Script from 'next/script';
 import AuthProvider from '@/components/layout/AuthProvider';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
+import Disclaimer from '@/components/layout/Disclaimer';
 import CartDrawer from '@/components/cart/CartDrawer';
 import './globals.css';
 
@@ -74,6 +75,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AuthProvider>
           <Header />
           <main className="min-h-[calc(100vh-4rem)]">{children}</main>
+          <Disclaimer />
           <Footer />
           <CartDrawer />
         </AuthProvider>
