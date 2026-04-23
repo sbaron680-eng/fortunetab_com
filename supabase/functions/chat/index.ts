@@ -1,5 +1,6 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { corsHeaders, corsPreflightResponse, jsonResponse } from '../_shared/cors.ts';
 
 /**
  * chat Edge Function — AI Chat Session 스트리밍
@@ -22,32 +23,10 @@ const MAX_TOKENS = 1024;
 const HISTORY_LIMIT = 30;           // 최근 N 메시지까지 문맥으로 전달
 const RATE_LIMIT_PER_MIN = 10;      // chat 호출 분당 상한 (Claude 과금 공격 방어)
 
-// ─── CORS ────────────────────────────────────────────────────────────
-// 2차 보안 감사: 와일드카드 Origin으로 cross-origin 유저 세션 악용 가능.
-// 명시적 화이트리스트 + Vary: Origin으로 캐시 안전성까지 확보.
-const ALLOWED_ORIGINS = new Set([
-  'https://fortunetab.com',
-  'https://www.fortunetab.com',
-  'http://localhost:3000',           // 로컬 개발용
-  'http://localhost:8788',           // wrangler pages dev
-]);
-
-function corsHeaders(req: Request): Record<string, string> {
-  const origin = req.headers.get('origin') ?? '';
-  const allowed = ALLOWED_ORIGINS.has(origin) ? origin : '';
-  return {
-    'Access-Control-Allow-Origin': allowed,
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Vary': 'Origin',
-  };
-}
-
+// CORS: ../_shared/cors.ts (3차 보안 감사 H4 — 인라인 복제본 제거, 단일 출처로 통합)
 function json(body: Record<string, unknown>, status = 200, req?: Request) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...(req ? corsHeaders(req) : {}), 'Content-Type': 'application/json' },
-  });
+  if (!req) return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+  return jsonResponse(body, status, req);
 }
 
 function sseEvent(obj: Record<string, unknown>): string {
@@ -71,9 +50,16 @@ function sanitizeFortuneSnapshot(snapshot: unknown): string {
 
   const safe = (v: unknown, maxLen = 30): string => {
     if (v === null || v === undefined) return '';
-    const str = typeof v === 'number' ? String(v) : String(v ?? '');
-    // 프롬프트 경계를 깰 수 있는 문자 제거
-    return str.replace(/[`\n\r"\\]/g, ' ').trim().slice(0, maxLen);
+    const raw = typeof v === 'number' ? String(v) : String(v ?? '');
+    // 1) NFKC 정규화 — 유사 문자(curly quote, combining 등) 1차 통합
+    // 2) 범용 category 제거 — Cc(control), Cf(format, ZWJ), Zl(U+2028), Zp(U+2029)
+    //    + ASCII 제어(\n\r), 백틱, 따옴표, 백슬래시
+    // 3) 마지막에 maxLen slice — combining char 중간 잘림 방지 위해 normalize 선행
+    const cleaned = raw
+      .normalize('NFKC')
+      .replace(/[\p{Cc}\p{Cf}\p{Zl}\p{Zp}`"'\\]/gu, ' ')
+      .trim();
+    return cleaned.slice(0, maxLen);
   };
 
   const entries: Array<[string, string]> = [
@@ -144,7 +130,7 @@ async function streamClaude(
 // ─── 핸들러 ──────────────────────────────────────────────────────────
 
 Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders(req) });
+  if (req.method === 'OPTIONS') return corsPreflightResponse(req);
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405, req);
 
   // 1. 인증
