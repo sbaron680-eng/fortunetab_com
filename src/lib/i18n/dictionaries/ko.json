@@ -58,7 +58,8 @@
     "messagesLeft": "남은 메시지: {count}개",
     "needCredits": "크레딧이 부족합니다",
     "startCost": "이 세션은 5크레딧이 필요합니다",
-    "extraMessages": "추가 10메시지: 2크레딧"
+    "extraMessages": "추가 10메시지: 2크레딧",
+    "rateLimited": "요청이 너무 빠릅니다. {seconds}초 후 다시 시도해주세요"
   },
   "fortune": {
     "birthData": {

@@ -58,7 +58,8 @@
     "messagesLeft": "{count} messages remaining",
     "needCredits": "Insufficient credits",
     "startCost": "This session requires 5 credits",
-    "extraMessages": "Extra 10 messages: 2 credits"
+    "extraMessages": "Extra 10 messages: 2 credits",
+    "rateLimited": "Too many requests. Please retry in {seconds}s"
   },
   "fortune": {
     "birthData": {

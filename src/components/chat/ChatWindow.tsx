@@ -25,6 +25,7 @@ export default function ChatWindow({ sessionId, initialMessages = [], maxMessage
   const [streamingText, setStreamingText] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [currentMaxMessages, setCurrentMaxMessages] = useState(maxMessages);
+  const [retryAfter, setRetryAfter] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { t } = useI18n();
 
@@ -35,6 +36,26 @@ export default function ChatWindow({ sessionId, initialMessages = [], maxMessage
   useEffect(() => {
     scrollToBottom();
   }, [messages, streamingText, scrollToBottom]);
+
+  // Rate-limit cooldown countdown
+  useEffect(() => {
+    if (retryAfter === null) return;
+    if (retryAfter <= 0) {
+      setRetryAfter(null);
+      setError(null);
+      return;
+    }
+    const id = setTimeout(() => {
+      setRetryAfter((prev) => (prev === null ? null : prev - 1));
+    }, 1000);
+    return () => clearTimeout(id);
+  }, [retryAfter]);
+
+  useEffect(() => {
+    if (retryAfter !== null && retryAfter > 0) {
+      setError(interpolate(t.chat.rateLimited, { seconds: retryAfter }));
+    }
+  }, [retryAfter, t.chat.rateLimited]);
 
   const getToken = async (): Promise<string | null> => {
     const { supabase } = await import('@/lib/supabase');
@@ -81,7 +102,19 @@ export default function ChatWindow({ sessionId, initialMessages = [], maxMessage
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: 'Unknown error' }));
-        if (err.error === 'insufficient_credits') {
+        if (res.status === 429) {
+          // Retry-After header is authoritative per RFC 9110 §10.2.3
+          const headerSec = Number(res.headers.get('Retry-After'));
+          const bodySec = Number(err.retry_after_sec);
+          const sec = Number.isFinite(headerSec) && headerSec > 0
+            ? headerSec
+            : Number.isFinite(bodySec) && bodySec > 0
+              ? bodySec
+              : 60;
+          setRetryAfter(sec);
+          // Server rejected before processing — roll back optimistic user message so it can be resent
+          setMessages(prev => prev.filter(m => m.id !== userMsg.id));
+        } else if (err.error === 'insufficient_credits') {
           setError(t.chat.needCredits);
         } else {
           setError(err.error || t.common.error);
@@ -216,7 +249,7 @@ export default function ChatWindow({ sessionId, initialMessages = [], maxMessage
       {/* Input */}
       <ChatInput
         onSend={handleSend}
-        disabled={isStreaming || messagesLeft <= 0}
+        disabled={isStreaming || messagesLeft <= 0 || (retryAfter !== null && retryAfter > 0)}
       />
     </div>
   );
