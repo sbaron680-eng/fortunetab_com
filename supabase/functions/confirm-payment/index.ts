@@ -56,15 +56,34 @@ Deno.serve(async (req: Request) => {
           return json({ ok: false, error: '결제 금액이 일치하지 않습니다.' }, 400);
         }
 
-        // ★ 서버측 재계산: order_items × 활성 프로모션
+        // ★ 서버측 재계산: order_items × products_pricing × 활성 프로모션
+        // order_items.price는 클라이언트가 쓴 값이라 신뢰 불가 — 서버 카탈로그(products_pricing)로 대체
         const { data: items } = await sb
           .from('order_items')
-          .select('product_id, price, qty')
+          .select('product_id, qty')
           .eq('order_id', orderRow.id);
 
         if (!items || items.length === 0) {
           console.error(`[confirm-payment] 주문 아이템 없음: ${orderRow.id}`);
           return json({ ok: false, error: '주문 아이템을 찾을 수 없습니다.' }, 400);
+        }
+
+        // 권위 가격 조회 — 주문된 모든 product_id를 한 번에
+        const productIds = items.map((i) => i.product_id);
+        const { data: pricing } = await sb
+          .from('products_pricing')
+          .select('id, price_krw, active')
+          .in('id', productIds);
+
+        const priceMap = new Map<string, { price_krw: number; active: boolean }>(
+          (pricing ?? []).map((p) => [p.id, { price_krw: p.price_krw, active: p.active }])
+        );
+
+        // 카탈로그에 없는 product_id가 섞여 있으면 주문 거절 (공격 의심)
+        const unknown = productIds.filter((id) => !priceMap.has(id));
+        if (unknown.length > 0) {
+          console.error(`[confirm-payment] 카탈로그 외 상품: ${unknown.join(',')}`);
+          return json({ ok: false, error: '알 수 없는 상품이 포함돼 있습니다.' }, 400);
         }
 
         const nowIso = new Date().toISOString();
@@ -81,8 +100,13 @@ Deno.serve(async (req: Request) => {
         // specific 상품 프로모가 없으면 global(product_slug=null)로 폴백 — 클라이언트
         // getPromotionForProduct와 동일.
         let expected = 0;
-        for (const it of items as Array<{ product_id: string; price: number; qty: number }>) {
-          const unit = it.price ?? 0;
+        for (const it of items as Array<{ product_id: string; qty: number }>) {
+          const catalog = priceMap.get(it.product_id)!; // 위에서 unknown 체크했으므로 non-null
+          if (!catalog.active) {
+            console.error(`[confirm-payment] 비활성 상품 주문: ${it.product_id}`);
+            return json({ ok: false, error: '판매 중단된 상품이 포함돼 있습니다.' }, 400);
+          }
+          const unit = catalog.price_krw;
           const qty = it.qty ?? 1;
           const promo = (promos ?? []).find((p) => p.product_slug === it.product_id)
                      ?? (promos ?? []).find((p) => p.product_slug === null);
