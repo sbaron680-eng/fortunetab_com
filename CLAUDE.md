@@ -113,7 +113,6 @@ src/
 │   │   └── engine.ts       # 엔트리포인트
 │   ├── ai/                 # Claude API + 프롬프트
 │   ├── i18n/               # 다국어 (config, server, client, dictionaries)
-│   ├── credits/            # 크레딧 서비스
 │   ├── stores/             # Zustand 스토어
 │   ├── __tests__/          # 테스트
 │   ├── pdf-generator.ts    # PDF 생성 코어

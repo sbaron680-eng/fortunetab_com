@@ -37,7 +37,8 @@ Deno.serve(async (req: Request) => {
     // (클라이언트가 createOrder로 전달한 total이 조작됐을 수 있으므로 items+promotions로 재계산)
     if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
       const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-/.test(orderId);
+      // UUID v4 strict — path traversal/확장자 위조/FT- prefix 혼동 차단
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(orderId);
       const col = isUuid ? 'id' : 'order_number';
       const { data: orderRow } = await sb
         .from('orders')
@@ -74,19 +75,24 @@ Deno.serve(async (req: Request) => {
           .lte('starts_at', nowIso)
           .or(`ends_at.is.null,ends_at.gte.${nowIso}`);
 
+        // 프로모션 계약(클라이언트 applyPromotion과 일치): 할인은 **per-unit** 적용 후
+        // qty와 곱한다. 이전 버그: 'fixed' 할인에서 `gross - discount_value`로 qty 무시.
+        // 예: 단가 1만원 × qty 2, flat ₩5000 할인 시 예상 = (1만-5천)×2 = 1만원, 기존 = 1만5천.
+        // specific 상품 프로모가 없으면 global(product_slug=null)로 폴백 — 클라이언트
+        // getPromotionForProduct와 동일.
         let expected = 0;
         for (const it of items as Array<{ product_id: string; price: number; qty: number }>) {
-          const gross = (it.price ?? 0) * (it.qty ?? 1);
+          const unit = it.price ?? 0;
+          const qty = it.qty ?? 1;
           const promo = (promos ?? []).find((p) => p.product_slug === it.product_id)
                      ?? (promos ?? []).find((p) => p.product_slug === null);
+          let discountedUnit = unit;
           if (promo) {
-            const discounted = promo.discount_type === 'percent'
-              ? Math.round(gross * (1 - promo.discount_value / 100))
-              : Math.max(0, gross - promo.discount_value);
-            expected += discounted;
-          } else {
-            expected += gross;
+            discountedUnit = promo.discount_type === 'percent'
+              ? Math.round(unit * (1 - promo.discount_value / 100))
+              : Math.max(0, unit - promo.discount_value);
           }
+          expected += discountedUnit * qty;
         }
 
         // ±1원 오차 허용 (반올림)
@@ -145,7 +151,8 @@ Deno.serve(async (req: Request) => {
     if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
       try {
         const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-/.test(orderId);
+        // UUID v4 strict — path traversal/확장자 위조/FT- prefix 혼동 차단
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(orderId);
         const col = isUuid ? 'id' : 'order_number';
         const { data: updatedOrder, error: updErr } = await sb
           .from('orders')

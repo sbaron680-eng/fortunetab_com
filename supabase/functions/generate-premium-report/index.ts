@@ -61,16 +61,37 @@ Deno.serve(async (req: Request) => {
 
     // access_token 보장: 구주문에 NULL일 수 있음 → UUID 발급 후 즉시 저장.
     // 이 토큰은 PDF 파일명·URL에 포함되어 capability URL로 동작한다.
+    //
+    // Race 방어: 두 병렬 호출이 둘 다 NULL을 보고 각각 mint하면 먼저 UPDATE된
+    // 토큰은 last-writer-wins로 덮어써지고, 그 토큰으로 n8n이 시작한 파이프라인의
+    // PDF는 고아화 → 404. 해결: .is('access_token', null) CAS로 1회만 write 성공.
     let accessToken: string = order.access_token ?? '';
     if (!accessToken) {
-      accessToken = crypto.randomUUID();
-      const { error: tokErr } = await sb
+      const candidate = crypto.randomUUID();
+      const { data: tokRow, error: tokErr } = await sb
         .from('orders')
-        .update({ access_token: accessToken })
-        .eq('id', order.id);
+        .update({ access_token: candidate })
+        .eq('id', order.id)
+        .is('access_token', null)      // ★ CAS: 아직 NULL인 경우에만 write
+        .select('access_token')
+        .maybeSingle();
       if (tokErr) {
-        console.error('[generate-premium-report] access_token 생성 실패:', tokErr);
+        console.error('[generate-premium-report] access_token 생성 실패:', tokErr.message ?? '-');
         return json({ ok: false, error: 'access_token 생성 실패' }, 500);
+      }
+      if (tokRow?.access_token) {
+        accessToken = tokRow.access_token;
+      } else {
+        // CAS 실패 → 다른 호출이 먼저 발급한 값 재조회
+        const { data: reread } = await sb
+          .from('orders')
+          .select('access_token')
+          .eq('id', order.id)
+          .single();
+        accessToken = reread?.access_token ?? '';
+        if (!accessToken) {
+          return json({ ok: false, error: 'access_token 재조회 실패' }, 500);
+        }
       }
     }
 
