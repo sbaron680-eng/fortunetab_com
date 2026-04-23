@@ -38,3 +38,6 @@ tsconfig.tsbuildinfo
 # 임시 파일
 env_tmp.txt
 *.tmp.txt
+
+# Supabase CLI 상태
+supabase/.temp/
