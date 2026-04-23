@@ -1,0 +1,38 @@
+# Supabase 프로젝트 로컬/배포 설정
+# 공식 문서: https://supabase.com/docs/guides/cli/config
+
+project_id = "cwnzezlgtcqkmnyojhbd"
+
+# ============================================================
+# Edge Functions 설정
+# ============================================================
+# verify_jwt = false 의미: Supabase API gateway가 요청 JWT 서명을 검증하지 않음.
+# 이 플래그를 켜면 함수 내부(`sb.auth.getUser()`)에서 인증 처리.
+#
+# chat: gateway가 ES256 JWT(신규 프로젝트 기본)를 거부하는 문제로 false 필수.
+#       내부에서 sbUser.auth.getUser()로 적절히 인증 처리함.
+# confirm-payment / generate-premium-report / send-*-email: service_role
+#       Bearer로 호출하는 내부 엔드포인트 — gateway 검증 불필요.
+# checkout: 사용자 JWT 또는 anon으로 호출 — 동일하게 함수 내부 처리.
+# generate: 사용자 JWT로 호출 — 함수 내부에서 auth 처리.
+
+[functions.chat]
+verify_jwt = false
+
+[functions.checkout]
+verify_jwt = false
+
+[functions.confirm-payment]
+verify_jwt = false
+
+[functions.generate]
+verify_jwt = false
+
+[functions.generate-premium-report]
+verify_jwt = false
+
+[functions.send-order-email]
+verify_jwt = true
+
+[functions.send-report-email]
+verify_jwt = true

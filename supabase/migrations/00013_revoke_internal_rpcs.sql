@@ -27,6 +27,11 @@ REVOKE ALL ON FUNCTION public.add_credits(uuid, integer, text, uuid, text, times
 REVOKE ALL ON FUNCTION public.add_credits(uuid, integer, text, uuid, text, timestamp with time zone) FROM authenticated, anon;
 GRANT EXECUTE ON FUNCTION public.add_credits(uuid, integer, text, uuid, text, timestamp with time zone) TO service_role;
 
--- 참고: decrement_message_count(00010) + check_and_consume_rate_limit(00011/00012)는
--- 각자 마이그레이션에서 이미 REVOKE + GRANT service_role 처리됨.
+-- decrement_message_count: 00010에서 REVOKE했지만 마이그레이션 재적용 시 ACL
+-- 리셋될 수 있어 여기에도 중복 적용(멱등성).
+REVOKE ALL ON FUNCTION public.decrement_message_count(uuid, uuid, integer) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.decrement_message_count(uuid, uuid, integer) FROM authenticated, anon;
+GRANT EXECUTE ON FUNCTION public.decrement_message_count(uuid, uuid, integer) TO service_role;
+
+-- 참고: check_and_consume_rate_limit(00011/00012)는 각자 마이그레이션에서 처리됨.
 -- get_my_orders / get_pending_reports_admin은 authenticated가 호출해야 하므로 제외.
