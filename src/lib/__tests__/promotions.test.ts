@@ -68,7 +68,9 @@ describe('calculateLineTotal — qty 계산 (M5 회귀 방지)', () => {
     expect(calculateLineTotal(5000, 3, promo)).toBe(9000);
   });
 
-  it('qty=undefined → 1로 간주', () => {
-    expect(calculateLineTotal(10000, undefined as unknown as number, null)).toBe(10000);
+  // 주: qty: number 타입 시그니처라 호출자가 undefined를 넘기는 경로는 TS에서 차단됨.
+  // 런타임 방어 `qty ?? 1`는 JSON 파싱된 객체가 qty 필드 누락일 때를 위한 안전망.
+  it('런타임 방어: qty가 null일 때 1로 간주 (jsonb payload 대비)', () => {
+    expect(calculateLineTotal(10000, null as unknown as number, null)).toBe(10000);
   });
 });

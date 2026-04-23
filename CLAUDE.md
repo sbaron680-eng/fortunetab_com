@@ -136,6 +136,7 @@ n8n/                        # n8n 워크플로 정의 (workflow.json, hmac-verif
 supabase/
 ├── migrations/             # DB 스키마 + RLS (00001~00009)
 └── functions/              # Deno Edge Functions (서버 로직의 유일한 자리)
+    ├── _shared/              # 공통 헬퍼 (CORS whitelist 등)
     ├── chat/                 # AI Chat SSE 스트리밍 (Phase 1)
     ├── generate/             # 3역할 JSON 생성 (명발굴 세션)
     ├── generate-premium-report/  # Phase 2 리포트 파이프라인 진입점

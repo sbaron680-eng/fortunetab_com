@@ -61,21 +61,38 @@ describe('자시(23시) 경계 — 조자시 롤오버', () => {
 });
 
 describe('자시 롤오버 — 입춘 경계 + 윤년 (2차 감사 제안)', () => {
-  it('입춘 D-1 23시: 연주는 이전 해 간지 유지 (롤오버가 절기 이탈 유발 안 함)', () => {
+  it('입춘 D-1 23시: 연주는 이전 해 乙巳(2025) 간지, 일주는 다음날(2/4)', () => {
     // 2026 입춘: 2/4. 2/3 23시 출생자는:
-    // - 일주는 2/4 기준으로 롤오버
-    // - 연주는 2/3(당일) 기준 → 입춘 전이므로 2025년 乙巳 간지
-    const rIpchunPre22 = calculateSaju(2026, 2, 3, 22);
-    const rIpchunPre23 = calculateSaju(2026, 2, 3, 23);
+    // - 일주는 2/4 기준으로 롤오버 (조자시)
+    // - 연주는 2/3(당일) 기준 → 입춘 전이므로 2025년 乙巳 간지 (stemIdx=1, branchIdx=5)
+    // 3차 감사 test-engineer 제안: literal 간지 assertion으로 calcYearPillar가
+    // 잘못된 파라미터를 받아도 통과하는 맹점 제거.
+    const r = calculateSaju(2026, 2, 3, 23);
 
-    // 22시와 23시 둘 다 2/3이 입춘 전이므로 연주 일치해야 함
-    expect(rIpchunPre23.year.stemIdx).toBe(rIpchunPre22.year.stemIdx);
-    expect(rIpchunPre23.year.branchIdx).toBe(rIpchunPre22.year.branchIdx);
+    // 연주 literal 검증 — 2025 乙巳
+    expect(r.year.stemIdx).toBe(1);   // 乙
+    expect(r.year.branchIdx).toBe(5); // 巳
+
+    // 22시와 비교해서 연주 일치(당일 기준이므로 시간 무관)
+    const r22 = calculateSaju(2026, 2, 3, 22);
+    expect(r.year.stemIdx).toBe(r22.year.stemIdx);
+    expect(r.year.branchIdx).toBe(r22.year.branchIdx);
 
     // 일주는 다음 날(2/4) 기준으로 변경돼야 함
     const nextDay = calcDayPillar(2026, 2, 4);
-    expect(rIpchunPre23.day.stemIdx).toBe(nextDay.stemIdx);
-    expect(rIpchunPre23.day.branchIdx).toBe(nextDay.branchIdx);
+    expect(r.day.stemIdx).toBe(nextDay.stemIdx);
+    expect(r.day.branchIdx).toBe(nextDay.branchIdx);
+  });
+
+  it('23시 rolloverJa 회귀 방지 — 이전 날 일주와 반드시 달라야 함', () => {
+    // 누군가 rolloverJa 로직을 제거·비활성화하면 23시 일주가 같은 날 일주로 퇴행.
+    // 이 테스트는 "다음날과 같다"만 검증하지 않고 "당일과 다르다"를 직접 assert.
+    const r23 = calculateSaju(2000, 3, 15, 23);
+    const currentDay = calcDayPillar(2000, 3, 15);
+    // 일주가 당일 기준과 확실히 다름 — rolloverJa가 꺼지면 둘이 같아져 FAIL
+    expect(
+      r23.day.stemIdx !== currentDay.stemIdx || r23.day.branchIdx !== currentDay.branchIdx
+    ).toBe(true);
   });
 
   it('윤년 2/28 23시 출생 → 일주가 2/29 기준', () => {
