@@ -97,8 +97,10 @@ Deno.serve(async (req: Request) => {
 
         // ±1원 오차 허용 (반올림)
         if (Math.abs(expected - amount) > 1) {
+          // PII 보호: 로그에 items 전체가 아닌 product_id 리스트만
+          const itemsSummary = items.map(i => i.product_id).join(',');
           console.error(
-            `[confirm-payment] 금액 조작 의심: 재계산=${expected}, 요청=${amount}, DB=${orderRow.total}, items=${JSON.stringify(items)}`
+            `[confirm-payment] 금액 조작 의심: 재계산=${expected}, 요청=${amount}, items=${itemsSummary}`
           );
           return json({ ok: false, error: '결제 금액 검증 실패. 장바구니를 새로고침 후 다시 시도해 주세요.' }, 400);
         }
@@ -129,7 +131,8 @@ Deno.serve(async (req: Request) => {
     const data = await tossRes.json();
 
     if (!tossRes.ok) {
-      console.error('[confirm-payment] 승인 실패:', JSON.stringify(data));
+      // PII 보호: 전체 body 대신 code/message만 (카드 tail, 승인번호 등 민감값 로그 방지)
+      console.error('[confirm-payment] 승인 실패:', data?.code ?? '-', '|', (data?.message ?? '').slice(0, 200));
       return json({
         ok: false,
         error: data.message || '결제 승인에 실패했습니다.',
@@ -139,21 +142,34 @@ Deno.serve(async (req: Request) => {
 
     console.log(`[confirm-payment] 승인 성공: ${orderId} (${paymentType === 'PAYPAL' ? `$${amount}` : `${amount}원`})`);
 
-    // DB 주문 상태 업데이트: pending → paid + 비동기 파이프라인 트리거
+    // DB 주문 상태 업데이트: pending → paid (CAS 패턴) + 비동기 파이프라인 트리거
+    //
+    // 원자성: .eq('status', 'pending') 조건부 UPDATE로 race 차단.
+    // - 두 요청이 pre-Toss 검증을 동시에 통과해도 fire-and-forget은 1회만 실행.
+    // - 이미 'paid' 상태면 update 0행 → updatedOrder=null → 트리거 생략.
+    // - Toss 자체는 paymentKey 기반 idempotent, 이 로직은 DB 레벨 idempotency.
     if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
       try {
         const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
         const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-/.test(orderId);
         const col = isUuid ? 'id' : 'order_number';
-        const { data: updatedOrder } = await sb
+        const { data: updatedOrder, error: updErr } = await sb
           .from('orders')
           .update({ status: 'paid', payment_key: paymentKey })
           .eq(col, orderId)
+          .eq('status', 'pending')   // ★ CAS: 이미 처리됐으면 0행 반환
           .select('id')
-          .single();
-        console.log(`[confirm-payment] DB 상태 업데이트: ${col}=${orderId} → paid`);
+          .maybeSingle();
 
-        if (updatedOrder?.id) {
+        if (updErr) {
+          console.error('[confirm-payment] DB UPDATE 오류:', updErr.message ?? '-');
+        } else if (!updatedOrder) {
+          // CAS 실패 = 이미 paid 상태. 결제는 성공했으나 DB는 먼저 들어온 요청이 처리.
+          // 중복 트리거 방지를 위해 fire-and-forget 생략하고 정상 응답.
+          console.log(`[confirm-payment] 이미 처리된 주문 (CAS skip): ${col}=${orderId}`);
+        } else {
+          console.log(`[confirm-payment] DB 상태 업데이트: ${col}=${orderId} → paid`);
+
           // 프리미엄 상품 여부 판별 — generate-premium-report 트리거 조건
           const { data: items } = await sb
             .from('order_items')
@@ -174,8 +190,6 @@ Deno.serve(async (req: Request) => {
           });
 
           // ── fire-and-forget 2: 프리미엄이면 심층 리포트 자동 생성 파이프라인 ──
-          // 브라우저 종료·세션 이탈과 무관하게 서버가 완성까지 처리.
-          // n8n 워크플로가 Claude API × PDF 렌더 × Storage 업로드 × send-report-email 순차 실행.
           if (hasPremium) {
             fetch(`${SUPABASE_URL}/functions/v1/generate-premium-report`, {
               method: 'POST',
