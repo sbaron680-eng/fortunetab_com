@@ -3,14 +3,12 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store';
-import { useSessionStore } from '@/lib/stores/session';
 import { calcFortuneScore } from '@/lib/fortune-score';
 import type { UserMode } from '@/lib/supabase';
 
 export default function SessionStartPage() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const { setMode, setFortuneScore, setStep, reset } = useSessionStore();
   const [selectedMode, setSelectedMode] = useState<UserMode | null>(null);
   const [birthDate, setBirthDate] = useState('');
   const [birthTime, setBirthTime] = useState('모름');
@@ -38,26 +36,81 @@ export default function SessionStartPage() {
       setError('모든 항목을 입력해 주세요.');
       return;
     }
+    if (!user) {
+      setError('로그인 후 세션을 시작할 수 있습니다.');
+      return;
+    }
 
     setIsLoading(true);
     setError('');
 
     try {
-      reset();
+      // 1. 클라이언트 측 Fortune Score 계산 (snapshot 재료)
+      //    ★ 키 네이밍은 sanitizeFortuneSnapshot whitelist(camelCase)와 일치해야 함.
+      //    snake_case로 보내면 chat Edge Function에서 grade 외 전부 drop되어
+      //    시스템 프롬프트가 '(운세 스냅샷 없음)'으로 붕괴됨.
+      //    현재 v1 엔진은 dayElem/yongsin/sunSign 미지원 — 다음 스프린트 v2 엔진 통합 시 확장.
       const result = calcFortuneScore(birthDate, birthTime, gender);
+      const fortuneSnapshot = {
+        fortuneScore: result.fortuneScore,
+        grade: result.grade.label,
+        daunPhase: result.daunPhase,
+      };
 
-      setMode(selectedMode);
-      setFortuneScore(
-        result.fortuneScore,
-        result.fortunePercent,
-        result.daunPhase,
-        result.grade.label,
-      );
-      setStep(0);
+      // 2. 인증 토큰 확보
+      const { supabase } = await import('@/lib/supabase');
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) {
+        setError('로그인 세션이 만료되었습니다. 다시 로그인해 주세요.');
+        setIsLoading(false);
+        return;
+      }
 
-      router.push('/session/wizard');
+      // 3. create-session Edge Function 호출 (크레딧 5 선차감 + fortune_profile UPSERT + chat_session INSERT)
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      if (!supabaseUrl) {
+        setError('SUPABASE_URL 설정이 누락되었습니다.');
+        setIsLoading(false);
+        return;
+      }
+
+      const res = await fetch(`${supabaseUrl}/functions/v1/create-session`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          mode: selectedMode,
+          birth_date: birthDate,
+          gender,
+          fortune_snapshot: fortuneSnapshot,
+          locale: 'ko',
+        }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (res.status === 402 && data.error === 'insufficient_credits') {
+          setError(
+            `크레딧이 부족합니다. (잔액 ${data.balance ?? 0}, 필요 ${data.required ?? 5})`,
+          );
+        } else {
+          setError(data.error ?? '세션 생성에 실패했습니다. 잠시 후 다시 시도해주세요.');
+        }
+        return;
+      }
+
+      if (!data.sessionId) {
+        setError('세션 ID를 받지 못했습니다.');
+        return;
+      }
+
+      // 4. 채팅 페이지로 이동
+      router.push(`/chat/?session=${encodeURIComponent(data.sessionId)}`);
     } catch {
-      setError('Fortune Score 계산 중 오류가 발생했습니다.');
+      setError('세션 생성 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
     }
