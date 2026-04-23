@@ -168,33 +168,52 @@ Deno.serve(async (req: Request) => {
     return json({ error: '세션 로드 실패' }, 404);
   }
 
-  // 6. 최근 히스토리 로드 (시간순)
+  // 6. 최근 히스토리 로드 — 최신 N-1개를 역방향으로 가져와 reverse로 시간순 복원.
+  //    Claude messages API는 시간순 정렬 필수. ascending=true로 limit(N)을 걸면
+  //    세션이 길어질 때 "초기 N개"만 보내 최근 맥락이 단절되는 버그 (2026-04-23 수정).
   const { data: history } = await sbAdmin
     .from('chat_messages')
     .select('role, content')
     .eq('session_id', body.sessionId)
-    .order('created_at', { ascending: true })
-    .limit(HISTORY_LIMIT);
+    .order('created_at', { ascending: false })
+    .limit(HISTORY_LIMIT - 1); // 이번 턴의 유저 메시지용 슬롯 1개 남김
 
   const messages: Array<{ role: 'user' | 'assistant'; content: string }> = (history ?? [])
+    .reverse()
     .filter(m => m.role === 'user' || m.role === 'assistant')
     .map(m => ({ role: m.role as 'user' | 'assistant', content: m.content }));
   messages.push({ role: 'user', content: message });
 
-  // 7. 유저 메시지 DB 저장 (fire-and-forget — Claude 호출 실패해도 유저 메시지는 기록)
-  sbAdmin.from('chat_messages').insert({
+  // 7. 유저 메시지 DB 저장 — await 필수. 실패 시 message_count 롤백 후 중단.
+  //    fire-and-forget으로 두면 DB 실패 시 다음 턴에 orphan assistant reply로
+  //    Claude가 혼란스러운 히스토리를 받음 (2026-04-23 수정).
+  const { error: userInsertErr } = await sbAdmin.from('chat_messages').insert({
     session_id: body.sessionId,
     role: 'user',
     content: message,
-  }).then(({ error }) => {
-    if (error) console.error('[chat] user msg insert 실패:', error);
   });
+  if (userInsertErr) {
+    console.error('[chat] user msg insert 실패:', userInsertErr.message ?? '-');
+    // 증가시켰던 +2 롤백
+    await sbAdmin.rpc('decrement_message_count', {
+      p_session_id: body.sessionId,
+      p_user_id: userId,
+      p_decrement: 2,
+    });
+    return json({ error: 'message_save_failed' }, 500);
+  }
 
-  // 8. Claude 스트리밍 호출
+  // 8. Claude 스트리밍 호출 — 실패 시 사전 증가된 message_count +2를 롤백.
+  //    유저 메시지 DB는 남기지만(실제 발화 기록) 쿼터는 돌려줌.
   let claudeStream: ReadableStream<Uint8Array>;
   try {
     claudeStream = await streamClaude(buildSystemPrompt(session.fortune_snapshot, session.locale ?? 'ko'), messages);
   } catch (e) {
+    await sbAdmin.rpc('decrement_message_count', {
+      p_session_id: body.sessionId,
+      p_user_id: userId,
+      p_decrement: 2,
+    });
     const msg = e instanceof Error ? e.message : 'AI 오류';
     return json({ error: msg }, 502);
   }
@@ -246,7 +265,9 @@ Deno.serve(async (req: Request) => {
         controller.close();
       }
 
-      // 10. assistant 메시지 DB 저장 (스트림 종료 후)
+      // 10. 스트림 종료 처리:
+      //     - 텍스트가 있으면 assistant 메시지 DB 저장
+      //     - 텍스트가 비어있으면(스트림 조기 단절) 사전 증가시킨 +2 중 assistant 몫 +1 롤백
       if (assistantFullText) {
         const { error } = await sbAdmin.from('chat_messages').insert({
           session_id: body.sessionId,
@@ -255,6 +276,14 @@ Deno.serve(async (req: Request) => {
           metadata: { model: MODEL, token_count: assistantFullText.length },
         });
         if (error) console.error('[chat] assistant msg insert 실패:', error);
+      } else {
+        // 스트림은 열렸지만 텍스트 0 — Claude가 중간에 끊어졌거나 rate-limited.
+        // 유저 메시지는 이미 DB에 있으니 +1만 유지, assistant 슬롯 +1 반환.
+        await sbAdmin.rpc('decrement_message_count', {
+          p_session_id: body.sessionId,
+          p_user_id: userId,
+          p_decrement: 1,
+        });
       }
     },
   });
