@@ -7,6 +7,7 @@ node_modules/
 .env
 .env.local
 .env.*.local
+.env.production
 pdf-server/.env
 
 # OS
@@ -41,3 +42,10 @@ env_tmp.txt
 
 # Supabase CLI 상태
 supabase/.temp/
+
+# 세션 인수인계 문서 (로컬 전용)
+handoff-*.md
+
+# 생성된 프레젠테이션·스크립트 (로컬 전용)
+*.pptx
+scripts/generate-*-ppt.mjs
