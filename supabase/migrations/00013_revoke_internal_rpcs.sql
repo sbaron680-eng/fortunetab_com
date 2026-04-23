@@ -1,28 +1,32 @@
 -- ============================================================
 -- Migration 00013: 내부 RPC 권한 정리 — authenticated/anon 차단
 -- ============================================================
--- 3차 보안 감사 MED: increment_message_count 등 내부 전용 RPC가 기본 authenticated
--- 역할에게 노출된 상태라면, 사용자가 PostgREST `/rpc/increment_message_count`로
--- 자기 세션 message_count를 임의로 늘려 쿼터 DoS 가능.
+-- 3차 보안 감사 MED: 내부 전용 RPC가 authenticated/anon에 암묵 노출된 상태면
+-- 사용자가 PostgREST /rpc/ 경로로 직접 호출해 자기 쿼터를 임의 증가시키는 등
+-- DoS/권한 우회 창구가 됨.
 --
--- 이 마이그레이션은 모든 내부 RPC에 REVOKE EXECUTE FROM authenticated, anon을
--- 명시적으로 적용 (이미 적용된 경우 idempotent).
+-- 4개 내부 RPC(increment_message_count, extend_session_messages, spend_credits,
+-- add_credits)에 REVOKE EXECUTE FROM authenticated, anon 적용.
+--
+-- 주의: CREATE OR REPLACE FUNCTION은 ACL을 유지하지 않으므로, 이 마이그레이션이
+-- 00002/00004 이후에 순서대로 실행돼야 함 (prefix 숫자로 보장).
 
-REVOKE ALL ON FUNCTION public.increment_message_count(uuid, uuid, int) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.increment_message_count(uuid, uuid, int) FROM authenticated, anon;
-GRANT EXECUTE ON FUNCTION public.increment_message_count(uuid, uuid, int) TO service_role;
+REVOKE ALL ON FUNCTION public.increment_message_count(uuid, uuid, integer) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.increment_message_count(uuid, uuid, integer) FROM authenticated, anon;
+GRANT EXECUTE ON FUNCTION public.increment_message_count(uuid, uuid, integer) TO service_role;
 
-REVOKE ALL ON FUNCTION public.extend_session_messages(uuid, uuid, int, int) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.extend_session_messages(uuid, uuid, int, int) FROM authenticated, anon;
-GRANT EXECUTE ON FUNCTION public.extend_session_messages(uuid, uuid, int, int) TO service_role;
+REVOKE ALL ON FUNCTION public.extend_session_messages(uuid, uuid, integer, integer) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.extend_session_messages(uuid, uuid, integer, integer) FROM authenticated, anon;
+GRANT EXECUTE ON FUNCTION public.extend_session_messages(uuid, uuid, integer, integer) TO service_role;
 
-REVOKE ALL ON FUNCTION public.spend_credits(uuid, int, text, uuid, text) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.spend_credits(uuid, int, text, uuid, text) FROM authenticated, anon;
-GRANT EXECUTE ON FUNCTION public.spend_credits(uuid, int, text, uuid, text) TO service_role;
+REVOKE ALL ON FUNCTION public.spend_credits(uuid, integer, text, uuid, text) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.spend_credits(uuid, integer, text, uuid, text) FROM authenticated, anon;
+GRANT EXECUTE ON FUNCTION public.spend_credits(uuid, integer, text, uuid, text) TO service_role;
 
-REVOKE ALL ON FUNCTION public.add_credits(uuid, int, text, uuid, text, timestamptz) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.add_credits(uuid, int, text, uuid, text, timestamptz) FROM authenticated, anon;
-GRANT EXECUTE ON FUNCTION public.add_credits(uuid, int, text, uuid, text, timestamptz) TO service_role;
+REVOKE ALL ON FUNCTION public.add_credits(uuid, integer, text, uuid, text, timestamp with time zone) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.add_credits(uuid, integer, text, uuid, text, timestamp with time zone) FROM authenticated, anon;
+GRANT EXECUTE ON FUNCTION public.add_credits(uuid, integer, text, uuid, text, timestamp with time zone) TO service_role;
 
--- get_my_orders / get_pending_reports_admin은 authenticated가 호출해야 하므로
--- 기존 GRANT TO authenticated 유지 (SECURITY DEFINER 내부에서 auth.uid() 검증).
+-- 참고: decrement_message_count(00010) + check_and_consume_rate_limit(00011/00012)는
+-- 각자 마이그레이션에서 이미 REVOKE + GRANT service_role 처리됨.
+-- get_my_orders / get_pending_reports_admin은 authenticated가 호출해야 하므로 제외.
