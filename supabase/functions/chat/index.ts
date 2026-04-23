@@ -19,18 +19,34 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '
 const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY') || '';
 const MODEL = 'claude-sonnet-4-6';
 const MAX_TOKENS = 1024;
-const HISTORY_LIMIT = 30; // 최근 N 메시지까지 문맥으로 전달
+const HISTORY_LIMIT = 30;           // 최근 N 메시지까지 문맥으로 전달
+const RATE_LIMIT_PER_MIN = 10;      // chat 호출 분당 상한 (Claude 과금 공격 방어)
 
-const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
+// ─── CORS ────────────────────────────────────────────────────────────
+// 2차 보안 감사: 와일드카드 Origin으로 cross-origin 유저 세션 악용 가능.
+// 명시적 화이트리스트 + Vary: Origin으로 캐시 안전성까지 확보.
+const ALLOWED_ORIGINS = new Set([
+  'https://fortunetab.com',
+  'https://www.fortunetab.com',
+  'http://localhost:3000',           // 로컬 개발용
+  'http://localhost:8788',           // wrangler pages dev
+]);
 
-function json(body: Record<string, unknown>, status = 200) {
+function corsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get('origin') ?? '';
+  const allowed = ALLOWED_ORIGINS.has(origin) ? origin : '';
+  return {
+    'Access-Control-Allow-Origin': allowed,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Vary': 'Origin',
+  };
+}
+
+function json(body: Record<string, unknown>, status = 200, req?: Request) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...CORS, 'Content-Type': 'application/json' },
+    headers: { ...(req ? corsHeaders(req) : {}), 'Content-Type': 'application/json' },
   });
 }
 
@@ -43,13 +59,42 @@ interface ChatRequest {
   message: string;
 }
 
+// ─── fortune_snapshot sanitize ───────────────────────────────────────
+// 2차 보안 감사 HIGH: JSON.stringify().slice(1500)는 잘린 JSON으로 system
+// prompt 경계를 흐림. 사용자/관리자가 snapshot에 악성 텍스트를 넣으면
+// prompt injection 가능 (예: `"}], "system": "ignore previous..."`).
+//
+// 방어: 알려진 안전한 키만 뽑아 스칼라화 후 재구성. 백틱·따옴표·개행은 공백 치환.
+function sanitizeFortuneSnapshot(snapshot: unknown): string {
+  if (!snapshot || typeof snapshot !== 'object') return '(운세 스냅샷 없음)';
+  const s = snapshot as Record<string, unknown>;
+
+  const safe = (v: unknown, maxLen = 30): string => {
+    if (v === null || v === undefined) return '';
+    const str = typeof v === 'number' ? String(v) : String(v ?? '');
+    // 프롬프트 경계를 깰 수 있는 문자 제거
+    return str.replace(/[`\n\r"\\]/g, ' ').trim().slice(0, maxLen);
+  };
+
+  const entries: Array<[string, string]> = [
+    ['fortuneScore', safe(s.fortuneScore, 10)],
+    ['grade',        safe(s.grade, 20)],
+    ['dayElem',      safe(s.dayElem, 10)],
+    ['yongsin',      safe(s.yongsin, 10)],
+    ['daunPhase',    safe(s.daunPhase, 20)],
+    ['sunSign',      safe(s.sunSign, 20)],
+    ['moonSign',     safe(s.moonSign, 20)],
+    ['risingSign',   safe(s.risingSign, 20)],
+  ];
+  const lines = entries.filter(([, v]) => v).map(([k, v]) => `- ${k}: ${v}`);
+  return lines.length > 0 ? lines.join('\n') : '(운세 스냅샷 없음)';
+}
+
 // ─── 시스템 프롬프트 ──────────────────────────────────────────────────
 
 function buildSystemPrompt(fortuneSnapshot: Record<string, unknown> | null, locale: string): string {
   const lang = locale === 'ko' ? '한국어 존댓말로' : 'in English';
-  const snap = fortuneSnapshot
-    ? JSON.stringify(fortuneSnapshot).slice(0, 1500)
-    : '(운세 스냅샷 없음)';
+  const snap = sanitizeFortuneSnapshot(fortuneSnapshot);
 
   return `당신은 FortuneTab의 AI 대화 파트너입니다. 동양 사주명리와 서양 점성술을 융합해 사용자의 삶의 방향을 탐색하도록 돕습니다.
 
@@ -99,13 +144,13 @@ async function streamClaude(
 // ─── 핸들러 ──────────────────────────────────────────────────────────
 
 Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
-  if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders(req) });
+  if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405, req);
 
   // 1. 인증
   const authHeader = req.headers.get('Authorization');
   if (!authHeader?.startsWith('Bearer ')) {
-    return json({ error: '로그인이 필요합니다.' }, 401);
+    return json({ error: '로그인이 필요합니다.' }, 401, req);
   }
 
   let userId: string;
@@ -114,26 +159,44 @@ Deno.serve(async (req: Request) => {
       global: { headers: { Authorization: authHeader } },
     });
     const { data: { user }, error: authErr } = await sbUser.auth.getUser();
-    if (authErr || !user) return json({ error: '세션이 만료되었습니다.' }, 401);
+    if (authErr || !user) return json({ error: '세션이 만료되었습니다.' }, 401, req);
     userId = user.id;
   } catch {
-    return json({ error: '인증 확인 실패' }, 401);
+    return json({ error: '인증 확인 실패' }, 401, req);
   }
 
-  if (!ANTHROPIC_API_KEY) return json({ error: 'AI 서비스 설정 오류' }, 500);
+  if (!ANTHROPIC_API_KEY) return json({ error: 'AI 서비스 설정 오류' }, 500, req);
+
+  // 1-a. Rate limit (사용자별 분당 10회) — Claude 과금 공격 차단
+  const sbAdminEarly = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+  const { data: rl } = await sbAdminEarly.rpc('check_and_consume_rate_limit', {
+    p_user_id: userId,
+    p_bucket: 'chat',
+    p_limit: RATE_LIMIT_PER_MIN,
+  });
+  if (rl && !rl.ok) {
+    return new Response(JSON.stringify({ error: 'rate_limited', retry_after_sec: rl.retry_after_sec ?? 60 }), {
+      status: 429,
+      headers: {
+        ...corsHeaders(req),
+        'Content-Type': 'application/json',
+        'Retry-After': String(rl.retry_after_sec ?? 60),
+      },
+    });
+  }
 
   // 2. 입력 검증
   let body: ChatRequest;
   try {
     body = await req.json();
   } catch {
-    return json({ error: 'Invalid JSON' }, 400);
+    return json({ error: 'Invalid JSON' }, 400, req);
   }
   if (!body.sessionId || !body.message || typeof body.message !== 'string') {
-    return json({ error: 'sessionId와 message가 필요합니다.' }, 400);
+    return json({ error: 'sessionId와 message가 필요합니다.' }, 400, req);
   }
   const message = body.message.trim().slice(0, 4000); // 입력 크기 제한
-  if (!message) return json({ error: '메시지가 비어있습니다.' }, 400);
+  if (!message) return json({ error: '메시지가 비어있습니다.' }, 400, req);
 
   // 3. 서비스 롤 클라이언트 (RPC + 삽입용 — user_id 명시로 권한 제어)
   const sbAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -146,14 +209,14 @@ Deno.serve(async (req: Request) => {
   });
   if (incErr) {
     console.error('[chat] increment_message_count 오류:', incErr);
-    return json({ error: 'DB 오류' }, 500);
+    return json({ error: 'DB 오류' }, 500, req);
   }
   if (!incResult?.ok) {
     const reason = incResult?.error;
-    if (reason === 'needs_extension') return json({ error: 'insufficient_credits' }, 402);
-    if (reason === 'session_not_found') return json({ error: 'session_not_found' }, 404);
-    if (reason === 'session_not_active') return json({ error: 'session_not_active' }, 400);
-    return json({ error: reason ?? 'quota_check_failed' }, 400);
+    if (reason === 'needs_extension') return json({ error: 'insufficient_credits' }, 402, req);
+    if (reason === 'session_not_found') return json({ error: 'session_not_found' }, 404, req);
+    if (reason === 'session_not_active') return json({ error: 'session_not_active' }, 400, req);
+    return json({ error: reason ?? 'quota_check_failed' }, 400, req);
   }
   const maxMessages: number = incResult.max_messages;
 
@@ -165,7 +228,7 @@ Deno.serve(async (req: Request) => {
     .eq('user_id', userId)  // 방어적 재확인 (RPC가 이미 user_id 매칭)
     .single();
   if (sessErr || !session) {
-    return json({ error: '세션 로드 실패' }, 404);
+    return json({ error: '세션 로드 실패' }, 404, req);
   }
 
   // 6. 최근 히스토리 로드 — 최신 N-1개를 역방향으로 가져와 reverse로 시간순 복원.
@@ -200,7 +263,7 @@ Deno.serve(async (req: Request) => {
       p_user_id: userId,
       p_decrement: 2,
     });
-    return json({ error: 'message_save_failed' }, 500);
+    return json({ error: 'message_save_failed' }, 500, req);
   }
 
   // 8. Claude 스트리밍 호출 — 실패 시 사전 증가된 message_count +2를 롤백.
@@ -215,7 +278,7 @@ Deno.serve(async (req: Request) => {
       p_decrement: 2,
     });
     const msg = e instanceof Error ? e.message : 'AI 오류';
-    return json({ error: msg }, 502);
+    return json({ error: msg }, 502, req);
   }
 
   // 9. SSE 변환: Claude 스트림 → 클라이언트 SSE 포맷
@@ -290,7 +353,7 @@ Deno.serve(async (req: Request) => {
 
   return new Response(outStream, {
     headers: {
-      ...CORS,
+      ...corsHeaders(req),
       'Content-Type': 'text/event-stream; charset=utf-8',
       'Cache-Control': 'no-cache',
       'Connection': 'keep-alive',

@@ -1,5 +1,6 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { corsHeaders, corsPreflightResponse, jsonResponse } from '../_shared/cors.ts';
 
 /**
  * send-order-email Edge Function
@@ -23,21 +24,15 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '
 const SITE_URL = Deno.env.get('SITE_URL') || 'https://fortunetab.com';
 const FROM_EMAIL = Deno.env.get('FROM_EMAIL') || 'FortuneTab <noreply@fortunetab.com>';
 
-const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
+// CORS: ../_shared/cors.ts (2026-04-23 보안 하드닝 - whitelist 전환)
 
-function json(body: Record<string, unknown>, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...CORS, 'Content-Type': 'application/json' },
-  });
-}
+
 
 Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
+  const json = (body: Record<string, unknown>, status = 200) =>
+    jsonResponse(body, status, req);
+
+  if (req.method === 'OPTIONS') return corsPreflightResponse(req);
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
 
   if (!RESEND_API_KEY) {

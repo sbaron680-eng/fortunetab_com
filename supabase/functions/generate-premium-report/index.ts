@@ -1,5 +1,6 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { corsHeaders, corsPreflightResponse, jsonResponse } from '../_shared/cors.ts';
 
 /**
  * generate-premium-report Edge Function
@@ -18,18 +19,7 @@ const WEBHOOK_SECRET = Deno.env.get('WEBHOOK_SHARED_SECRET') || '';
 
 const REPORT_RETENTION_DAYS = 32;
 
-const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-internal-secret',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
-
-function json(body: Record<string, unknown>, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...CORS, 'Content-Type': 'application/json' },
-  });
-}
+// CORS: ../_shared/cors.ts (2026-04-23 보안 하드닝 - whitelist 전환)
 
 async function sign(payload: string, secret: string): Promise<string> {
   const enc = new TextEncoder();
@@ -43,7 +33,9 @@ async function sign(payload: string, secret: string): Promise<string> {
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
+  const json = (body: Record<string, unknown>, status = 200) =>
+    jsonResponse(body, status, req);
+  if (req.method === 'OPTIONS') return corsPreflightResponse(req);
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
 
   try {

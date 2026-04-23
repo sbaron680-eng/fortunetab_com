@@ -1,5 +1,6 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { corsHeaders, corsPreflightResponse, jsonResponse } from '../_shared/cors.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') || '';
@@ -9,18 +10,9 @@ const API_KEY = Deno.env.get('ANTHROPIC_API_KEY') || '';
 const MODEL = 'claude-sonnet-4-6';
 const MAX_TOKENS = 1024;
 
-const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
+// CORS: ../_shared/cors.ts (2026-04-23 보안 하드닝 - whitelist 전환)
 
-function json(body: Record<string, unknown>, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...CORS, 'Content-Type': 'application/json' },
-  });
-}
+
 
 // ─── 타입 ─────────────────────────────────────────────────────────────
 
@@ -146,8 +138,11 @@ async function callClaude<T>(prompt: string): Promise<T> {
 // ─── 핸들러 ──────────────────────────────────────────────────────────
 
 Deno.serve(async (req: Request) => {
+  const json = (body: Record<string, unknown>, status = 200) =>
+    jsonResponse(body, status, req);
+
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: CORS });
+    return corsPreflightResponse(req);
   }
   if (req.method !== 'POST') {
     return json({ ok: false, error: 'Method not allowed' }, 405);
