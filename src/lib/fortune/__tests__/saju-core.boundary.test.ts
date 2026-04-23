@@ -60,6 +60,41 @@ describe('자시(23시) 경계 — 조자시 롤오버', () => {
   });
 });
 
+describe('자시 롤오버 — 입춘 경계 + 윤년 (2차 감사 제안)', () => {
+  it('입춘 D-1 23시: 연주는 이전 해 간지 유지 (롤오버가 절기 이탈 유발 안 함)', () => {
+    // 2026 입춘: 2/4. 2/3 23시 출생자는:
+    // - 일주는 2/4 기준으로 롤오버
+    // - 연주는 2/3(당일) 기준 → 입춘 전이므로 2025년 乙巳 간지
+    const rIpchunPre22 = calculateSaju(2026, 2, 3, 22);
+    const rIpchunPre23 = calculateSaju(2026, 2, 3, 23);
+
+    // 22시와 23시 둘 다 2/3이 입춘 전이므로 연주 일치해야 함
+    expect(rIpchunPre23.year.stemIdx).toBe(rIpchunPre22.year.stemIdx);
+    expect(rIpchunPre23.year.branchIdx).toBe(rIpchunPre22.year.branchIdx);
+
+    // 일주는 다음 날(2/4) 기준으로 변경돼야 함
+    const nextDay = calcDayPillar(2026, 2, 4);
+    expect(rIpchunPre23.day.stemIdx).toBe(nextDay.stemIdx);
+    expect(rIpchunPre23.day.branchIdx).toBe(nextDay.branchIdx);
+  });
+
+  it('윤년 2/28 23시 출생 → 일주가 2/29 기준', () => {
+    // 2024는 윤년, 2/29 존재
+    const r = calculateSaju(2024, 2, 28, 23);
+    const feb29 = calcDayPillar(2024, 2, 29);
+    expect(r.day.stemIdx).toBe(feb29.stemIdx);
+    expect(r.day.branchIdx).toBe(feb29.branchIdx);
+  });
+
+  it('평년 2/28 23시 출생 → 일주가 3/1 기준 (JS Date UTC 산술로 2/29 건너뜀)', () => {
+    // 2023은 평년, 2/28 다음 날은 3/1
+    const r = calculateSaju(2023, 2, 28, 23);
+    const mar1 = calcDayPillar(2023, 3, 1);
+    expect(r.day.stemIdx).toBe(mar1.stemIdx);
+    expect(r.day.branchIdx).toBe(mar1.branchIdx);
+  });
+});
+
 describe('hourToBranchIdx 입력 검증', () => {
   it('정상 범위 0~23 동작', () => {
     expect(hourToBranchIdx(0)).toBe(0);

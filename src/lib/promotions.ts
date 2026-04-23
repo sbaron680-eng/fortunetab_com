@@ -76,6 +76,24 @@ export function getPromotionForProduct(
   return global ?? null;
 }
 
+// ── 라인 총액 계산 — per-unit 할인 적용 후 qty 곱 ─────────────
+//
+// confirm-payment Edge Function의 재계산 로직과 계약을 맞추기 위한 공유 함수.
+// 서버에서 Deno/Edge 런타임 제약으로 이 함수를 직접 import하지는 못하지만,
+// 둘이 동일 공식을 쓰도록 참조점으로 남김.
+//
+// Flat 할인 qty 버그 회귀 방지(2026-04-23):
+//   (단가 - 할인) × qty   ✅ 올바른 계산
+//   (단가 × qty) - 할인   ❌ 1회만 차감되는 버그
+export function calculateLineTotal(
+  unit: number,
+  qty: number,
+  promo: Promotion | null,
+): number {
+  const { finalPrice } = applyPromotion(unit, promo);
+  return finalPrice * (qty ?? 1);
+}
+
 // ── 어드민: 전체 프로모션 조회 (만료 포함) ────────────────────
 export async function fetchAllPromotions(): Promise<Promotion[]> {
   const { data, error } = await supabase
