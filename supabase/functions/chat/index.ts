@@ -1,6 +1,7 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { corsHeaders, corsPreflightResponse, jsonResponse } from '../_shared/cors.ts';
+import { sanitizeFortuneSnapshot } from '../_shared/sanitize.ts';
 
 /**
  * chat Edge Function — AI Chat Session 스트리밍
@@ -38,43 +39,7 @@ interface ChatRequest {
   message: string;
 }
 
-// ─── fortune_snapshot sanitize ───────────────────────────────────────
-// 2차 보안 감사 HIGH: JSON.stringify().slice(1500)는 잘린 JSON으로 system
-// prompt 경계를 흐림. 사용자/관리자가 snapshot에 악성 텍스트를 넣으면
-// prompt injection 가능 (예: `"}], "system": "ignore previous..."`).
-//
-// 방어: 알려진 안전한 키만 뽑아 스칼라화 후 재구성. 백틱·따옴표·개행은 공백 치환.
-function sanitizeFortuneSnapshot(snapshot: unknown): string {
-  if (!snapshot || typeof snapshot !== 'object') return '(운세 스냅샷 없음)';
-  const s = snapshot as Record<string, unknown>;
-
-  const safe = (v: unknown, maxLen = 30): string => {
-    if (v === null || v === undefined) return '';
-    const raw = typeof v === 'number' ? String(v) : String(v ?? '');
-    // 1) NFKC 정규화 — 유사 문자(curly quote, combining 등) 1차 통합
-    // 2) 범용 category 제거 — Cc(control), Cf(format, ZWJ), Zl(U+2028), Zp(U+2029)
-    //    + ASCII 제어(\n\r), 백틱, 따옴표, 백슬래시
-    // 3) 마지막에 maxLen slice — combining char 중간 잘림 방지 위해 normalize 선행
-    const cleaned = raw
-      .normalize('NFKC')
-      .replace(/[\p{Cc}\p{Cf}\p{Zl}\p{Zp}`"'\\]/gu, ' ')
-      .trim();
-    return cleaned.slice(0, maxLen);
-  };
-
-  const entries: Array<[string, string]> = [
-    ['fortuneScore', safe(s.fortuneScore, 10)],
-    ['grade',        safe(s.grade, 20)],
-    ['dayElem',      safe(s.dayElem, 10)],
-    ['yongsin',      safe(s.yongsin, 10)],
-    ['daunPhase',    safe(s.daunPhase, 20)],
-    ['sunSign',      safe(s.sunSign, 20)],
-    ['moonSign',     safe(s.moonSign, 20)],
-    ['risingSign',   safe(s.risingSign, 20)],
-  ];
-  const lines = entries.filter(([, v]) => v).map(([k, v]) => `- ${k}: ${v}`);
-  return lines.length > 0 ? lines.join('\n') : '(운세 스냅샷 없음)';
-}
+// fortune_snapshot sanitize: ../_shared/sanitize.ts (4차 감사 — 테스트 공유 위해 추출)
 
 // ─── 시스템 프롬프트 ──────────────────────────────────────────────────
 
@@ -272,9 +237,6 @@ Deno.serve(async (req: Request) => {
   const decoder = new TextDecoder();
   let assistantFullText = '';
 
-  // 부분 응답이 "완성된 답변"으로 볼 가치가 있는 최소 길이. 이보다 짧고 에러가 있으면 환불.
-  const MIN_USEFUL_RESPONSE_CHARS = 100;
-
   const outStream = new ReadableStream<Uint8Array>({
     async start(controller) {
       // 초기 이벤트: maxMessages 고지
@@ -282,7 +244,10 @@ Deno.serve(async (req: Request) => {
 
       const reader = claudeStream.getReader();
       let buffer = '';
-      let streamErrored = false;
+      // 4차 감사 M1/M2: Claude의 `message_stop` 이벤트가 유일한 완료 권위.
+      // length 임계(100자)는 짧은 정상 답변을 환불 처리하는 오판이 있었음.
+      // streamCompleted=true = Claude가 정상 완료 → 저장. 아니면 환불.
+      let streamCompleted = false;
       try {
         while (true) {
           const { done, value } = await reader.read();
@@ -304,8 +269,11 @@ Deno.serve(async (req: Request) => {
                     assistantFullText += text;
                     controller.enqueue(encoder.encode(sseEvent({ text })));
                   }
+                } else if (evt.type === 'message_stop') {
+                  streamCompleted = true;
                 } else if (evt.type === 'error') {
-                  streamErrored = true;
+                  // 에러 이벤트는 전달만 — 이후 message_stop이 와도 의심스러우므로
+                  // streamCompleted 신호만 믿는 게 안전.
                   controller.enqueue(encoder.encode(sseEvent({ error: evt.error?.message ?? 'stream error' })));
                 }
               } catch { /* partial JSON — 무시 */ }
@@ -313,20 +281,18 @@ Deno.serve(async (req: Request) => {
           }
         }
       } catch (e) {
-        streamErrored = true;
         const msg = e instanceof Error ? e.message : 'stream error';
         controller.enqueue(encoder.encode(sseEvent({ error: msg })));
       } finally {
         controller.close();
       }
 
-      // 10. 스트림 종료 처리 — 3차 감사 M4/M5 대응:
-      //     - 정상 응답(텍스트 ≥ 100자 && no error): assistant 저장, insert 실패 시 +1 롤백
-      //     - 부분 응답 + 에러: 유용하지 않은 수준이면 +1 환불 (사용자 체감 공정성)
-      //     - 텍스트 0: 기존대로 +1 환불
-      const isUsefulResponse = assistantFullText.length >= MIN_USEFUL_RESPONSE_CHARS && !streamErrored;
-
-      if (isUsefulResponse) {
+      // 10. 스트림 종료 후 저장 판정 — message_stop 수신만이 권위적 완료 신호.
+      //     - streamCompleted=true + 텍스트 있음: 정상 저장, insert 실패 시 +1 환불
+      //     - 그 외 (미완성·빈 스트림·조용한 단절): assistant 몫 +1 환불
+      //     vendor가 완료 후 ping/error를 보내는 케이스에서도 텍스트는 이미 완성됐으므로
+      //     message_stop 도착을 기다리는 이 로직이 과환불을 자동 차단.
+      if (streamCompleted && assistantFullText) {
         const { error } = await sbAdmin.from('chat_messages').insert({
           session_id: body.sessionId,
           role: 'assistant',
@@ -335,14 +301,13 @@ Deno.serve(async (req: Request) => {
         });
         if (error) {
           // assistant insert 실패 — 다음 턴에 orphan user 메시지가 되지 않도록 +1 롤백
-          // (user 메시지는 DB에 남지만 쿼터만 보전)
           console.error('[chat] assistant msg insert 실패:', error.message ?? '-');
           await sbAdmin.rpc('decrement_message_count', {
             p_session_id: body.sessionId, p_user_id: userId, p_decrement: 1,
           });
         }
       } else {
-        // 빈 스트림 OR 부분 응답 + 에러 — assistant 몫 +1 반환
+        // 미완성 — assistant 몫 +1 환불
         await sbAdmin.rpc('decrement_message_count', {
           p_session_id: body.sessionId, p_user_id: userId, p_decrement: 1,
         });
