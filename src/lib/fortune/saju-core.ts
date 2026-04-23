@@ -118,8 +118,12 @@ export function calcDayPillar(year: number, month: number, day: number): Pillar 
 /**
  * 시간(0~23) → 지지 인덱스 변환
  * 자시(23~01)=0, 축시(01~03)=1, ..., 해시(21~23)=11
+ * @throws RangeError 범위 밖·유한수 아닌 입력은 조용한 오동작 대신 명시적 실패
  */
 export function hourToBranchIdx(hour: number): number {
+  if (!Number.isFinite(hour) || hour < 0 || hour >= 24) {
+    throw new RangeError(`hourToBranchIdx: invalid hour ${hour} (0 이상 24 미만 필요)`);
+  }
   // 23시 이후는 자시(0)
   if (hour >= 23) return 0;
   return Math.floor((hour + 1) / 2);
@@ -305,11 +309,25 @@ export function calcYongsin(
 // ─── 메인 사주 계산 ──────────────────────────────────────────────────
 
 /**
+ * 출생 일자에 days 만큼 더해 새 (year, month, day) 반환.
+ * JS Date의 UTC 기반 산술로 월/년 롤오버 자동 처리.
+ */
+function addDays(year: number, month: number, day: number, days: number): { year: number; month: number; day: number } {
+  const d = new Date(Date.UTC(year, month - 1, day));
+  d.setUTCDate(d.getUTCDate() + days);
+  return { year: d.getUTCFullYear(), month: d.getUTCMonth() + 1, day: d.getUTCDate() };
+}
+
+/**
  * 사주팔자 계산
  * @param birthYear  양력 출생 년
  * @param birthMonth 양력 출생 월 (1~12)
  * @param birthDay   양력 출생 일
  * @param birthHour  출생 시간 (0~23, undefined=모름)
+ *
+ * 자시 처리: 23:00~23:59 출생은 조자시(早子時) 관행에 따라 **다음 날**의
+ * 일주·시주로 계산한다. 연주·월주는 일 변경으로 바뀌지 않는다(절기 기준).
+ * (야자시 학파를 쓰려면 calcHourPillar의 hour 처리를 분기 필요.)
  */
 export function calculateSaju(
   birthYear: number,
@@ -317,9 +335,15 @@ export function calculateSaju(
   birthDay: number,
   birthHour?: number,
 ): SajuResult {
+  // 23시 출생자는 일주·시주만 다음 날 기준으로 롤오버 (조자시)
+  const rolloverJa = birthHour !== undefined && birthHour >= 23;
+  const dayBase = rolloverJa
+    ? addDays(birthYear, birthMonth, birthDay, 1)
+    : { year: birthYear, month: birthMonth, day: birthDay };
+
   const yearPillar = calcYearPillar(birthYear, birthMonth, birthDay);
   const monthPillar = calcMonthPillar(birthYear, birthMonth, birthDay, yearPillar.stemIdx);
-  const dayPillar = calcDayPillar(birthYear, birthMonth, birthDay);
+  const dayPillar = calcDayPillar(dayBase.year, dayBase.month, dayBase.day);
   const hourPillar = calcHourPillar(birthHour, dayPillar.stemIdx);
 
   const activePillars = [yearPillar, monthPillar, dayPillar, hourPillar];
