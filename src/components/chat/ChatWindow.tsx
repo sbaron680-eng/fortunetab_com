@@ -62,7 +62,15 @@ export default function ChatWindow({ sessionId, initialMessages = [], maxMessage
     setStreamingText('');
 
     try {
-      const res = await fetch('/api/chat', {
+      // Chat 엔드포인트: Supabase Edge Function (Cloudflare Pages output:'export' 제약으로 Route Handler 불가)
+      // 2026-04-23 마이그레이션.
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      if (!supabaseUrl) {
+        setError('SUPABASE_URL 설정 누락');
+        setIsStreaming(false);
+        return;
+      }
+      const res = await fetch(`${supabaseUrl}/functions/v1/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

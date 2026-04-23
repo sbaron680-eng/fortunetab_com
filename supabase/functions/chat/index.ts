@@ -1,0 +1,271 @@
+import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
+import { createClient } from 'jsr:@supabase/supabase-js@2';
+
+/**
+ * chat Edge Function — AI Chat Session 스트리밍
+ *
+ * 계약 (ChatWindow.tsx 기준):
+ *   Request:  POST /functions/v1/chat  { sessionId, message }  (Bearer = Supabase session)
+ *   Response: SSE 스트림  data: {"text"?, "maxMessages"?, "error"?}
+ *   Errors:   HTTP 401(인증) / 403(권한) / 404(세션) / 400(검증) / 402+{error:"insufficient_credits"}(한도)
+ *
+ * 원자성: increment_message_count RPC가 SELECT FOR UPDATE로 동시성 보장.
+ * 2026-04-23: output:'export' 제약으로 Route Handler 불가 → Supabase Edge Function으로 이전.
+ */
+
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
+const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') || '';
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY') || '';
+const MODEL = 'claude-sonnet-4-6';
+const MAX_TOKENS = 1024;
+const HISTORY_LIMIT = 30; // 최근 N 메시지까지 문맥으로 전달
+
+const CORS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
+
+function json(body: Record<string, unknown>, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...CORS, 'Content-Type': 'application/json' },
+  });
+}
+
+function sseEvent(obj: Record<string, unknown>): string {
+  return `data: ${JSON.stringify(obj)}\n\n`;
+}
+
+interface ChatRequest {
+  sessionId: string;
+  message: string;
+}
+
+// ─── 시스템 프롬프트 ──────────────────────────────────────────────────
+
+function buildSystemPrompt(fortuneSnapshot: Record<string, unknown> | null, locale: string): string {
+  const lang = locale === 'ko' ? '한국어 존댓말로' : 'in English';
+  const snap = fortuneSnapshot
+    ? JSON.stringify(fortuneSnapshot).slice(0, 1500)
+    : '(운세 스냅샷 없음)';
+
+  return `당신은 FortuneTab의 AI 대화 파트너입니다. 동양 사주명리와 서양 점성술을 융합해 사용자의 삶의 방향을 탐색하도록 돕습니다.
+
+응답 원칙:
+- ${lang} 응답
+- 판단하지 않는 공감적인 톤 유지, 단정 대신 질문·관찰·가능성 제시
+- AI 분석은 참고 용도임을 적절히 상기 (1회 대화에 1회 이내)
+- 한 응답은 3~6문장으로 밀도 있게
+- Fortune Score, 대운, 십신 등 전문 용어는 사용 가능하나 쉬운 설명을 덧붙임
+- 사용자가 구체적 행동을 요청하면 GROW 4법(Ground/Root/Open/Water) 프레임 참고 가능
+
+사용자 운세 스냅샷:
+${snap}
+
+대화를 시작합니다. 사용자의 첫 메시지에 자연스럽게 반응하세요.`;
+}
+
+// ─── Claude 스트리밍 호출 ────────────────────────────────────────────
+
+async function streamClaude(
+  systemPrompt: string,
+  history: Array<{ role: 'user' | 'assistant'; content: string }>,
+): Promise<ReadableStream<Uint8Array>> {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': ANTHROPIC_API_KEY,
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      max_tokens: MAX_TOKENS,
+      system: systemPrompt,
+      messages: history,
+      stream: true,
+    }),
+  });
+  if (!res.ok || !res.body) {
+    const errText = await res.text().catch(() => '');
+    console.error('[chat] Claude API error:', res.status, errText.slice(0, 400));
+    throw new Error(`AI 오류 (${res.status})`);
+  }
+  return res.body;
+}
+
+// ─── 핸들러 ──────────────────────────────────────────────────────────
+
+Deno.serve(async (req: Request) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
+  if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
+
+  // 1. 인증
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader?.startsWith('Bearer ')) {
+    return json({ error: '로그인이 필요합니다.' }, 401);
+  }
+
+  let userId: string;
+  try {
+    const sbUser = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: { user }, error: authErr } = await sbUser.auth.getUser();
+    if (authErr || !user) return json({ error: '세션이 만료되었습니다.' }, 401);
+    userId = user.id;
+  } catch {
+    return json({ error: '인증 확인 실패' }, 401);
+  }
+
+  if (!ANTHROPIC_API_KEY) return json({ error: 'AI 서비스 설정 오류' }, 500);
+
+  // 2. 입력 검증
+  let body: ChatRequest;
+  try {
+    body = await req.json();
+  } catch {
+    return json({ error: 'Invalid JSON' }, 400);
+  }
+  if (!body.sessionId || !body.message || typeof body.message !== 'string') {
+    return json({ error: 'sessionId와 message가 필요합니다.' }, 400);
+  }
+  const message = body.message.trim().slice(0, 4000); // 입력 크기 제한
+  if (!message) return json({ error: '메시지가 비어있습니다.' }, 400);
+
+  // 3. 서비스 롤 클라이언트 (RPC + 삽입용 — user_id 명시로 권한 제어)
+  const sbAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+  // 4. 원자적 한도 체크 + 카운트 증가 (user+assistant = 2)
+  const { data: incResult, error: incErr } = await sbAdmin.rpc('increment_message_count', {
+    p_session_id: body.sessionId,
+    p_user_id: userId,
+    p_increment: 2,
+  });
+  if (incErr) {
+    console.error('[chat] increment_message_count 오류:', incErr);
+    return json({ error: 'DB 오류' }, 500);
+  }
+  if (!incResult?.ok) {
+    const reason = incResult?.error;
+    if (reason === 'needs_extension') return json({ error: 'insufficient_credits' }, 402);
+    if (reason === 'session_not_found') return json({ error: 'session_not_found' }, 404);
+    if (reason === 'session_not_active') return json({ error: 'session_not_active' }, 400);
+    return json({ error: reason ?? 'quota_check_failed' }, 400);
+  }
+  const maxMessages: number = incResult.max_messages;
+
+  // 5. 세션 컨텍스트 로드 (fortune_snapshot, locale)
+  const { data: session, error: sessErr } = await sbAdmin
+    .from('chat_sessions')
+    .select('id, fortune_snapshot, locale')
+    .eq('id', body.sessionId)
+    .eq('user_id', userId)  // 방어적 재확인 (RPC가 이미 user_id 매칭)
+    .single();
+  if (sessErr || !session) {
+    return json({ error: '세션 로드 실패' }, 404);
+  }
+
+  // 6. 최근 히스토리 로드 (시간순)
+  const { data: history } = await sbAdmin
+    .from('chat_messages')
+    .select('role, content')
+    .eq('session_id', body.sessionId)
+    .order('created_at', { ascending: true })
+    .limit(HISTORY_LIMIT);
+
+  const messages: Array<{ role: 'user' | 'assistant'; content: string }> = (history ?? [])
+    .filter(m => m.role === 'user' || m.role === 'assistant')
+    .map(m => ({ role: m.role as 'user' | 'assistant', content: m.content }));
+  messages.push({ role: 'user', content: message });
+
+  // 7. 유저 메시지 DB 저장 (fire-and-forget — Claude 호출 실패해도 유저 메시지는 기록)
+  sbAdmin.from('chat_messages').insert({
+    session_id: body.sessionId,
+    role: 'user',
+    content: message,
+  }).then(({ error }) => {
+    if (error) console.error('[chat] user msg insert 실패:', error);
+  });
+
+  // 8. Claude 스트리밍 호출
+  let claudeStream: ReadableStream<Uint8Array>;
+  try {
+    claudeStream = await streamClaude(buildSystemPrompt(session.fortune_snapshot, session.locale ?? 'ko'), messages);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : 'AI 오류';
+    return json({ error: msg }, 502);
+  }
+
+  // 9. SSE 변환: Claude 스트림 → 클라이언트 SSE 포맷
+  const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
+  let assistantFullText = '';
+
+  const outStream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      // 초기 이벤트: maxMessages 고지
+      controller.enqueue(encoder.encode(sseEvent({ maxMessages })));
+
+      const reader = claudeStream.getReader();
+      let buffer = '';
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          // Claude는 SSE를 주므로 이벤트 단위로 파싱
+          const parts = buffer.split('\n\n');
+          buffer = parts.pop() ?? '';
+          for (const part of parts) {
+            for (const line of part.split('\n')) {
+              if (!line.startsWith('data: ')) continue;
+              const payload = line.slice(6);
+              if (payload === '[DONE]') continue;
+              try {
+                const evt = JSON.parse(payload);
+                if (evt.type === 'content_block_delta' && evt.delta?.type === 'text_delta') {
+                  const text = evt.delta.text ?? '';
+                  if (text) {
+                    assistantFullText += text;
+                    controller.enqueue(encoder.encode(sseEvent({ text })));
+                  }
+                } else if (evt.type === 'error') {
+                  controller.enqueue(encoder.encode(sseEvent({ error: evt.error?.message ?? 'stream error' })));
+                }
+              } catch { /* partial JSON — 무시 */ }
+            }
+          }
+        }
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : 'stream error';
+        controller.enqueue(encoder.encode(sseEvent({ error: msg })));
+      } finally {
+        controller.close();
+      }
+
+      // 10. assistant 메시지 DB 저장 (스트림 종료 후)
+      if (assistantFullText) {
+        const { error } = await sbAdmin.from('chat_messages').insert({
+          session_id: body.sessionId,
+          role: 'assistant',
+          content: assistantFullText,
+          metadata: { model: MODEL, token_count: assistantFullText.length },
+        });
+        if (error) console.error('[chat] assistant msg insert 실패:', error);
+      }
+    },
+  });
+
+  return new Response(outStream, {
+    headers: {
+      ...CORS,
+      'Content-Type': 'text/event-stream; charset=utf-8',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'X-Accel-Buffering': 'no',
+    },
+  });
+});
