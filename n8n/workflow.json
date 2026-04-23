@@ -178,7 +178,7 @@
     {
       "parameters": {
         "language": "javaScript",
-        "jsCode": "// readWriteFile 노드 대체 — Code 노드에서 직접 fs.writeFileSync\n// n8n 1.x readWriteFile의 'not writable' 우회. /reports는 호스트 /volume1/docker/fortunetab/reports 마운트됨.\nconst fs = require('fs');\nconst path = require('path');\n\nconst orderId = $input.item.json.order_id;\nif (!orderId) throw new Error('order_id 없음');\n\n// n8n Code 노드 헬퍼: binary를 Buffer로 가져옴\nconst buf = await this.helpers.getBinaryDataBuffer(0, 'pdf');\nif (!buf || buf.length < 1000) {\n  throw new Error(`PDF 바이너리 이상: size=${buf?.length ?? 0}`);\n}\n\nconst filePath = `/reports/${orderId}.pdf`;\nfs.writeFileSync(filePath, buf);\n\nreturn [{\n  json: {\n    ...$input.item.json,\n    nas_file_path: filePath,\n    nas_bytes: buf.length,\n  },\n}];"
+        "jsCode": "// readWriteFile 노드 대체 — Code 노드에서 직접 fs.writeFileSync\n// n8n 1.x readWriteFile의 'not writable' 우회. /reports는 호스트 /volume1/docker/fortunetab/reports 마운트됨.\nconst fs = require('fs');\nconst path = require('path');\n\nconst orderId = $input.item.json.order_id;\nconst accessToken = $('Webhook · from Supabase').first().json.body?.access_token;\nif (!orderId) throw new Error('order_id 없음');\nif (!accessToken) throw new Error('access_token 누락 (capability URL)');\n\n// n8n Code 노드 헬퍼: binary를 Buffer로 가져옴\nconst buf = await this.helpers.getBinaryDataBuffer(0, 'pdf');\nif (!buf || buf.length < 1000) {\n  throw new Error(`PDF 바이너리 이상: size=${buf?.length ?? 0}`);\n}\n\nconst filePath = `/reports/${orderId}_${accessToken}.pdf`;\nfs.writeFileSync(filePath, buf);\n\nreturn [{\n  json: {\n    ...$input.item.json,\n    nas_file_path: filePath,\n    nas_bytes: buf.length,\n  },\n}];"
       },
       "id": "node-write-file",
       "name": "NAS 저장 (Code + fs)",
@@ -189,7 +189,7 @@
     {
       "parameters": {
         "language": "javaScript",
-        "jsCode": "// Supabase REST PATCH 페이로드 (orders.report_file_url + report_json)\nconst order_id = $('렌더 페이로드 구성').first().json.order_id;\nconst sections = $('렌더 페이로드 구성').first().json.sections;\nconst reviewIssues = $('렌더 페이로드 구성').first().json.review_issues;\n\n// NAS 파일의 외부 접근 URL — 사용자 환경 맞춤 (예: 리버스 프록시 /r/<order>.pdf)\nconst NAS_PUBLIC_BASE = $env.NAS_REPORT_PUBLIC_BASE ?? 'https://reports.fortunetab.com/r';\nconst publicUrl = `${NAS_PUBLIC_BASE}/${order_id}.pdf`;\n\nreturn [{\n  json: {\n    order_id,\n    callback: $('렌더 페이로드 구성').first().json.callback,\n    patch_body: {\n      report_file_url: publicUrl,\n      report_json: { ...sections, _review_issues: reviewIssues ?? [] },\n    },\n  },\n}];"
+        "jsCode": "// Supabase REST PATCH 페이로드 (orders.report_file_url + report_json)\nconst order_id = $('렌더 페이로드 구성').first().json.order_id;\nconst access_token = $('Webhook · from Supabase').first().json.body?.access_token;\nif (!access_token) throw new Error('access_token 누락 (capability URL)');\nconst sections = $('렌더 페이로드 구성').first().json.sections;\nconst reviewIssues = $('렌더 페이로드 구성').first().json.review_issues;\n\n// NAS 파일의 외부 접근 URL — 사용자 환경 맞춤 (예: 리버스 프록시 /r/<order>.pdf)\nconst NAS_PUBLIC_BASE = $env.NAS_REPORT_PUBLIC_BASE ?? 'https://reports.fortunetab.com/r';\nconst publicUrl = `${NAS_PUBLIC_BASE}/${order_id}_${access_token}.pdf`;\n\nreturn [{\n  json: {\n    order_id,\n    callback: $('렌더 페이로드 구성').first().json.callback,\n    patch_body: {\n      report_file_url: publicUrl,\n      report_json: { ...sections, _review_issues: reviewIssues ?? [] },\n    },\n  },\n}];"
       },
       "id": "node-build-patch",
       "name": "Supabase PATCH 구성",

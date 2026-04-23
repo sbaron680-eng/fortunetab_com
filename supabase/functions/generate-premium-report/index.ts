@@ -58,13 +58,28 @@ Deno.serve(async (req: Request) => {
 
     const { data: order, error: orderErr } = await sb
       .from('orders')
-      .select('id, order_number, user_id, status, saju_data, report_status, report_file_url')
+      .select('id, order_number, user_id, status, saju_data, report_status, report_file_url, access_token')
       .eq('id', order_id)
       .single();
 
     if (orderErr || !order) {
       console.error('[generate-premium-report] order not found:', order_id, orderErr);
       return json({ ok: false, error: 'Order not found' }, 404);
+    }
+
+    // access_token 보장: 구주문에 NULL일 수 있음 → UUID 발급 후 즉시 저장.
+    // 이 토큰은 PDF 파일명·URL에 포함되어 capability URL로 동작한다.
+    let accessToken: string = order.access_token ?? '';
+    if (!accessToken) {
+      accessToken = crypto.randomUUID();
+      const { error: tokErr } = await sb
+        .from('orders')
+        .update({ access_token: accessToken })
+        .eq('id', order.id);
+      if (tokErr) {
+        console.error('[generate-premium-report] access_token 생성 실패:', tokErr);
+        return json({ ok: false, error: 'access_token 생성 실패' }, 500);
+      }
     }
 
     if (order.status !== 'paid' && order.status !== 'completed') {
@@ -116,10 +131,12 @@ Deno.serve(async (req: Request) => {
       },
       saju_data: order.saju_data,
       product_ids: (items ?? []).map(i => i.product_id),
+      access_token: accessToken,                     // capability URL에 포함되어 PDF 무단 접근 방지
       storage: {
         target: 'nas',                               // NAS pdf_server 로컬 저장
         retention_days: REPORT_RETENTION_DAYS,       // 32일 후 자동 삭제
         supabase_storage_enabled: false,             // 수익화 후 true 전환
+        filename_pattern: '{order_id}_{access_token}.pdf',  // n8n 워크플로와 계약
       },
       callback: {
         send_email_url: `${SUPABASE_URL}/functions/v1/send-report-email`,

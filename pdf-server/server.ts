@@ -99,11 +99,15 @@ app.post('/reports/render', handleRenderReport);
 //   3) Content-Disposition 없으면 브라우저가 인라인 표시 vs 다운로드 — 이메일 UX는 다운로드 선호
 const REPORT_DIR = process.env.REPORT_DIR || '/reports';
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+// Capability URL 패턴: <order_id>_<access_token>. 2026-04-23 보안 하드닝.
+// 엄격한 UUID v4 검증으로 path traversal·임의 필명 차단.
+// 구주문(~2026-04-22) 파일은 <order_id>.pdf 형식이라 32일 만료 전까지 이전 패턴도 유지.
+const UUID_V4_WITH_TOKEN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}_[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 app.get('/r/:id.pdf', (req, res) => {
   const id = req.params.id;
 
-  if (!UUID_V4.test(id)) { res.status(404).end(); return; }
+  if (!UUID_V4.test(id) && !UUID_V4_WITH_TOKEN.test(id)) { res.status(404).end(); return; }
 
   const baseDir = path.resolve(REPORT_DIR);
   const filePath = path.resolve(baseDir, `${id}.pdf`);
