@@ -103,14 +103,17 @@ export default function ChatWindow({ sessionId, initialMessages = [], maxMessage
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: 'Unknown error' }));
         if (res.status === 429) {
-          // Retry-After header is authoritative per RFC 9110 §10.2.3
+          // Retry-After header is authoritative per RFC 9110 §10.2.3.
+          // 상한 300s (5분): 서버 오동작으로 Retry-After=86400 같은 값이 와도 UI를 하루 잠그지 않음.
+          const MAX_COOLDOWN_SEC = 300;
           const headerSec = Number(res.headers.get('Retry-After'));
           const bodySec = Number(err.retry_after_sec);
-          const sec = Number.isFinite(headerSec) && headerSec > 0
+          const raw = Number.isFinite(headerSec) && headerSec > 0
             ? headerSec
             : Number.isFinite(bodySec) && bodySec > 0
               ? bodySec
               : 60;
+          const sec = Math.min(raw, MAX_COOLDOWN_SEC);
           setRetryAfter(sec);
           // Server rejected before processing — roll back optimistic user message so it can be resent
           setMessages(prev => prev.filter(m => m.id !== userMsg.id));

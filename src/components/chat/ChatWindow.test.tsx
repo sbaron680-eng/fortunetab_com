@@ -126,6 +126,20 @@ describe('ChatWindow — 429 Retry-After UX', () => {
     ).toBeInTheDocument();
   });
 
+  it('Retry-After가 상한(300s) 초과하면 상한으로 cap', async () => {
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+      make429({ retryAfterHeader: '86400' /* 24h */ }),
+    );
+
+    render(<ChatWindow sessionId="s1" maxMessages={10} />);
+    await sendMessage('hi');
+
+    // 86400이 아니라 300으로 cap 되어야 함
+    expect(
+      await screen.findByText('요청이 너무 빠릅니다. 300초 후 다시 시도해주세요'),
+    ).toBeInTheDocument();
+  });
+
   it('헤더/body 모두 비정상(NaN/음수)이면 60초 default', async () => {
     (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
       make429({ retryAfterHeader: 'not-a-number', bodySec: -5 }),

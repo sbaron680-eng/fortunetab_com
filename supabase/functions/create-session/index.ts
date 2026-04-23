@@ -3,7 +3,7 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { corsPreflightResponse, jsonResponse } from '../_shared/cors.ts';
 
 /**
- * create-session Edge Function — AI Chat Session 생성 + 선차감
+ * create-session Edge Function — AI Chat Session 생성 (2026-04-24 정밀 감사 후 재설계)
  *
  * 계약:
  *   Request:  POST /functions/v1/create-session  (Bearer = Supabase session)
@@ -11,31 +11,34 @@ import { corsPreflightResponse, jsonResponse } from '../_shared/cors.ts';
  *       mode: 'biz'|'gen',
  *       birth_date: 'YYYY-MM-DD',
  *       gender: 'male'|'female',
- *       fortune_snapshot: { fortune_score, daun_phase, grade_label, ... },
+ *       fortune_snapshot: {                    // camelCase whitelist
+ *         fortuneScore: number,                // 필수
+ *         grade: string,                       // 필수
+ *         daunPhase: string,                   // 필수
+ *         dayElem?, yongsin?, sunSign?, moonSign?, risingSign?
+ *       },
  *       birth_hour?: number, birth_minute?: number, birth_location?: string,
  *       locale?: 'ko'|'en'  (default 'ko')
  *     }
  *   Response: 200 { ok: true, sessionId, maxMessages, balance }
  *   Errors:   401 unauthorized / 400 invalid_request / 402 insufficient_credits / 500 *
  *
- * 트랜잭션 순서 (orphan 방지):
- *   1) fortune_profiles UPSERT (캐시, 실패 시 조기 return)
- *   2) spend_credits RPC (ref_id=null 임시)
- *      → insufficient → 402 반환 (아직 아무것도 안 생성)
- *      → 기타 실패 → 500
- *   3) chat_sessions INSERT (credits_spent=5 확정값)
- *      → 실패 시 add_credits RPC로 환불 → 500
- *   4) credit_transactions UPDATE reference_id=session.id (best-effort 감사 연결)
+ * 아키텍처 (C1 수정 후):
+ *   - 단일 RPC `create_chat_session_atomic` 호출 → 내부 트랜잭션이 credit + profile +
+ *     session + audit를 한 번에 처리. 부분 실패 자동 롤백.
+ *   - service_role 사용 (RPC는 service_role만 EXECUTE 허용됨)
+ *   - 서버 책임: Bearer JWT 검증 → user.id 확보 → 화이트리스트 pick → RPC 호출
  *
  * 테스트법:
  *   - 정상: 크레딧 5 보유 유저 → 200 + sessionId
- *   - 잔액 부족: 402 + insufficient_credits
+ *   - 잔액 부족: 402 + insufficient_credits + balance/required
+ *   - 미인증: 401
  *   - 검증 실패: 400 invalid_request
  *
  * 예상 오류 3:
- *   1. service role 키 미설정 → 5xx
- *   2. fortune_profiles unique 제약 위반 → UPSERT로 해결
- *   3. Supabase 네트워크 장애 → 500, 세션 롤백이 실패할 수 있음 (orphan 가능)
+ *   1. SUPABASE_SERVICE_ROLE_KEY 미설정 → 5xx
+ *   2. 00014 마이그레이션 미적용 → RPC not found 5xx
+ *   3. fortune_snapshot 필수 키 누락 → 400 invalid_snapshot
  */
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
@@ -44,6 +47,13 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '
 
 const SESSION_COST = 5;
 const DEFAULT_MAX_MESSAGES = 30;
+
+// fortune_snapshot 화이트리스트 — chat Edge Function의 sanitizeFortuneSnapshot과 동기화
+const SNAPSHOT_ALLOWED_KEYS = [
+  'fortuneScore', 'grade', 'dayElem', 'yongsin',
+  'daunPhase', 'sunSign', 'moonSign', 'risingSign',
+] as const;
+const SNAPSHOT_REQUIRED_KEYS = ['fortuneScore', 'grade', 'daunPhase'] as const;
 
 interface CreateSessionBody {
   mode: 'biz' | 'gen';
@@ -62,18 +72,42 @@ function isValidBody(body: unknown): body is CreateSessionBody {
   if (b.mode !== 'biz' && b.mode !== 'gen') return false;
   if (typeof b.birth_date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(b.birth_date)) return false;
   if (b.gender !== 'male' && b.gender !== 'female') return false;
-  if (!b.fortune_snapshot || typeof b.fortune_snapshot !== 'object') return false;
   if (b.birth_hour != null && (typeof b.birth_hour !== 'number' || b.birth_hour < 0 || b.birth_hour > 23)) return false;
   if (b.birth_minute != null && (typeof b.birth_minute !== 'number' || b.birth_minute < 0 || b.birth_minute > 59)) return false;
-  if (b.locale && b.locale !== 'ko' && b.locale !== 'en') return false;
+  if (b.locale != null && b.locale !== 'ko' && b.locale !== 'en') return false;
+
+  // fortune_snapshot 구조 검증
+  if (!b.fortune_snapshot || typeof b.fortune_snapshot !== 'object') return false;
+  const snap = b.fortune_snapshot as Record<string, unknown>;
+  for (const key of SNAPSHOT_REQUIRED_KEYS) {
+    if (snap[key] === undefined || snap[key] === null) return false;
+  }
+  if (typeof snap.fortuneScore !== 'number' || !Number.isFinite(snap.fortuneScore)) return false;
+  if (typeof snap.grade !== 'string' || snap.grade.length === 0) return false;
+  if (typeof snap.daunPhase !== 'string' || snap.daunPhase.length === 0) return false;
+
   return true;
+}
+
+/**
+ * 클라이언트 주입 방지: 화이트리스트 키만 남기고 나머지 drop.
+ * chat Edge Function의 sanitizeFortuneSnapshot과 동일 스펙.
+ */
+function pickSnapshot(raw: Record<string, unknown>): Record<string, unknown> {
+  const picked: Record<string, unknown> = {};
+  for (const key of SNAPSHOT_ALLOWED_KEYS) {
+    if (raw[key] !== undefined && raw[key] !== null) {
+      picked[key] = raw[key];
+    }
+  }
+  return picked;
 }
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return corsPreflightResponse(req);
   if (req.method !== 'POST') return jsonResponse({ error: 'method_not_allowed' }, 405, req);
 
-  // 1. 인증 — user JWT로 getUser
+  // ── 1. 인증 (Bearer JWT → user.id) ────────────────────────
   const authHeader = req.headers.get('Authorization');
   if (!authHeader?.startsWith('Bearer ')) {
     return jsonResponse({ error: 'unauthorized' }, 401, req);
@@ -87,7 +121,7 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: 'unauthorized' }, 401, req);
   }
 
-  // 2. 바디 파싱 + 검증
+  // ── 2. 바디 파싱 + 검증 ───────────────────────────────────
   let body: CreateSessionBody;
   try {
     const raw = await req.json();
@@ -99,101 +133,68 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: 'invalid_json' }, 400, req);
   }
 
-  // 3. Service role 클라이언트 (RPC + 테이블 쓰기)
+  // ── 3. 화이트리스트 pick (prompt injection 방어) ───────────
+  const safeSnapshot = pickSnapshot(body.fortune_snapshot);
+
+  // ── 4. atomic RPC 호출 ───────────────────────────────────
   const sbAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+  const title = body.mode === 'biz' ? '사업 발굴 세션' : '명발굴 세션';
 
-  // 4. fortune_profiles UPSERT (세션과 독립적인 캐시 — 실패해도 세션 생성 가능하지만, 일관성 위해 실패 시 중단)
-  const nowIso = new Date().toISOString();
-  const expiresIso = new Date(Date.now() + 24 * 3600 * 1000).toISOString();
-  const { error: profileErr } = await sbAdmin
-    .from('fortune_profiles')
-    .upsert({
-      user_id: user.id,
-      birth_date: body.birth_date,
-      birth_hour: body.birth_hour ?? null,
-      birth_minute: body.birth_minute ?? null,
-      birth_location: body.birth_location ?? null,
-      gender: body.gender,
-      composite_score: body.fortune_snapshot,
-      calculated_at: nowIso,
-      expires_at: expiresIso,
-    }, { onConflict: 'user_id' });
+  const { data: rpcResult, error: rpcErr } = await sbAdmin.rpc(
+    'create_chat_session_atomic',
+    {
+      p_user_id: user.id,
+      p_mode: body.mode,
+      p_title: title,
+      p_fortune_snapshot: safeSnapshot,
+      p_profile: {
+        birth_date: body.birth_date,
+        birth_hour: body.birth_hour ?? null,
+        birth_minute: body.birth_minute ?? null,
+        birth_location: body.birth_location ?? null,
+        gender: body.gender,
+      },
+      p_amount: SESSION_COST,
+      p_max_messages: DEFAULT_MAX_MESSAGES,
+      p_locale: body.locale ?? 'ko',
+    },
+  );
 
-  if (profileErr) {
-    console.error('[create-session] profile upsert error:', profileErr);
-    return jsonResponse({ error: 'profile_upsert_failed' }, 500, req);
+  if (rpcErr) {
+    console.error('[create-session] RPC error:', rpcErr);
+    return jsonResponse({ error: 'rpc_failed' }, 500, req);
   }
 
-  // 5. spend_credits — 선차감 (ref_id는 아직 없음, best-effort로 나중에 연결)
-  const { data: spendResult, error: spendErr } = await sbAdmin.rpc('spend_credits', {
-    p_user_id: user.id,
-    p_amount: SESSION_COST,
-    p_reason: 'session_start',
-    p_ref_type: 'chat_session',
-  });
+  if (!rpcResult || typeof rpcResult !== 'object') {
+    console.error('[create-session] unexpected RPC result:', rpcResult);
+    return jsonResponse({ error: 'unexpected_result' }, 500, req);
+  }
 
-  const spentOk = !spendErr && spendResult && (spendResult as { ok: boolean }).ok === true;
-  if (!spentOk) {
-    const res = spendResult as { error?: string; balance?: number; required?: number } | null;
-    if (res?.error === 'insufficient_credits') {
+  const result = rpcResult as {
+    ok?: boolean;
+    error?: string;
+    session_id?: string;
+    balance?: number;
+    required?: number;
+    max_messages?: number;
+  };
+
+  if (result.ok !== true) {
+    if (result.error === 'insufficient_credits') {
       return jsonResponse({
         error: 'insufficient_credits',
-        balance: res.balance ?? 0,
-        required: res.required ?? SESSION_COST,
+        balance: result.balance ?? 0,
+        required: result.required ?? SESSION_COST,
       }, 402, req);
     }
-    console.error('[create-session] spend_credits failed:', spendErr, res);
-    return jsonResponse({ error: 'spend_failed' }, 500, req);
-  }
-
-  const balance = (spendResult as { balance?: number }).balance ?? 0;
-
-  // 6. chat_sessions INSERT (credits_spent 확정값)
-  const title = body.mode === 'biz' ? '사업 발굴 세션' : '명발굴 세션';
-  const { data: session, error: sessionErr } = await sbAdmin
-    .from('chat_sessions')
-    .insert({
-      user_id: user.id,
-      session_type: 'conversation',
-      status: 'active',
-      fortune_snapshot: body.fortune_snapshot,
-      credits_spent: SESSION_COST,
-      locale: body.locale ?? 'ko',
-      max_messages: DEFAULT_MAX_MESSAGES,
-      title,
-    })
-    .select('id')
-    .single();
-
-  if (sessionErr || !session) {
-    // 세션 생성 실패 — 차감된 크레딧 환불
-    console.error('[create-session] session insert failed, refunding:', sessionErr);
-    await sbAdmin.rpc('add_credits', {
-      p_user_id: user.id,
-      p_amount: SESSION_COST,
-      p_reason: 'refund',
-      p_ref_type: 'chat_session',
-    });
-    return jsonResponse({ error: 'session_insert_failed' }, 500, req);
-  }
-
-  // 7. 감사 연결 (best-effort) — 방금 생성한 session_start 트랜잭션에 reference_id 주입.
-  //    실패해도 주 기능은 성공, ledger는 credit_transactions 기준이므로 감사 경미한 손실.
-  const { error: auditErr } = await sbAdmin
-    .from('credit_transactions')
-    .update({ reference_id: session.id })
-    .eq('user_id', user.id)
-    .eq('reason', 'session_start')
-    .eq('reference_type', 'chat_session')
-    .is('reference_id', null);
-  if (auditErr) {
-    console.warn('[create-session] audit linking failed (non-fatal):', auditErr);
+    console.error('[create-session] RPC logical error:', result);
+    return jsonResponse({ error: result.error ?? 'session_creation_failed' }, 400, req);
   }
 
   return jsonResponse({
     ok: true,
-    sessionId: session.id,
-    maxMessages: DEFAULT_MAX_MESSAGES,
-    balance,
+    sessionId: result.session_id,
+    maxMessages: result.max_messages ?? DEFAULT_MAX_MESSAGES,
+    balance: result.balance ?? 0,
   }, 200, req);
 });

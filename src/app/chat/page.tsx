@@ -29,9 +29,13 @@ import ChatWindow from '@/components/chat/ChatWindow';
 
 const DEFAULT_MAX_MESSAGES = 30;
 
+// UUID v1~v5 regex — 서버 측은 파라미터화 쿼리라 안전하지만, 피싱 URL 필터링 + 즉각적 UX 용도.
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 function ChatPageContent() {
   const searchParams = useSearchParams();
-  const sessionId = searchParams.get('session');
+  const rawSessionId = searchParams.get('session');
+  const sessionId = rawSessionId && UUID_RE.test(rawSessionId) ? rawSessionId : null;
   const router = useRouter();
   // NOTE: `isLoading`은 로그인 액션 진행 플래그. auth 초기화 완료 게이트는 `isAuthReady`.
   // isLoading로 가드하면 새로고침 시 세션 rehydrate 전에 로그인 리다이렉트가 발생.
