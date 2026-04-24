@@ -711,6 +711,30 @@ function applyHaikuReview(sonnetSections, haikuReview) {
 // Exports — n8n Code 노드에선 return으로, Node.js에선 module.exports로
 // ────────────────────────────────────────────────────────────────────────────
 
+// ═══════════════════════════════════════════════════════════════════════════
+// n8n Code Node Entry — "5개 Sonnet 요청 생성"
+//
+// 이전 노드("ReportInput 정리")가 내보내는 객체: {order_id, order_number,
+// callback, report_input: {user, current_year, current_date, order_number}}.
+// computeSajuData/buildSonnetRequest는 report_input 모양의 입력을 기대한다.
+// ═══════════════════════════════════════════════════════════════════════════
+
+if (typeof $input !== 'undefined' && typeof $json !== 'undefined') {
+  const p = $json;
+  const input = p.report_input || p;
+  const sections = ['saju_core','annual_outlook','monthly_seun','action_guide','insight_highlight'];
+  // Return 5 items, each carrying the section+request plus downstream context.
+  return sections.map((s) => ({
+    json: {
+      section: s,
+      request: buildSonnetRequest(s, input),
+      order_id: p.order_id,
+      order_number: p.order_number,
+      callback: p.callback,
+    },
+  }));
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     MODEL_SONNET,
