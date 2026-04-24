@@ -365,7 +365,10 @@ function OrderCard({ order, index }: { order: MyOrder; index: number }) {
                 <span className="text-ft-muted font-normal">· 열람 완료</span>
               )}
             </div>
-            {order.file_url ? (
+            {/* 두 경로를 나란히 노출 — 관리자가 NAS/드라이브에 올린 사전 제작본(file_url)과
+                 사용자가 직접 브라우저에서 생성하는 /premium-planner 셀프 경로가 공존한다.
+                 한쪽만 있으면 그쪽만, 둘 다 있으면 위: 사전 제작본 / 아래: 셀프 생성. */}
+            {order.file_url && (
               <button
                 onClick={() => { setDownloadAgreed(false); setShowDownloadModal('planner'); }}
                 className="flex items-center justify-center gap-2 w-full py-2.5 bg-ft-gold text-ft-ink font-bold rounded-xl text-sm hover:bg-ft-gold-h transition-colors"
@@ -373,20 +376,26 @@ function OrderCard({ order, index }: { order: MyOrder; index: number }) {
                 <DownloadIcon />
                 맞춤 플래너 PDF 다운로드
               </button>
-            ) : order.saju_data ? (
+            )}
+            {order.saju_data && (
               <>
                 <Link
                   href={`/premium-planner?order=${order.id}`}
-                  className="flex items-center justify-center gap-2 w-full py-2.5 bg-ft-gold text-ft-ink font-bold rounded-xl text-sm hover:bg-ft-gold-h transition-colors"
+                  className={`flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm transition-colors ${
+                    order.file_url
+                      ? 'mt-2 bg-ft-paper text-ft-ink font-medium border border-ft-border hover:bg-ft-paper-alt'
+                      : 'bg-ft-gold text-ft-ink font-bold hover:bg-ft-gold-h'
+                  }`}
                 >
                   <DownloadIcon />
-                  맞춤 플래너 생성 페이지로 이동
+                  {order.file_url ? '또는 직접 커스터마이즈해 생성' : '맞춤 플래너 생성 페이지로 이동'}
                 </Link>
                 <p className="text-[11px] text-ft-muted mt-1.5 text-center">
                   연도·테마·포함 페이지를 선택해 브라우저에서 즉시 PDF 생성.
                 </p>
               </>
-            ) : (
+            )}
+            {!order.file_url && !order.saju_data && (
               <div className="p-2 bg-indigo-50 rounded-lg text-xs text-indigo-700 border border-indigo-100">
                 사주 분석 후 맞춤 제작 중입니다. 완료 시 이메일로 PDF가 발송됩니다.
               </div>
