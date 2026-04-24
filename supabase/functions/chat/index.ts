@@ -23,6 +23,7 @@ const MODEL = 'claude-sonnet-4-6';
 const MAX_TOKENS = 1024;
 const HISTORY_LIMIT = 30;           // 최근 N 메시지까지 문맥으로 전달
 const RATE_LIMIT_PER_MIN = 10;      // chat 호출 분당 상한 (Claude 과금 공격 방어)
+const GLOBAL_DAILY_CAP = Number(Deno.env.get('AI_GLOBAL_DAILY_CAP') ?? '1500'); // 전역 하루 상한 (파생 공격 방어)
 
 // CORS: ../_shared/cors.ts (3차 보안 감사 H4 — 인라인 복제본 제거, 단일 출처로 통합)
 function json(body: Record<string, unknown>, status = 200, req?: Request) {
@@ -111,6 +112,10 @@ Deno.serve(async (req: Request) => {
     });
     const { data: { user }, error: authErr } = await sbUser.auth.getUser();
     if (authErr || !user) return json({ error: '세션이 만료되었습니다.' }, 401, req);
+    // S1-7: 이메일 미검증 계정은 AI 호출 차단 (무한 무료 계정 파밍 방지)
+    if (!user.email_confirmed_at) {
+      return json({ error: 'email_not_verified' }, 403, req);
+    }
     userId = user.id;
   } catch {
     return json({ error: '인증 확인 실패' }, 401, req);
@@ -134,6 +139,15 @@ Deno.serve(async (req: Request) => {
         'Retry-After': String(rl.retry_after_sec ?? 60),
       },
     });
+  }
+
+  // 1-b. S1-7 전역 일일 캡 — 다계정 파밍 + 봇 러시 방어 (Anthropic 하드캡)
+  const { data: cap } = await sbAdminEarly.rpc('check_and_consume_ai_daily_cap', {
+    p_daily_limit: GLOBAL_DAILY_CAP,
+  });
+  if (cap && cap.ok === false) {
+    console.warn('[chat] global daily cap hit:', cap.count, '/', cap.limit);
+    return json({ error: 'service_unavailable_quota' }, 503, req);
   }
 
   // 2. 입력 검증
