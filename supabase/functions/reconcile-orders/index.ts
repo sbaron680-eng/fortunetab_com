@@ -20,16 +20,35 @@ const TOSS_SECRET_KEY = Deno.env.get('TOSS_SECRET_KEY') || '';
 const TOSS_PAYPAL_SECRET_KEY = Deno.env.get('TOSS_PAYPAL_SECRET_KEY') || '';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || '';
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+// Dedicated shared secret for the pg_cron → reconcile-orders call path.
+// Keeps the service-role key out of pg_proc + lets us rotate this hop
+// independently of anything else. Set via `supabase secrets set`.
+const RECONCILE_TOKEN = Deno.env.get('RECONCILE_TOKEN') || '';
 
 const BATCH_LIMIT = 25;        // don't thrash Toss if there's a backlog
 const MIN_AGE_MINUTES = 10;    // don't race with confirm-payment
 const MAX_AGE_HOURS = 24;      // no point reconciling week-old abandoned orders
 
 Deno.serve(async (req: Request) => {
-  // service_role gate — the function is marked verify_jwt=false so the
-  // Supabase gateway doesn't check. We enforce it ourselves.
+  // Shared-secret gate. Accepts either the dedicated RECONCILE_TOKEN (used
+  // by pg_cron — set via `supabase secrets set`) or the service-role key
+  // (for manual admin curls). Constant-time compare defeats timing probes.
   const auth = req.headers.get('Authorization') || '';
-  if (!auth.startsWith('Bearer ') || auth.slice(7) !== SUPABASE_SERVICE_ROLE_KEY) {
+  if (!auth.startsWith('Bearer ')) {
+    return new Response(JSON.stringify({ error: 'forbidden' }), {
+      status: 403,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+  const token = auth.slice(7);
+  const accepted = [RECONCILE_TOKEN, SUPABASE_SERVICE_ROLE_KEY].filter(Boolean);
+  const ok = accepted.some((expected) => {
+    if (token.length !== expected.length) return false;
+    let diff = 0;
+    for (let i = 0; i < token.length; i++) diff |= token.charCodeAt(i) ^ expected.charCodeAt(i);
+    return diff === 0;
+  });
+  if (!ok) {
     return new Response(JSON.stringify({ error: 'forbidden' }), {
       status: 403,
       headers: { 'Content-Type': 'application/json' },
