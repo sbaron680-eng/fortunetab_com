@@ -27,7 +27,8 @@ export type PageType = 'cover' | 'year-index' | 'monthly' | 'weekly' | 'daily'
 export interface NavLink {
   x: number; y: number; w: number; h: number;
   targetType: PageType;
-  targetIdx: number; // month 0-11 | week 1-52
+  /** monthly: 0~11 · weekly: 1~52 · daily: 0~364(dayOfYear) · 기타 단일 페이지: 0 */
+  targetIdx: number;
 }
 
 export interface SajuData {

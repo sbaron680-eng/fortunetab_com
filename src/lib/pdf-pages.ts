@@ -19,7 +19,7 @@ import {
   drawSectionHeadV2, drawMemoLinesV2,
   drawNavBar,
   firstDayOf, daysInMonth, getWeekDates, getISOWeek,
-  type NavLink, type PlannerOptions,
+  type NavLink, type PlannerOptions, type PageType,
 } from './pdf-utils';
 
 // ── 간지·절기 상수 ───────────────────────────────────────────────────────────
@@ -407,9 +407,9 @@ export function drawYearIndex(
 
   drawTitleDividerV2(ctx, W);
 
-  // 12개월 3×4 그리드
+  // 12개월 3×4 그리드 + 하단 사주 능동 설계 바로가기 바(프리미엄 전용)
   const gridTop = titleDividerY() + 24;
-  const gridBot = CH - PAD_V2 - 40;
+  const gridBot = CH - PAD_V2 - 40 - (opts.saju ? 80 : 0);
   const gridW = W - PAD_V2 * 2;
   const cellW = gridW / 3;
   const cellH = (gridBot - gridTop) / 4;
@@ -425,6 +425,47 @@ export function drawYearIndex(
       x: cx, y: cy, w: cellW, h: cellH,
       targetType: 'monthly', targetIdx: idx,
     });
+  }
+
+  // ── 능동 설계 바로가기 (프리미엄: opts.saju 있을 때만 노출) ────────
+  // 각 아이콘이 해당 사주 기능 페이지로 점프. expandedPages에 해당 타입이
+  // 포함돼 있지 않으면 generator 루프에서 자동 스킵되므로 안전.
+  if (opts.saju) {
+    const shortcuts: { type: PageType; label: string; icon: string }[] = [
+      { type: 'saju-year-design',     label: '연간 설계',    icon: '🧭' },
+      { type: 'saju-month-strategy',  label: '월간 전략',    icon: '♟️' },
+      { type: 'saju-decision-canvas', label: '결정 캔버스',  icon: '⚖️' },
+      { type: 'saju-problem-dig',     label: '문제 파고들기', icon: '🔎' },
+      { type: 'saju-weekly-rhythm',   label: '주간 리듬',    icon: '🌗' },
+      { type: 'saju-daeun-timeline',  label: '대운 타임라인', icon: '🎯' },
+      { type: 'saju-year-heatmap',    label: '세운 히트맵',  icon: '🌊' },
+    ];
+    const barY = gridBot + 12;
+    const barH = 56;
+    ctx.font = `300 11px ${SERIF}`;
+    ctx.fillStyle = INK_FAINT_V2;
+    ctx.fillText('ACTIVE DESIGN · 능동 설계 바로가기', PAD_V2, barY - 6);
+    const slotW = gridW / shortcuts.length;
+    for (let i = 0; i < shortcuts.length; i++) {
+      const sx = PAD_V2 + slotW * i;
+      // 박스
+      ctx.strokeStyle = T.accent; ctx.globalAlpha = 0.6; ctx.lineWidth = 0.8;
+      ctx.strokeRect(sx + 2, barY, slotW - 4, barH);
+      ctx.globalAlpha = 1;
+      // 아이콘
+      ctx.font = `400 20px "Noto Color Emoji", "Noto Serif KR", serif`;
+      ctx.fillStyle = INK_V2;
+      ctx.fillText(shortcuts[i].icon, sx + 10, barY + 26);
+      // 라벨
+      ctx.font = `400 10.5px ${SERIF}`;
+      ctx.fillStyle = INK_V2;
+      ctx.fillText(shortcuts[i].label, sx + 10, barY + 46);
+      // 클릭 영역
+      links.push({
+        x: sx + 2, y: barY, w: slotW - 4, h: barH,
+        targetType: shortcuts[i].type, targetIdx: 0,
+      });
+    }
   }
 
   drawFooterV2(ctx, W, CH, '— YEAR INDEX —');
@@ -815,7 +856,8 @@ export function drawWeekly(
   W: number, H: number,
   opts: PlannerOptions,
   weekNo: number,
-) {
+): NavLink[] {
+  const links: NavLink[] = [];
   const T = themeHolder.T;
   const CH = getCH(H);
   const weekDates = getWeekDates(opts.year, weekNo); // 월~일
@@ -858,9 +900,26 @@ export function drawWeekly(
   const DAYS_TOP = titleDividerY() + 24;
   const DAYS_BOT = CH - PAD_V2 - FOOT_H;
   const DAY_H = (DAYS_BOT - DAYS_TOP) / 7;
-  // ISO 주 자연 순서 (월→일) 유지 — 업무용 주간 플래너에 가장 자연스러움
+  // ISO 주 자연 순서 (월→일) 유지 — 업무용 주간 플래너에 가장 자연스러움.
+  // 각 요일 행 전체를 클릭하면 해당 일간 페이지(daily)로 이동.
+  // targetIdx = dayOfYear (0~364/365) — expandedPages의 daily entries와 매칭.
   for (let i = 0; i < 7; i++) {
-    drawWeekDayRow(ctx, PAD_V2, DAYS_TOP + i * DAY_H, W - PAD_V2 * 2, DAY_H, weekDates[i], opts);
+    const rowY = DAYS_TOP + i * DAY_H;
+    const rowW = W - PAD_V2 * 2;
+    drawWeekDayRow(ctx, PAD_V2, rowY, rowW, DAY_H, weekDates[i], opts);
+
+    // dayOfYear 계산 — Jan 1을 0으로
+    const d = weekDates[i];
+    if (d.getFullYear() === opts.year) {
+      const janFirst = new Date(opts.year, 0, 1);
+      const dayOfYear = Math.round((d.getTime() - janFirst.getTime()) / 86400000);
+      if (dayOfYear >= 0 && dayOfYear <= 365) {
+        links.push({
+          x: PAD_V2, y: rowY, w: rowW, h: DAY_H,
+          targetType: 'daily', targetIdx: dayOfYear,
+        });
+      }
+    }
   }
   ctx.strokeStyle = INK_V2; ctx.globalAlpha = 0.15; ctx.lineWidth = 0.5;
   ctx.beginPath(); ctx.moveTo(PAD_V2, DAYS_BOT); ctx.lineTo(W - PAD_V2, DAYS_BOT); ctx.stroke();
@@ -872,6 +931,8 @@ export function drawWeekly(
 
   drawFooterV2(ctx, W, CH, `— WK ${wkStr} · WEEKLY —`);
   drawNavBar(ctx, W, H, 'weekly', opts.pages);
+
+  return links;
 }
 
 function drawWeekDayRow(

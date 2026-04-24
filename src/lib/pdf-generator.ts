@@ -141,7 +141,7 @@ export async function generatePlannerPDF(opts: PlannerOptions): Promise<Blob | v
     } else if (page.type === 'monthly') {
       pageNavLinks = drawMonthly(ctx, CW, CH, opts, page.idx!);
     } else if (page.type === 'weekly') {
-      drawWeekly(ctx, CW, CH, opts, page.idx!);
+      pageNavLinks = drawWeekly(ctx, CW, CH, opts, page.idx!);
     } else if (page.type === 'daily') {
       drawDaily(ctx, CW, CH, opts, page.idx);
     } else {
@@ -165,19 +165,20 @@ export async function generatePlannerPDF(opts: PlannerOptions): Promise<Blob | v
       }
     }
 
-    // ── 내부 콘텐츠 NavLink 처리 (연간→월간, 월간→주간) ──────────────────
+    // ── 내부 콘텐츠 NavLink 처리 ─────────────────────────────────────────
+    // 연간→월간, 월간→주간, 주간→일간(daily) 그리고 사주 능동 설계 페이지
+    // 바로가기. targetIdx가 있는 타입(monthly/weekly/daily)은 idx 일치로,
+    // 단일 페이지(saju-* 등)는 타입만으로 매칭.
+    const INDEXED_TYPES = new Set<PageType>(['monthly', 'weekly', 'daily']);
     for (const link of pageNavLinks) {
       let targetPageNum = -1;
-
-      if (link.targetType === 'monthly') {
+      if (INDEXED_TYPES.has(link.targetType)) {
         const idx = expandedPages.findIndex(
-          (p) => p.type === 'monthly' && p.idx === link.targetIdx,
+          (p) => p.type === link.targetType && p.idx === link.targetIdx,
         );
         if (idx >= 0) targetPageNum = idx + 1;
-      } else if (link.targetType === 'weekly') {
-        const idx = expandedPages.findIndex(
-          (p) => p.type === 'weekly' && p.idx === link.targetIdx,
-        );
+      } else {
+        const idx = expandedPages.findIndex((p) => p.type === link.targetType);
         if (idx >= 0) targetPageNum = idx + 1;
       }
 
