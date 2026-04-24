@@ -17,7 +17,12 @@ export type PageType = 'cover' | 'year-index' | 'monthly' | 'weekly' | 'daily'
   | 'daily-alt' | 'journal' | 'gratitude'
   | 'savings' | 'budget' | 'household' | 'expense'
   | 'inspiration' | 'bucket-list' | 'travel' | 'shopping' | 'contacts'
-  | 'todo' | 'notes-lined' | 'notes-grid';
+  | 'todo' | 'notes-lined' | 'notes-grid'
+  // 사주 능동 설계 (프리미엄 전용)
+  | 'saju-year-design' | 'saju-month-strategy' | 'saju-decision-canvas'
+  | 'saju-problem-dig' | 'saju-weekly-rhythm'
+  // 사주 시각화 (프리미엄 전용)
+  | 'saju-daeun-timeline' | 'saju-year-heatmap';
 
 export interface NavLink {
   x: number; y: number; w: number; h: number;

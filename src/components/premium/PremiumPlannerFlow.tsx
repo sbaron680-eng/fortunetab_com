@@ -25,6 +25,7 @@ import { THEMES } from '@/lib/pdf-themes';
 import PlannerPreviewCanvas from '@/components/planner/PlannerPreviewCanvas';
 import { calculateSajuFromBirthData, sajuResultToSajuData } from '@/lib/saju';
 import { generatePlannerFortune } from '@/lib/fortune-text';
+import { EXTRA_PAGES } from '@/lib/pdf-pages-extras';
 
 // ── 타입 ─────────────────────────────────────────────────────────────────────
 type OrderStatus = 'pending' | 'paid' | 'processing' | 'completed' | 'cancelled';
@@ -63,7 +64,23 @@ const PAGE_OPTIONS: { type: PageType; label: string; sublabel: string; icon: str
   { type: 'daily',      label: '일간 스케줄', sublabel: '365 페이지 · 매일 일진·오행 자동', icon: '✏️' },
 ];
 
-const DEFAULT_PAGES: PageType[] = ['cover', 'year-index', 'monthly', 'weekly', 'daily'];
+// 사주 능동 설계 + 시각화 (프리미엄 핵심 차별 지점). 새 7종을 UI에 노출.
+// EXTRA_PAGES에서 saju-* 프리픽스로 골라 카드 라벨·아이콘·부제를 생성한다.
+const SAJU_DESIGN_PAGES = EXTRA_PAGES
+  .filter((p) => p.type.startsWith('saju-'))
+  .map((p) => ({
+    type: p.type as PageType,
+    label: p.titleKo,
+    sublabel: p.title,
+    icon: p.icon,
+  }));
+
+// 결제자 기본 체크: 코어 5개 + 사주 능동 설계 7개 전부.
+// "생각하는대로 살기" 철학의 디폴트 — 빈 페이지 대신 사고 프레임을 먼저 보게.
+const DEFAULT_PAGES: PageType[] = [
+  'cover', 'year-index', 'monthly', 'weekly', 'daily',
+  ...SAJU_DESIGN_PAGES.map((p) => p.type),
+];
 
 function getYears(): number[] {
   const now = new Date();
@@ -227,7 +244,11 @@ function OrderFlow({ order, otherOrders }: { order: MyOrder; otherOrders: MyOrde
         orientation,
         year,
         name: name.trim() || '나의 플래너',
-        pages: PAGE_OPTIONS.filter((o) => selectedPages.has(o.type)).map((o) => o.type),
+        // 코어 + 사주 능동 설계 페이지를 한 배열로 결합. UI에서 체크된 항목만.
+        pages: [
+          ...PAGE_OPTIONS.filter((o) => selectedPages.has(o.type)).map((o) => o.type),
+          ...SAJU_DESIGN_PAGES.filter((o) => selectedPages.has(o.type)).map((o) => o.type),
+        ],
         theme,
         mode: 'fortune',
         saju: savedSaju,
@@ -502,6 +523,50 @@ function OrderFlow({ order, otherOrders }: { order: MyOrder; otherOrders: MyOrde
               );
             })}
           </div>
+          {/* ── 사주 능동 설계 그룹 (프리미엄 전용 · "생각하는대로 살기") ── */}
+          <div className="mt-6 pt-5 border-t border-ft-border">
+            <div className="flex items-baseline justify-between mb-1">
+              <h3 className="text-ft-ink font-semibold text-[13px] tracking-wide flex items-center gap-2">
+                <span className="text-ft-gold">🧭</span>
+                <span>사주 능동 설계 · Active Design</span>
+                <span className="px-1.5 py-0.5 rounded-md bg-ft-gold/15 text-[10px] font-semibold text-ft-gold">PREMIUM</span>
+              </h3>
+              <span className="text-[11px] text-ft-muted">기본 전체 선택</span>
+            </div>
+            <p className="text-[11.5px] text-ft-muted leading-relaxed mb-3">
+              나의 일간·대운·용신이 페이지 안에 직접 박혀 있습니다. 빈 칸이 아니라 질문 프레임으로 일 년을 설계하세요.
+            </p>
+            <div className="space-y-2">
+              {SAJU_DESIGN_PAGES.map(({ type, label, sublabel, icon }) => {
+                const checked = selectedPages.has(type);
+                return (
+                  <label
+                    key={type}
+                    className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                      checked ? 'border-ft-gold bg-ft-paper-alt' : 'border-ft-border bg-white hover:bg-ft-paper-alt'
+                    }`}
+                  >
+                    <input type="checkbox" className="sr-only" checked={checked} onChange={() => togglePage(type)} />
+                    <span className={`w-5 h-5 rounded flex-shrink-0 flex items-center justify-center border-2 ${
+                      checked ? 'bg-ft-gold border-ft-gold' : 'border-ft-border bg-transparent'
+                    }`}>
+                      {checked && (
+                        <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                    </span>
+                    <span className="text-lg leading-none">{icon}</span>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm font-medium text-ft-body">{label}</span>
+                      <span className="ml-2 text-[11px] text-ft-muted">{sublabel}</span>
+                    </div>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+
           {selectedPages.size > 0 && (
             <div className="mt-3 text-right text-xs text-ft-muted">
               예상 페이지 수: <span className="text-ft-ink font-medium">{estimatedPages}p</span>
