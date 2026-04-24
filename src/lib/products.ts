@@ -207,6 +207,7 @@ export const PRODUCTS: Product[] = [
       { icon: '📋', label: '주간',                 count: '52p' },
       { icon: '✏️', label: '일간 스케줄 (DAY QI 박스)', count: '365p', highlight: true, note: '매일 일진·오행·기운' },
       { icon: '📦', label: '부록 페이지 선택',       count: '옵션', note: '원하는 부록 자유 선택' },
+      { icon: '🧭', label: '능동 설계 페이지 (NEW)',  count: '5종', highlight: true, note: '연간 설계·월간 전략·결정 캔버스·문제 파고들기·주간 리듬 — 사주 렌즈 맞춤 질문' },
       { icon: '📖', label: '사주 심층 리포트',        count: '20p+', highlight: true, note: '⏳ 출시 예정 — 현재 개발 중' },
       { icon: '🌊', label: '월별 세운 분석',          count: '12개', highlight: true, note: '⏳ 출시 예정' },
       { icon: '🎯', label: '10년 대운 차트',          count: '1p',   highlight: true, note: '⏳ 출시 예정' },

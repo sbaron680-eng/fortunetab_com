@@ -56,7 +56,13 @@ export type ExtraPageType =
   | 'daily-alt' | 'journal' | 'gratitude'
   | 'savings' | 'budget' | 'household' | 'expense'
   | 'inspiration' | 'bucket-list' | 'travel' | 'shopping' | 'contacts'
-  | 'todo' | 'notes-lined' | 'notes-grid';
+  | 'todo' | 'notes-lined' | 'notes-grid'
+  // ─── "생각하는대로 살기" 철학 기반 능동 설계 페이지 (Tier 1 + Tier 2) ───
+  | 'saju-year-design'       // Tier 1-① 연간 설계 (6축 · 사주 렌즈)
+  | 'saju-month-strategy'    // Tier 1-② 월간 전략·진입·중간점검·회고
+  | 'saju-decision-canvas'   // Tier 1-③ 중요 결정 캔버스
+  | 'saju-problem-dig'       // Tier 2-① 문제 파고들기 (5Why + 용신 행동)
+  | 'saju-weekly-rhythm';    // Tier 2-② 주간 리듬 (사주 기반)
 
 export interface ExtraPageConfig {
   type: ExtraPageType;
@@ -104,6 +110,12 @@ export const EXTRA_PAGES: ExtraPageConfig[] = [
   { type: 'todo', title: 'TO-DO LIST', titleKo: '할일 목록', category: 'notes', categoryKo: '노트', icon: '☑️', free: true },
   { type: 'notes-lined', title: 'NOTES', titleKo: '줄 노트', category: 'notes', categoryKo: '노트', icon: '📄', free: true },
   { type: 'notes-grid', title: 'NOTES', titleKo: '모눈 노트', category: 'notes', categoryKo: '노트', icon: '📐', free: false },
+  // "생각하는대로 살기" — 사주 기반 능동 설계 · 실질 사고 도구 (모두 프리미엄)
+  { type: 'saju-year-design',     title: 'YEAR DESIGN',          titleKo: '연간 설계',       category: 'annual',  categoryKo: '연간', icon: '🧭', free: false },
+  { type: 'saju-month-strategy',  title: 'MONTH STRATEGY',       titleKo: '월간 전략',       category: 'monthly', categoryKo: '월간', icon: '♟️', free: false },
+  { type: 'saju-decision-canvas', title: 'DECISION CANVAS',      titleKo: '결정 캔버스',     category: 'life',    categoryKo: '라이프', icon: '⚖️', free: false },
+  { type: 'saju-problem-dig',     title: 'PROBLEM DIG',          titleKo: '문제 파고들기',   category: 'life',    categoryKo: '라이프', icon: '🔎', free: false },
+  { type: 'saju-weekly-rhythm',   title: 'WEEKLY RHYTHM',        titleKo: '주간 리듬',       category: 'weekly',  categoryKo: '주간', icon: '🌗', free: false },
 ];
 
 // ── 공통 유틸 (v2 "New Eastern Editorial") ────────────────────────
@@ -563,6 +575,109 @@ function drawSimplePage(
 }
 
 // ═══════════════════════════════════════════════════════════════
+// 사주 능동 설계 페이지 — 프롬프트 프레임
+//
+// 단순 빈 칸이 아니라 "사주로 나를 비추고 → 의도적으로 설계"하도록
+// 각 질문에 일간·용신·현재 대운을 변수로 끼워 넣는다. 사주 데이터가
+// 없으면(무료 플래너) 일반 질문으로 fallback.
+// ═══════════════════════════════════════════════════════════════
+
+interface SajuShortHand {
+  day: string;        // "계(癸)수" — 일간+오행
+  yongsin: string;    // "금"
+  daeun: string;      // "43~52세 경오(庚午) 정인"
+  daeunKey: string;   // "정인" — 사용 권고 축에 사용
+  weak: boolean;      // true=신약
+}
+
+function sajuShort(s: PlannerOptions['saju']): SajuShortHand {
+  if (!s) {
+    return { day: '일간', yongsin: '용신', daeun: '현재 대운', daeunKey: '대운', weak: false };
+  }
+  const dm = s.dayMasterKo ?? s.dayElem;
+  const day = dm.includes('(') ? dm + s.dayElem : `${dm} ${s.dayElem}`;
+  return {
+    day,
+    yongsin: s.yongsin || '용신',
+    daeun: s.currentDaeun ?? '현재 대운',
+    daeunKey: s.daeunSipsin ?? '대운',
+    weak: s.strength === '신약',
+  };
+}
+
+function drawSajuYearDesign(ctx: CanvasRenderingContext2D, W: number, H: number, opts: PlannerOptions, useSerif: boolean) {
+  const s = sajuShort(opts.saju);
+  // 6축 설계 — 업/건/재/연/학/정 · 각 축을 한 줄 질문 + 2줄 답변으로 구성
+  // 맨 아래 북극성 한 문장.
+  drawSectionsPage(ctx, W, H, 'YEAR DESIGN', `YEAR: ${opts.year}    일간 ${s.day} · ${s.daeun}`, [
+    { label: `업(業) — 올해 ${s.day}(${s.daeunKey} 대운)을 쓸 한 가지 작업은 무엇인가?`, style: 'free', lines: 3 },
+    { label: `건(健) — ${s.weak ? '신약 ' : ''}${s.day}를 ${s.yongsin}(으)로 채울 루틴 3개`, style: 'check', lines: 3 },
+    { label: `재(財) — 성과를 수치·증거로 남길 방법 (소득/저축/관리 중 택)`, style: 'free', lines: 2 },
+    { label: `연(緣) — 올해 깊게 만들 관계 3명 · 각자와의 다음 행동`, style: 'free', lines: 3 },
+    { label: `학(學) — ${s.daeunKey} 대운에 어울리는 배움 주제 1개 + 6개월 마일스톤`, style: 'free', lines: 3 },
+    { label: `정(整) — 비울 것 · 놓아줄 것 3가지`, style: 'check', lines: 3 },
+    { label: `★ 올해의 북극성 — 한 문장으로`, style: 'free', lines: 2 },
+  ], useSerif);
+}
+
+function drawSajuMonthStrategy(ctx: CanvasRenderingContext2D, W: number, H: number, opts: PlannerOptions, useSerif: boolean) {
+  const s = sajuShort(opts.saju);
+  // 한 달 = 3단계 사이클 (진입 / 중간점검 / 월말 회고)
+  drawSectionsPage(ctx, W, H, 'MONTH STRATEGY', `MONTH: ________    YEAR: ${opts.year}`, [
+    { label: `▷ 월초 전략 — 이번 달 월주와 ${s.daeun}이 교차하는 지점에서 집중할 것`, style: 'free', lines: 3 },
+    { label: `이번 달 핵심 행동 3가지 (한 문장씩, 실행 동사로 시작)`, style: 'check', lines: 3 },
+    { label: `⊙ 15일 중간 점검 — 계획 대비 실행률 · 막힌 지점 · 조정안`, style: 'free', lines: 4 },
+    { label: `◯ 월말 회고 — 이달의 배움 한 문장 + 다음 달로 넘길 씨앗`, style: 'free', lines: 4 },
+    { label: `★ 이 달 하나만 기억한다면`, style: 'free', lines: 2 },
+  ], useSerif);
+}
+
+function drawSajuDecisionCanvas(ctx: CanvasRenderingContext2D, W: number, H: number, opts: PlannerOptions, useSerif: boolean) {
+  const s = sajuShort(opts.saju);
+  drawSectionsPage(ctx, W, H, 'DECISION CANVAS', `DATE: ________    ${s.day}의 결정`, [
+    { label: `결정해야 할 것 — 한 문장으로`, style: 'free', lines: 2 },
+    { label: `사주 렌즈 — ${s.yongsin} 용신 관점의 장점 / 기신(忌神) 관점의 리스크`, style: 'free', lines: 4 },
+    { label: `상(上) 시나리오 — 가장 좋은 결과와 도달 조건 3`, style: 'free', lines: 3 },
+    { label: `하(下) 시나리오 — 최악일 때의 모습과 복구 비용`, style: 'free', lines: 3 },
+    { label: `조언자 3인 — 이름 · 그에게 물을 질문 한 가지씩`, style: 'free', lines: 3 },
+    { label: `실행 첫 3일 — 오늘/내일/모레 행동 1줄씩 · 결정 마감일`, style: 'check', lines: 4 },
+  ], useSerif);
+}
+
+function drawSajuProblemDig(ctx: CanvasRenderingContext2D, W: number, H: number, opts: PlannerOptions, useSerif: boolean) {
+  const s = sajuShort(opts.saju);
+  drawSectionsPage(ctx, W, H, 'PROBLEM DIG', `DATE: ________    5 WHY · ${s.day} 렌즈`, [
+    { label: `문제 — 지금 막혀 있는 한 가지를 한 문장으로`, style: 'free', lines: 2 },
+    { label: `WHY 1 — 왜 이것이 문제인가?`, style: 'free', lines: 2 },
+    { label: `WHY 2 — 그 이유의 이유는?`, style: 'free', lines: 2 },
+    { label: `WHY 3 — 그 뒤에 있는 것은?`, style: 'free', lines: 2 },
+    { label: `WHY 4 — 더 깊은 원인은?`, style: 'free', lines: 2 },
+    { label: `WHY 5 — 근원은 무엇인가? (정지점)`, style: 'free', lines: 2 },
+    { label: `★ ${s.yongsin} 용신 행동 — 근원을 풀 ${s.weak ? '한 박자 쉬어가는 ' : '결단적 '}선택 1개`, style: 'check', lines: 3 },
+  ], useSerif);
+}
+
+function drawSajuWeeklyRhythm(ctx: CanvasRenderingContext2D, W: number, H: number, opts: PlannerOptions, useSerif: boolean) {
+  const s = sajuShort(opts.saju);
+  // 요일별 에너지 테마 (사주 없을 때는 일반 7일)
+  const days = ['월', '화', '수', '목', '금', '토', '일'];
+  const themes = opts.saju
+    ? [
+        `월 — 진입 (${s.daeunKey} 대운 의식하기 · 이번 주 목표 한 문장)`,
+        `화 — 실행 (${s.day} 체력 안배 · 핵심 1건 먼저)`,
+        `수 — 전환점 (막힘 점검 · ${s.yongsin} 행동 주입)`,
+        `목 — 깊이 (하나만 깊게 · 산만함 브레이크)`,
+        `금 — 연결 (사람 1인에게 감사 · 도움 요청)`,
+        `토 — 회복 (${s.weak ? '충분한 휴식 · ' : ''}몸을 ${s.yongsin}(으)로 채우기)`,
+        `일 — 설계 (다음 주 1문장 · 버릴 것 3개)`,
+      ]
+    : days.map((d) => `${d}요일`);
+  drawSectionsPage(ctx, W, H, 'WEEKLY RHYTHM', `WEEK OF: ________    ${s.day}`,
+    themes.map((t) => ({ label: t, style: 'dotted' as const, lines: 3 })),
+    useSerif);
+}
+
+// ═══════════════════════════════════════════════════════════════
 // 메인 라우터
 // ═══════════════════════════════════════════════════════════════
 export function drawExtraPage(
@@ -729,6 +844,23 @@ export function drawExtraPage(
       break;
     case 'yearly-goals':
       drawSimplePage(ctx, W, H, 'YEARLY GOALS', 'YEAR: ________', 'goals', 20, useSerif);
+      break;
+
+    // ── 사주 능동 설계 페이지 ─────────────────────────────────
+    case 'saju-year-design':
+      drawSajuYearDesign(ctx, W, H, opts, useSerif);
+      break;
+    case 'saju-month-strategy':
+      drawSajuMonthStrategy(ctx, W, H, opts, useSerif);
+      break;
+    case 'saju-decision-canvas':
+      drawSajuDecisionCanvas(ctx, W, H, opts, useSerif);
+      break;
+    case 'saju-problem-dig':
+      drawSajuProblemDig(ctx, W, H, opts, useSerif);
+      break;
+    case 'saju-weekly-rhythm':
+      drawSajuWeeklyRhythm(ctx, W, H, opts, useSerif);
       break;
   }
 

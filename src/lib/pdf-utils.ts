@@ -34,6 +34,13 @@ export interface SajuData {
   dayPillar: string;
   hourPillar: string;
   elemSummary: string;
+  /** 선택 확장 — 사주 맞춤 "능동 설계" 페이지가 질문 프레임에 주입한다.
+   *  없으면 일반 프레임으로 fallback. */
+  dayMasterKo?: string;        // 예: "계(癸)" — 프롬프트에서 이름 호출용
+  strength?: '신강' | '신약' | '중화';
+  currentDaeun?: string;       // 예: "43~52세 경오(庚午) 정인"
+  daeunSipsin?: string;        // 예: "정인"
+  monthlyPillars?: { month: number; ko: string }[]; // 1~12월 월주 간지
 }
 
 export type CoverStyle = 'fortune' | 'practice' | 'premium' | 'extras' | 'allinone';
