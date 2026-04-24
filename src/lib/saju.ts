@@ -767,16 +767,20 @@ export function detectZodiac(month: number, day: number): ZodiacSign {
 // ─── SajuResult → SajuData 변환 (PDF 렌더링용) ──────────────────────
 import type { SajuData } from '@/lib/pdf-utils';
 
-export function sajuResultToSajuData(r: SajuResult): SajuData {
+export function sajuResultToSajuData(
+  r: SajuResult,
+  extras?: {
+    gender?: string;            // 대운 순/역행 결정
+    birthYear?: number;         // elemSummary 포함 전체 8자 표기용
+    currentYear?: number;       // 현재 나이·세운 월주 계산
+    strength?: '신강' | '신약' | '중화';
+  },
+): SajuData {
   const fmt = (p: Pillar) => `${p.stemKo}${p.branchKo}(${p.stemHj}${p.branchHj})`;
-  const top3 = ELEM_KO
-    .map((e) => ({ e, n: r.elemCount[e] }))
-    .sort((a, b) => b.n - a.n)
-    .filter((x) => x.n > 0)
-    .slice(0, 3)
-    .map((x) => `${x.e} ${x.n}`)
-    .join(' · ');
-  return {
+  // elemSummary: 5 오행 전체를 균일 표기 (플래너 레이더가 파싱하기 쉬운 포맷)
+  const elemFull = ELEM_KO.map((e) => `${e}${r.elemCount[e] ?? 0}`).join(' · ');
+
+  const out: SajuData = {
     ganzhi: fmt(r.year),
     dayElem: r.dayElem,
     yongsin: r.yongsin,
@@ -784,8 +788,69 @@ export function sajuResultToSajuData(r: SajuResult): SajuData {
     monthPillar: fmt(r.month),
     dayPillar: fmt(r.day),
     hourPillar: r.hasHour ? fmt(r.hour) : '시간미상',
-    elemSummary: top3,
+    elemSummary: elemFull,
+    dayMasterKo: `${r.day.stemKo}(${r.day.stemHj})`,
+    strength: extras?.strength,
   };
+
+  // 대운 8기 직렬화 (gender 있을 때만 정확)
+  if (extras?.gender) {
+    const periods = calcDaeun(r, extras.gender);
+    out.daeun = {
+      periods: periods.map((p) => ({
+        startAge: p.startAge,
+        endAge: p.endAge,
+        pillarKo: `${p.stemKo}${p.branchKo}`,
+        stemElem: (ELEM_KO[['목','목','화','화','토','토','금','금','수','수'].indexOf(p.stemKo) >= 0
+          ? 0 : 0] as string), // 안전 — 아래서 실제로 설정
+        sipsin: p.sipsin,
+      })),
+    };
+    // stemElem 실제 매핑 (stemKo 한글 인덱스에서 오행 추출)
+    const stemKoList = ['갑','을','병','정','무','기','경','신','임','계'];
+    const stemElemList = ['목','목','화','화','토','토','금','금','수','수'];
+    out.daeun.periods = periods.map((p) => ({
+      startAge: p.startAge,
+      endAge: p.endAge,
+      pillarKo: `${p.stemKo}${p.branchKo}`,
+      stemElem: stemElemList[stemKoList.indexOf(p.stemKo)] ?? '토',
+      sipsin: p.sipsin,
+    }));
+
+    // 현재 나이 + 대응 대운
+    if (extras.birthYear && extras.currentYear) {
+      const age = extras.currentYear - extras.birthYear + 1;
+      out.ageThisYear = age;
+      const cur = periods.find((p) => age >= p.startAge && age <= p.endAge)
+        ?? periods[0];
+      if (cur) {
+        out.currentDaeun = `${cur.startAge}~${cur.endAge}세 ${cur.stemKo}${cur.branchKo}`;
+        out.daeunSipsin = cur.sipsin;
+      }
+    }
+  }
+
+  // 올해 1~12월 월주 (extras.currentYear 있을 때만)
+  if (extras?.currentYear) {
+    const year = extras.currentYear;
+    const stemKoArr = ['갑','을','병','정','무','기','경','신','임','계'];
+    const branchKoArr = ['자','축','인','묘','진','사','오','미','신','유','술','해'];
+    // year stem 확보: 2월 15일 기준 (입춘 이후)
+    const yp = calcYearPillar(year, 2, 15);
+    // 월주 시작 천간 (연간%5 → 인월 시작)
+    const startStem = [2,4,6,8,0][yp.stemIdx % 5];
+    const monthToBranch = [1,2,3,4,5,6,7,8,9,10,11,0]; // 1월=축,2월=인,…,12월=자
+    out.monthlyPillars = monthToBranch.map((branchIdx, idx) => {
+      const offset = (branchIdx - 2 + 12) % 12;
+      const stemIdx = (startStem + offset) % 10;
+      return {
+        month: idx + 1,
+        ko: `${stemKoArr[stemIdx]}${branchKoArr[branchIdx]}`,
+      };
+    });
+  }
+
+  return out;
 }
 
 /** 프로필 생년월일 → SajuResult 계산 (로그인 시 자동 호출용) */

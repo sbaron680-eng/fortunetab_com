@@ -209,7 +209,18 @@ function OrderFlow({ order, otherOrders }: { order: MyOrder; otherOrders: MyOrde
 
     try {
       const sajuResult = calculateSajuFromBirthData(birthDate, birthTime || '모름');
-      const savedSaju = sajuResultToSajuData(sajuResult);
+      // 프리미엄 전용 확장 필드(대운 · 월별 월주 · 현재 나이 · 일간 표기)를
+      // 채워 플래너 레이아웃이 사주 맞춤 정보를 그릴 수 있게 한다.
+      // gender/birthYear/currentYear 없어도 기본 필드는 정상 반환되므로
+      // 무료 플래너 경로엔 영향 없음.
+      const [byStr] = birthDate.split('-');
+      const byNum = parseInt(byStr, 10);
+      const genderStr = sajuData.gender === '여자' || sajuData.gender === 'female' ? 'female' : 'male';
+      const savedSaju = sajuResultToSajuData(sajuResult, {
+        gender: genderStr,
+        birthYear: Number.isFinite(byNum) ? byNum : undefined,
+        currentYear: year,
+      });
       const fortune = generatePlannerFortune(sajuResult, year);
 
       await generatePlannerPDF({
