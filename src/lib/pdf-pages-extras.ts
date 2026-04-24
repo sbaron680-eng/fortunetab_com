@@ -62,7 +62,9 @@ export type ExtraPageType =
   | 'saju-month-strategy'    // Tier 1-② 월간 전략·진입·중간점검·회고
   | 'saju-decision-canvas'   // Tier 1-③ 중요 결정 캔버스
   | 'saju-problem-dig'       // Tier 2-① 문제 파고들기 (5Why + 용신 행동)
-  | 'saju-weekly-rhythm';    // Tier 2-② 주간 리듬 (사주 기반)
+  | 'saju-weekly-rhythm'     // Tier 2-② 주간 리듬 (사주 기반)
+  | 'saju-daeun-timeline'    // 시각화 — 10년 대운 타임라인 배너
+  | 'saju-year-heatmap';     // 시각화 — 12개월 세운 히트맵
 
 export interface ExtraPageConfig {
   type: ExtraPageType;
@@ -116,6 +118,9 @@ export const EXTRA_PAGES: ExtraPageConfig[] = [
   { type: 'saju-decision-canvas', title: 'DECISION CANVAS',      titleKo: '결정 캔버스',     category: 'life',    categoryKo: '라이프', icon: '⚖️', free: false },
   { type: 'saju-problem-dig',     title: 'PROBLEM DIG',          titleKo: '문제 파고들기',   category: 'life',    categoryKo: '라이프', icon: '🔎', free: false },
   { type: 'saju-weekly-rhythm',   title: 'WEEKLY RHYTHM',        titleKo: '주간 리듬',       category: 'weekly',  categoryKo: '주간', icon: '🌗', free: false },
+  // 시각화 — 결제 직후 첫 펼침에서 "이건 내 사주 다이어리" 인상 확정
+  { type: 'saju-daeun-timeline',  title: 'DAEUN TIMELINE',       titleKo: '10년 대운 타임라인', category: 'annual', categoryKo: '연간', icon: '🎯', free: false },
+  { type: 'saju-year-heatmap',    title: 'YEAR HEATMAP',         titleKo: '12개월 세운 히트맵', category: 'annual', categoryKo: '연간', icon: '🌊', free: false },
 ];
 
 // ── 공통 유틸 (v2 "New Eastern Editorial") ────────────────────────
@@ -678,6 +683,240 @@ function drawSajuWeeklyRhythm(ctx: CanvasRenderingContext2D, W: number, H: numbe
 }
 
 // ═══════════════════════════════════════════════════════════════
+// 사주 시각화 — 대운 타임라인 + 12개월 세운 히트맵
+// ═══════════════════════════════════════════════════════════════
+
+const OHAENG_COLOR: Record<string, string> = {
+  목: '#4b8b3b', 화: '#c23b22', 토: '#b08b4f', 금: '#8a8d93', 수: '#2f5e8a',
+};
+
+function drawSajuDaeunTimeline(ctx: CanvasRenderingContext2D, W: number, H: number, opts: PlannerOptions, useSerif: boolean) {
+  const { CH, PAD, startY } = drawPageHeader(ctx, W, H,
+    'DAEUN TIMELINE', `10년 × 8기 대운 · YEAR ${opts.year}`, useSerif);
+  const c = TC();
+
+  // 데이터가 없으면 안내만 렌더링
+  const s = opts.saju;
+  const periods = s?.daeun?.periods;
+  if (!s || !periods || periods.length === 0) {
+    ctx.font = `300 14px ${useSerif ? '"Noto Serif KR", serif' : '"Noto Sans KR", sans-serif'}`;
+    ctx.fillStyle = '#888';
+    ctx.fillText('사주 데이터가 있어야 10년 대운 타임라인이 채워집니다 (프리미엄 주문 시 자동 연결).', PAD, startY + 40);
+    return;
+  }
+
+  const age = s.ageThisYear ?? 0;
+  const barY = startY + 60;
+  const barH = 80;
+  const totalW = W - PAD * 2;
+  const segW = totalW / periods.length;
+
+  for (let i = 0; i < periods.length; i++) {
+    const p = periods[i];
+    const x = PAD + segW * i;
+    const elem = p.stemElem ?? '토';
+    const color = OHAENG_COLOR[elem] || '#888';
+    const isCurrent = age >= p.startAge && age <= p.endAge;
+
+    ctx.fillStyle = color;
+    ctx.globalAlpha = isCurrent ? 0.85 : 0.35;
+    ctx.fillRect(x, barY, segW - 2, barH);
+    ctx.globalAlpha = 1;
+
+    // 천간지지
+    ctx.font = `700 18px "Noto Serif KR", serif`;
+    ctx.fillStyle = '#fff';
+    ctx.fillText(p.pillarKo ?? '', x + 8, barY + 28);
+    // 십신
+    ctx.font = `400 11px "Noto Sans KR", sans-serif`;
+    ctx.fillText(p.sipsin ?? '', x + 8, barY + 46);
+    // 나이 범위
+    ctx.font = `300 11px "Noto Sans KR", sans-serif`;
+    ctx.fillText(`${p.startAge}-${p.endAge}`, x + 8, barY + barH - 10);
+
+    // 현재 핀
+    if (isCurrent) {
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.arc(x + segW / 2, barY - 10, 8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(x + segW / 2, barY - 10, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#c1121f';
+      ctx.font = `700 11px "Noto Sans KR", sans-serif`;
+      ctx.fillText('NOW', x + segW / 2 - 14, barY - 22);
+    }
+  }
+
+  // 범례 — 오행 5색
+  const legendY = barY + barH + 40;
+  ctx.font = `300 12px "Noto Sans KR", sans-serif`;
+  ctx.fillStyle = c.textMid;
+  ctx.fillText('오행 색상', PAD, legendY);
+  const elems: ('목'|'화'|'토'|'금'|'수')[] = ['목','화','토','금','수'];
+  elems.forEach((e, i) => {
+    const lx = PAD + 80 + i * 90;
+    ctx.fillStyle = OHAENG_COLOR[e];
+    ctx.fillRect(lx, legendY - 10, 14, 14);
+    ctx.fillStyle = c.textDark;
+    ctx.fillText(e, lx + 22, legendY + 2);
+  });
+
+  // 아래 해설
+  const noteY = legendY + 50;
+  ctx.font = `400 13px "Noto Serif KR", serif`;
+  ctx.fillStyle = c.textDark;
+  ctx.fillText('대운은 10년 단위로 인생의 큰 흐름을 결정합니다.', PAD, noteY);
+  ctx.font = `300 12px "Noto Serif KR", serif`;
+  ctx.fillStyle = c.textMid;
+  ctx.fillText('NOW 핀의 색이 당신의 현재 에너지. 다음 대운으로 넘어갈 때 정체성과 과제가 재조정됩니다.', PAD, noteY + 22);
+  void CH;
+}
+
+function drawSajuYearHeatmap(ctx: CanvasRenderingContext2D, W: number, H: number, opts: PlannerOptions, useSerif: boolean) {
+  const { CH, PAD, startY } = drawPageHeader(ctx, W, H,
+    'YEAR HEATMAP', `12개월 세운 × 오행 분포 · YEAR ${opts.year}`, useSerif);
+  const c = TC();
+  const s = opts.saju;
+  const monthly = s?.monthlyPillars;
+
+  if (!s || !monthly || monthly.length === 0) {
+    ctx.font = `300 14px "Noto Serif KR", serif`;
+    ctx.fillStyle = '#888';
+    ctx.fillText('사주 데이터 + 12개월 세운이 필요합니다 (프리미엄 주문 시 자동 연결).', PAD, startY + 40);
+    return;
+  }
+
+  // 좌측: 오행 레이더 (간단화된 원형 배지)
+  const leftW = 260;
+  const rdCx = PAD + leftW / 2;
+  const rdCy = startY + 180;
+  const rdR = 110;
+
+  ctx.font = `700 14px "Noto Serif KR", serif`;
+  ctx.fillStyle = c.textDark;
+  ctx.fillText('내 오행 균형', PAD, startY + 28);
+
+  // 5 축
+  const elems: ('목'|'화'|'토'|'금'|'수')[] = ['목','화','토','금','수'];
+  // elemSummary 파싱: "목3 · 화1 · 토2 · 금1 · 수1"
+  const counts: Record<string, number> = { 목:0, 화:0, 토:0, 금:0, 수:0 };
+  const mm = (s.elemSummary || '').matchAll(/([목화토금수])(\d+)/g);
+  for (const m of mm) counts[m[1]] = parseInt(m[2], 10);
+  const maxC = Math.max(1, ...Object.values(counts));
+
+  ctx.strokeStyle = c.ruleFaint;
+  ctx.lineWidth = 0.6;
+  // 배경 원 3개
+  for (let ring = 1; ring <= 3; ring++) {
+    ctx.beginPath();
+    ctx.arc(rdCx, rdCy, (rdR * ring) / 3, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  // 각 축
+  elems.forEach((e, i) => {
+    const a = -Math.PI / 2 + (Math.PI * 2 * i) / 5;
+    const r = (counts[e] / maxC) * rdR;
+    const x = rdCx + Math.cos(a) * r;
+    const y = rdCy + Math.sin(a) * r;
+    ctx.fillStyle = OHAENG_COLOR[e];
+    ctx.beginPath();
+    ctx.arc(x, y, 7, 0, Math.PI * 2);
+    ctx.fill();
+    // 라벨
+    const lx = rdCx + Math.cos(a) * (rdR + 20);
+    const ly = rdCy + Math.sin(a) * (rdR + 20);
+    ctx.fillStyle = c.textDark;
+    ctx.font = `500 13px "Noto Serif KR", serif`;
+    ctx.fillText(`${e}${counts[e]}`, lx - 8, ly + 4);
+  });
+  // 축선
+  elems.forEach((_, i) => {
+    const a = -Math.PI / 2 + (Math.PI * 2 * i) / 5;
+    ctx.strokeStyle = c.ruleFaint;
+    ctx.beginPath();
+    ctx.moveTo(rdCx, rdCy);
+    ctx.lineTo(rdCx + Math.cos(a) * rdR, rdCy + Math.sin(a) * rdR);
+    ctx.stroke();
+  });
+
+  // 우측: 12개월 월주 히트맵 (3×4 그리드 · 용신 오행은 금테두리, 기신은 붉은 테두리)
+  const gridX = PAD + leftW + 40;
+  const gridW = W - gridX - PAD;
+  const cols = 3;
+  const rows = 4;
+  const cellW = gridW / cols;
+  const cellH = 90;
+  const gridY = startY + 30;
+
+  ctx.font = `700 14px "Noto Serif KR", serif`;
+  ctx.fillStyle = c.textDark;
+  ctx.fillText('12개월 월주 히트맵', gridX, gridY - 8);
+
+  const yongsin = s.yongsin;
+  const CTRL: Record<string, string> = { 목:'금', 화:'수', 토:'목', 금:'화', 수:'토' };
+  const kiElem = yongsin ? CTRL[yongsin] : '';
+
+  for (let i = 0; i < 12; i++) {
+    const m = monthly[i];
+    if (!m) continue;
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const cx = gridX + col * cellW;
+    const cy = gridY + row * cellH;
+
+    // 월주 한글에서 오행 추론
+    const ko = m.ko || '';
+    // stem 한글 → 오행
+    const stemKoArr = ['갑','을','병','정','무','기','경','신','임','계'];
+    const stemElemKoArr = ['목','목','화','화','토','토','금','금','수','수'];
+    const sIdx = stemKoArr.indexOf(ko[0]);
+    const elem = sIdx >= 0 ? stemElemKoArr[sIdx] : '토';
+    const color = OHAENG_COLOR[elem] || '#888';
+
+    // 배경
+    ctx.fillStyle = color;
+    ctx.globalAlpha = 0.25;
+    ctx.fillRect(cx + 4, cy + 4, cellW - 10, cellH - 10);
+    ctx.globalAlpha = 1;
+
+    // 용신/기신 테두리
+    if (elem === yongsin) {
+      ctx.strokeStyle = '#b8860b';
+      ctx.lineWidth = 2.5;
+    } else if (elem === kiElem) {
+      ctx.strokeStyle = '#c1121f';
+      ctx.lineWidth = 2;
+    } else {
+      ctx.strokeStyle = c.ruleFaint;
+      ctx.lineWidth = 0.8;
+    }
+    ctx.strokeRect(cx + 4, cy + 4, cellW - 10, cellH - 10);
+
+    // 월 번호
+    ctx.font = `900 26px "Playfair Display", "Noto Serif KR", serif`;
+    ctx.fillStyle = c.textDark;
+    ctx.fillText(String(m.month).padStart(2, '0'), cx + 14, cy + 34);
+    // 월주
+    ctx.font = `500 17px "Noto Serif KR", serif`;
+    ctx.fillText(ko, cx + 14, cy + 60);
+    // 오행
+    ctx.font = `400 11px "Noto Sans KR", sans-serif`;
+    ctx.fillStyle = c.textMid;
+    ctx.fillText(elem, cx + 14, cy + 78);
+  }
+
+  // 범례
+  const legendY2 = gridY + rows * cellH + 12;
+  ctx.font = `300 11px "Noto Sans KR", sans-serif`;
+  ctx.fillStyle = c.textMid;
+  ctx.fillText('◆ 금색 테두리 = 용신 달 (기회) · ◇ 붉은 테두리 = 기신 달 (보존)', gridX, legendY2);
+  void CH;
+}
+
+// ═══════════════════════════════════════════════════════════════
 // 메인 라우터
 // ═══════════════════════════════════════════════════════════════
 export function drawExtraPage(
@@ -861,6 +1100,12 @@ export function drawExtraPage(
       break;
     case 'saju-weekly-rhythm':
       drawSajuWeeklyRhythm(ctx, W, H, opts, useSerif);
+      break;
+    case 'saju-daeun-timeline':
+      drawSajuDaeunTimeline(ctx, W, H, opts, useSerif);
+      break;
+    case 'saju-year-heatmap':
+      drawSajuYearHeatmap(ctx, W, H, opts, useSerif);
       break;
   }
 

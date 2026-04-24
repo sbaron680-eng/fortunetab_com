@@ -68,6 +68,102 @@ const SHICHEN = [
   { kanji: '亥', name: '해시', range: '21:00 — 23:00', glyph: '豬' },
 ];
 
+// ── 사주 맞춤 프리미엄 헬퍼 (10신·합충·용신 비교) ────────────────
+// 모두 STEMS/BRANCHES 인덱스 기반. opts.saju 없으면 전부 null/평(平) 반환해
+// 무료 플래너 경로에선 호출해도 부작용 없음.
+
+const STEM_YIN = [false, true, false, true, false, true, false, true, false, true];
+const STEM_ELEM_KO = ['목','목','화','화','토','토','금','금','수','수'] as const;
+const BRANCH_ELEM_KO = ['수','토','목','목','토','화','화','토','금','금','토','수'] as const;
+const SIPSIN_NAMES_10 = ['비견','겁재','식신','상관','편재','정재','편관','정관','편인','정인'];
+const GEN_ORDER = ['목','화','토','금','수'];
+
+/** 일간 stem × 대상 stem → 10신 이름. 없으면 '' */
+function sipsinOf(dayStemIdx: number, targetStemIdx: number): string {
+  if (dayStemIdx < 0 || targetStemIdx < 0) return '';
+  const di = GEN_ORDER.indexOf(STEM_ELEM_KO[dayStemIdx]);
+  const ti = GEN_ORDER.indexOf(STEM_ELEM_KO[targetStemIdx]);
+  const diff = (ti - di + 5) % 5;
+  const same = STEM_YIN[dayStemIdx] === STEM_YIN[targetStemIdx];
+  const row = [
+    same ? 0 : 1,  // 같은 오행
+    same ? 2 : 3,  // 내가 생
+    same ? 4 : 5,  // 내가 극
+    same ? 6 : 7,  // 날 극
+    same ? 8 : 9,  // 날 생
+  ];
+  return SIPSIN_NAMES_10[row[diff]];
+}
+
+/** 일간 stem × 대상 stem → 용신 관계 ('용'|'기'|'') — 용신 오행을 넘겨줘야 한다 */
+function stemVsYongsin(stemIdx: number, yongsinKo?: string): 'yong' | 'ki' | '' {
+  if (!yongsinKo) return '';
+  const elem = STEM_ELEM_KO[stemIdx];
+  if (elem === yongsinKo) return 'yong';
+  // 간이 정의: 용신을 극하는 오행 = 기신
+  const ctrl: Record<string, string> = { '목':'금','화':'수','토':'목','금':'화','수':'토' };
+  if (ctrl[elem] === yongsinKo) return 'ki';
+  return '';
+}
+
+/** 지지×지지 합충 관계 — paid 주간 헤더 띠 색에 쓰임 */
+type BranchRel = 'harm' | 'conflict' | 'punish' | 'empty' | 'neutral';
+const YUKHAP = [[0,1],[2,11],[3,10],[4,9],[5,8],[6,7]];          // 육합 (합·기회)
+const CHUNG = [[0,6],[1,7],[2,8],[3,9],[4,10],[5,11]];           // 육충 (주의)
+const SELF_PUNISH = [4, 6, 9, 11];                                // 자형 지지
+
+function branchRel(myBranchIdx: number, otherBranchIdx: number): BranchRel {
+  if (myBranchIdx < 0 || otherBranchIdx < 0) return 'neutral';
+  if (myBranchIdx === otherBranchIdx && SELF_PUNISH.includes(myBranchIdx)) return 'punish';
+  for (const [a, b] of CHUNG) {
+    if ((myBranchIdx === a && otherBranchIdx === b) || (myBranchIdx === b && otherBranchIdx === a)) {
+      return 'conflict';
+    }
+  }
+  for (const [a, b] of YUKHAP) {
+    if ((myBranchIdx === a && otherBranchIdx === b) || (myBranchIdx === b && otherBranchIdx === a)) {
+      return 'harm';
+    }
+  }
+  // 공망: 일주 기준 공망 계산은 복잡 — 생략, 중립 반환
+  return 'neutral';
+}
+
+/** 지지 관계 → 색/라벨 맵 */
+function relStyle(rel: BranchRel): { color: string; label: string } {
+  switch (rel) {
+    case 'harm':     return { color: '#b8860b', label: '기회' };   // 금색 · 합
+    case 'conflict': return { color: '#c1121f', label: '주의' };   // 붉은색 · 충
+    case 'punish':   return { color: '#9a3412', label: '점검' };   // 주황 · 자형
+    case 'empty':    return { color: '#cbd5e1', label: '공망' };   // 회색
+    default:         return { color: 'transparent', label: '' };
+  }
+}
+
+/** 사주 문자열에서 천간/지지 한자 추출 (예: "무오(戊午)" → 戊·午). 실패 시 -1. */
+function parsePillarHj(pillar?: string): { stemIdx: number; branchIdx: number } {
+  if (!pillar) return { stemIdx: -1, branchIdx: -1 };
+  // 한자 부분 우선 추출
+  const hj = pillar.match(/([甲乙丙丁戊己庚辛壬癸])([子丑寅卯辰巳午未申酉戌亥])/);
+  if (hj) {
+    return { stemIdx: STEMS.indexOf(hj[1]), branchIdx: BRANCHES.indexOf(hj[2]) };
+  }
+  // 한글 fallback
+  const KO_S = ['갑','을','병','정','무','기','경','신','임','계'];
+  const KO_B = ['자','축','인','묘','진','사','오','미','신','유','술','해'];
+  const ko = pillar.match(/([갑을병정무기경신임계])([자축인묘진사오미신유술해])/);
+  if (ko) return { stemIdx: KO_S.indexOf(ko[1]), branchIdx: KO_B.indexOf(ko[2]) };
+  return { stemIdx: -1, branchIdx: -1 };
+}
+
+/** opts.saju에서 일간/일지 인덱스 추출 — 각 프리미엄 섹션이 한 번만 부르도록 */
+function mySajuIdx(opts: PlannerOptions): { dayStem: number; dayBranch: number } | null {
+  if (!opts.saju) return null;
+  const { stemIdx, branchIdx } = parsePillarHj(opts.saju.dayPillar);
+  if (stemIdx < 0 || branchIdx < 0) return null;
+  return { dayStem: stemIdx, dayBranch: branchIdx };
+}
+
 // 월별 테마·키워드 (인사이트)
 const MONTH_THEMES: Record<number, { theme: string; kw: string[] }> = {
   1:  { theme: '시작의 달',     kw: ['씨앗', '숙고', '고요'] },
@@ -450,7 +546,7 @@ export function drawMonthly(
   const CAL_H = CH - PAD_V2 - 40 - CAL_Y;
   const weekLinks = drawMonthCalendar(ctx, PAD_V2, CAL_Y, CAL_W, CAL_H, year, month);
   links.push(...weekLinks);
-  drawMonthSidebar(ctx, PAD_V2 + CAL_W + GAP, CAL_Y, SIDE_W, CAL_H, year, month, opts.mode);
+  drawMonthSidebar(ctx, PAD_V2 + CAL_W + GAP, CAL_Y, SIDE_W, CAL_H, year, month, opts.mode, opts);
 
   drawFooterV2(ctx, W, CH, `— ${mNum} · MONTHLY —`);
   drawNavBar(ctx, W, H, 'monthly', opts.pages);
@@ -556,6 +652,7 @@ function drawMonthSidebar(
   x: number, y: number, w: number, h: number,
   year: number, month: number,
   mode: PlannerOptions['mode'] = 'fortune',
+  opts?: PlannerOptions,
 ) {
   // 좌측 얇은 경계
   ctx.strokeStyle = INK_V2; ctx.globalAlpha = 0.15; ctx.lineWidth = 0.6;
@@ -565,7 +662,7 @@ function drawMonthSidebar(
   if (mode === 'practice') {
     drawMonthSidebarPractice(ctx, x, y, w, h);
   } else {
-    drawMonthSidebarFortune(ctx, x, y, w, h, year, month);
+    drawMonthSidebarFortune(ctx, x, y, w, h, year, month, opts);
   }
 }
 
@@ -573,8 +670,46 @@ function drawMonthSidebarFortune(
   ctx: CanvasRenderingContext2D,
   x: number, y: number, w: number, h: number,
   year: number, month: number,
+  opts?: PlannerOptions,
 ) {
   let cy = y;
+
+  // ── 0번 블록 (프리미엄): "나 × 이 달" 십신 배지 + 용신/기신 표시 ────
+  // saju + dayPillar 파싱 성공 시에만. 무료 플래너에선 조용히 스킵.
+  const mine = opts ? mySajuIdx(opts) : null;
+  if (mine && opts?.saju) {
+    const mgz = monthGanzhi(year, month);
+    const mStemIdx = STEMS.indexOf(mgz[0]);
+    const mBranchIdx = BRANCHES.indexOf(mgz[1]);
+    const stemSipsin = sipsinOf(mine.dayStem, mStemIdx);
+    const branchSipsin = mStemIdx >= 0 ? sipsinOf(mine.dayStem, (mBranchIdx * 2) % 10 /* 근사 */) : '';
+    const yongKi = stemVsYongsin(mStemIdx, opts.saju.yongsin);
+
+    // 미니 블록 (높이 약 48px)
+    cy = drawSectionHeadV2(ctx, x, cy, w, '00', 'YOUR LENS', '내 사주 × 이 달');
+    // 1행: [월주 간지] — [십신]
+    ctx.font = `500 13px ${SERIF}`;
+    ctx.fillStyle = INK_V2;
+    ctx.fillText(`${mgz}月 → ${stemSipsin || '—'}`, x, cy + 18);
+    // 2행: 용신/기신 뱃지
+    if (yongKi === 'yong') {
+      ctx.fillStyle = '#b8860b';
+      ctx.font = `700 11px ${SERIF}`;
+      ctx.fillText('◆ 용신의 달 — 당신을 돕는 기운', x, cy + 36);
+    } else if (yongKi === 'ki') {
+      ctx.fillStyle = '#c1121f';
+      ctx.font = `700 11px ${SERIF}`;
+      ctx.fillText('◇ 기신의 달 — 에너지 보존 우선', x, cy + 36);
+    } else {
+      ctx.fillStyle = INK_FAINT_V2;
+      ctx.font = `400 11px ${SERIF}`;
+      ctx.fillText('평(平) — 중립 · 리듬 유지', x, cy + 36);
+    }
+    // branchSipsin는 근사계산이라 로그만 남기고 UI엔 미노출 (정확히 하려면 지지 main stem 테이블 필요)
+    void branchSipsin;
+    cy += 56;
+  }
+
   cy = drawSectionHeadV2(ctx, x, cy, w, '01', 'INTENTION', '이번 달 의도');
   cy = drawMemoLinesV2(ctx, x, cy, w, 3, 'dot');
   cy += 16;
@@ -725,7 +860,7 @@ export function drawWeekly(
   const DAY_H = (DAYS_BOT - DAYS_TOP) / 7;
   // ISO 주 자연 순서 (월→일) 유지 — 업무용 주간 플래너에 가장 자연스러움
   for (let i = 0; i < 7; i++) {
-    drawWeekDayRow(ctx, PAD_V2, DAYS_TOP + i * DAY_H, W - PAD_V2 * 2, DAY_H, weekDates[i]);
+    drawWeekDayRow(ctx, PAD_V2, DAYS_TOP + i * DAY_H, W - PAD_V2 * 2, DAY_H, weekDates[i], opts);
   }
   ctx.strokeStyle = INK_V2; ctx.globalAlpha = 0.15; ctx.lineWidth = 0.5;
   ctx.beginPath(); ctx.moveTo(PAD_V2, DAYS_BOT); ctx.lineTo(W - PAD_V2, DAYS_BOT); ctx.stroke();
@@ -743,6 +878,7 @@ function drawWeekDayRow(
   ctx: CanvasRenderingContext2D,
   x: number, y: number, w: number, h: number,
   d: Date,
+  opts?: PlannerOptions,
 ) {
   const T = themeHolder.T;
   const dow = d.getDay();
@@ -752,6 +888,27 @@ function drawWeekDayRow(
   ctx.strokeStyle = INK_V2; ctx.globalAlpha = 0.15; ctx.lineWidth = 0.5;
   ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + w, y); ctx.stroke();
   ctx.globalAlpha = 1;
+
+  // 프리미엄 전용: 이 날짜 지지와 내 일지의 합충 관계 → 왼쪽 가장자리 3mm 색 띠 + 라벨
+  const mine = opts ? mySajuIdx(opts) : null;
+  if (mine) {
+    const gz = dayGanzhi(d.getFullYear(), d.getMonth() + 1, d.getDate());
+    const dayBranchIdx = BRANCHES.indexOf(gz[1]);
+    const rel = branchRel(mine.dayBranch, dayBranchIdx);
+    const style = relStyle(rel);
+    if (style.color !== 'transparent') {
+      ctx.fillStyle = style.color;
+      ctx.globalAlpha = rel === 'neutral' ? 0 : 0.75;
+      ctx.fillRect(x, y, 10, h);     // 왼쪽 3mm 띠 (=10px @150dpi)
+      ctx.globalAlpha = 1;
+      // 라벨을 우측 상단에 아주 작게
+      if (style.label) {
+        ctx.font = `700 10px ${SERIF}`;
+        ctx.fillStyle = style.color;
+        ctx.fillText(style.label, x + w - 42, y + 16);
+      }
+    }
+  }
   // 주말 배경
   if (isSun) {
     ctx.fillStyle = T.accent; ctx.globalAlpha = 0.035;
@@ -906,8 +1063,60 @@ export function drawDaily(
     const stemIdx = STEMS.indexOf(gz[0]);
     const elem = ['木','木','火','火','土','土','金','金','水','水'][stemIdx] ?? '木';
     ctx.fillText('오행 · ' + elem, boxX + 18, boxY + 136);
-    ctx.fillStyle = SEAL_V2;
-    ctx.fillText('기운 · 전진', boxX + 150, boxY + 136);
+
+    // ── 프리미엄 확장: 십신 + 용신 표시 + 우측 12mm 세로 바 ────────
+    const mineD = mySajuIdx(opts);
+    if (mineD && opts.saju) {
+      const sipsin = sipsinOf(mineD.dayStem, stemIdx);
+      const branchIdx = BRANCHES.indexOf(gz[1]);
+      const rel = branchRel(mineD.dayBranch, branchIdx);
+      const yongKi = stemVsYongsin(stemIdx, opts.saju.yongsin);
+      const yongFill = yongKi === 'yong' ? '#b8860b' : yongKi === 'ki' ? '#c1121f' : '#cbd5e1';
+
+      // 십신 텍스트 (기존 '기운 · 전진' 자리)
+      ctx.fillStyle = SEAL_V2;
+      ctx.fillText(`나와 · ${sipsin || '—'}`, boxX + 150, boxY + 136);
+
+      // 우측 12mm 세로 바 (용신=금, 기신=적, 평=회)
+      ctx.fillStyle = yongFill;
+      ctx.globalAlpha = yongKi ? 0.85 : 0.35;
+      ctx.fillRect(boxX + boxW - 10, boxY + 30, 10, boxH - 30);
+      ctx.globalAlpha = 1;
+
+      // 합충 라벨 (일지 기반)
+      const relStyleD = relStyle(rel);
+      if (relStyleD.label) {
+        ctx.font = `700 10px ${SERIF}`;
+        ctx.fillStyle = relStyleD.color;
+        ctx.fillText(`일지 ${relStyleD.label}`, boxX + 18, boxY + 154);
+      }
+    } else {
+      ctx.fillStyle = SEAL_V2;
+      ctx.fillText('기운 · 전진', boxX + 150, boxY + 136);
+    }
+  }
+
+  // ── 박스 바로 아래 (프리미엄): 용신 행동 / 주의 행동 한 줄씩 ────────
+  // 별도 줄을 박스 밖에 두어 365p 내내 매일의 사주 렌즈가 박히도록 한다.
+  const mineBelow = mySajuIdx(opts);
+  if (opts.mode !== 'practice' && mineBelow && opts.saju) {
+    const stemIdx2 = STEMS.indexOf(gz[0]);
+    const yongKi2 = stemVsYongsin(stemIdx2, opts.saju.yongsin);
+    const underY = boxY + boxH + 18;
+    ctx.font = `500 12px ${SERIF}`;
+    ctx.fillStyle = '#b8860b';
+    const actionText = yongKi2 === 'yong'
+      ? `◆ 오늘은 ${opts.saju.yongsin}의 기운 · 진행 · 결정 · 공표에 유리`
+      : yongKi2 === 'ki'
+      ? `◇ 오늘은 ${opts.saju.yongsin} 반대 기운 · 페이스 조절 · 휴식 · 재점검`
+      : `· 평기 · 리듬 유지 · 하나를 끝내기`;
+    ctx.fillText(actionText, boxX, underY);
+    ctx.font = `300 11px ${SERIF}`;
+    ctx.fillStyle = INK_FAINT_V2;
+    const cautionText = yongKi2 === 'ki'
+      ? `주의 — 중요한 계약·이동·충동적 지출은 내일로 미루기`
+      : `체크 — 몸의 신호 · 식사·수분 · 수면 리듬`;
+    ctx.fillText(cautionText, boxX, underY + 18);
   }
 
   drawTitleDividerV2(ctx, W);

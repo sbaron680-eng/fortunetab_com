@@ -41,6 +41,12 @@ export interface SajuData {
   currentDaeun?: string;       // 예: "43~52세 경오(庚午) 정인"
   daeunSipsin?: string;        // 예: "정인"
   monthlyPillars?: { month: number; ko: string }[]; // 1~12월 월주 간지
+  /** 한국식 세는 나이 (대운 타임라인 NOW 핀 위치 계산용). */
+  ageThisYear?: number;
+  /** 대운 8기 (saju-advanced.calcDaeun 결과 직렬화). 시각화 페이지에서 사용. */
+  daeun?: {
+    periods: { startAge: number; endAge: number; pillarKo: string; stemElem: string; sipsin: string; }[];
+  };
 }
 
 export type CoverStyle = 'fortune' | 'practice' | 'premium' | 'extras' | 'allinone';
