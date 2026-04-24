@@ -50,6 +50,9 @@ const env = nunjucks.configure(TEMPLATE_DIR, {
   lstripBlocks: true,
 });
 
+// pad2(1) => "01" · 템플릿에서 `{{ n | pad2 }}` 사용
+env.addFilter('pad2', (value: unknown) => String(value ?? '').padStart(2, '0'));
+
 const RENDER_SHARED_SECRET = process.env.REPORT_RENDER_SECRET || '';
 
 // ─── 페이로드 타입 ─────────────────────────────────────────────────────────
