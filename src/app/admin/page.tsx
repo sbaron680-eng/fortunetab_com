@@ -299,16 +299,22 @@ export default function AdminPage() {
     setSavingMemo(null);
   };
 
-  // ── 리포트 생성 시작 버튼 → report_status='preparing' ───────────────────────
+  // ── 리포트 생성 시작 버튼 → report_status='preparing' + 주문 상태도 '제작 중'으로 ──
+  // 운영자가 주문 목록 상단의 "상태" 필터로 제작 중인 프리미엄을 한눈에 볼 수 있도록
+  // report_status와 orders.status를 묶어서 이동시킨다.
   const [togglingReport, setTogglingReport] = useState<string | null>(null);
   const handleStartReport = async (orderId: string) => {
     setTogglingReport(orderId);
     const { error } = await supabase
       .from('orders')
-      .update({ report_status: 'preparing' })
+      .update({ report_status: 'preparing', status: 'processing' })
       .eq('id', orderId);
     if (!error) {
-      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, report_status: 'preparing' } : o));
+      setOrders(prev => prev.map(o =>
+        o.id === orderId
+          ? { ...o, report_status: 'preparing', status: 'processing' }
+          : o,
+      ));
     }
     setTogglingReport(null);
   };
@@ -341,10 +347,25 @@ export default function AdminPage() {
       const data = await res.json();
       if (!data.ok) throw new Error(data.error || '이메일 발송 실패');
 
+      // 3. orders.status='completed'로 동기화 — "발송 완료"로 필터에서 즉시 보이도록.
+      //    send-report-email이 report_status='sent' + sent_at는 자동 기록하지만 주문 본체
+      //    status는 건드리지 않아 여기서 명시적으로 맞춘다.
+      await supabase
+        .from('orders')
+        .update({ status: 'completed' })
+        .eq('id', orderId);
+
       setOrders(prev =>
         prev.map(o =>
           o.id === orderId
-            ? { ...o, report_file_url: url, report_status: 'sent', report_sent_at: new Date().toISOString() }
+            ? {
+                ...o,
+                file_url: o.file_url, // keep
+                report_file_url: url,
+                report_status: 'sent',
+                report_sent_at: new Date().toISOString(),
+                status: 'completed',
+              }
             : o,
         ),
       );

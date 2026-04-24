@@ -96,12 +96,14 @@ Deno.serve(async (req: Request) => {
     const emailData = await emailRes.json();
     console.log(`[send-report-email] 발송 성공: ${userEmail}, order=${order.order_number}, resend_id=${emailData.id}`);
 
-    // 발송 성공 → 상태 전환
+    // 발송 성공 → report_status='sent' + orders.status='completed' 동시 전환.
+    // admin 주문 목록에서 "발송 완료"로 바로 보이도록 order 본체 상태를 함께 이동.
     await sb
       .from('orders')
       .update({
         report_status: 'sent',
         report_sent_at: new Date().toISOString(),
+        status: 'completed',
       })
       .eq('id', order_id);
 

@@ -121,9 +121,11 @@ Deno.serve(async (req: Request) => {
       return json({ ok: false, error: 'User email not found' }, 404);
     }
 
+    // report_status와 함께 orders.status도 'processing'으로 전환해 admin 주문
+    // 목록 상태 필터/배지가 작업 중인 프리미엄 리포트를 즉시 반영하도록 한다.
     await sb
       .from('orders')
-      .update({ report_status: 'preparing' })
+      .update({ report_status: 'preparing', status: 'processing' })
       .eq('id', order.id);
 
     if (!N8N_WEBHOOK_URL) {
@@ -172,14 +174,24 @@ Deno.serve(async (req: Request) => {
       if (!res.ok) {
         const errText = await res.text();
         console.error('[generate-premium-report] n8n webhook 실패:', res.status, errText);
-        await sb.from('orders').update({ report_status: 'pending' }).eq('id', order.id);
+        // n8n trigger 실패 시 report_status는 'pending'으로 되돌리고 orders.status도
+// 'paid'로 복구 — admin이 수동 재시도할 수 있도록.
+await sb
+  .from('orders')
+  .update({ report_status: 'pending', status: 'paid' })
+  .eq('id', order.id);
         return json({ ok: false, error: 'n8n 워크플로에서 자동 생성 시작 실패' }, 502);
       }
       console.log('[generate-premium-report] n8n 트리거 성공:', order.order_number);
       return json({ ok: true, queued: true, order_number: order.order_number });
     } catch (e) {
       console.error('[generate-premium-report] n8n 연결 오류:', e);
-      await sb.from('orders').update({ report_status: 'pending' }).eq('id', order.id);
+      // n8n trigger 실패 시 report_status는 'pending'으로 되돌리고 orders.status도
+// 'paid'로 복구 — admin이 수동 재시도할 수 있도록.
+await sb
+  .from('orders')
+  .update({ report_status: 'pending', status: 'paid' })
+  .eq('id', order.id);
       return json({ ok: false, error: 'n8n 워크플로 연결 실패' }, 502);
     }
   } catch (e) {
