@@ -102,38 +102,38 @@ export async function trackDownload(
   return { fileUrl: data as string | null, error: null };
 }
 
-// ── 파일 URL 설정 (관리자) ────────────────────────────────────────────────────
+// ── 파일 URL 설정 (관리자 RPC — SECURITY DEFINER + is_admin 가드) ────────────
 export async function setOrderFileUrl(
   orderId: string,
   fileUrl: string
 ): Promise<boolean> {
-  const { error } = await supabase
-    .from('orders')
-    .update({ file_url: fileUrl, status: 'completed' })
-    .eq('id', orderId);
+  const { data, error } = await supabase.rpc('admin_set_order_file_url', {
+    p_order_id: orderId,
+    p_file_url: fileUrl,
+  });
 
   if (error) {
     console.error('[setOrderFileUrl] 실패:', error);
     return false;
   }
-  return true;
+  return data === true;
 }
 
-// ── 주문 상태 변경 (관리자) ───────────────────────────────────────────────────
+// ── 주문 상태 변경 (관리자 RPC) ──────────────────────────────────────────────
 export async function updateOrderStatus(
   orderId: string,
   status: 'pending' | 'paid' | 'processing' | 'completed' | 'cancelled'
 ): Promise<boolean> {
-  const { error } = await supabase
-    .from('orders')
-    .update({ status })
-    .eq('id', orderId);
+  const { data, error } = await supabase.rpc('admin_update_order_status', {
+    p_order_id: orderId,
+    p_status: status,
+  });
 
   if (error) {
     console.error('[updateOrderStatus] 실패:', error);
     return false;
   }
-  return true;
+  return data === true;
 }
 
 // ── 주문 아이템 조회 (관리자 — 주문 상세) ────────────────────────────────────
@@ -150,19 +150,19 @@ export async function fetchOrderItems(orderId: string) {
   return data ?? [];
 }
 
-// ── 주문 메모 저장 (관리자) ──────────────────────────────────────────────────
+// ── 주문 메모 저장 (관리자 RPC) ──────────────────────────────────────────────
 export async function updateOrderMemo(
   orderId: string,
   memo: string
 ): Promise<boolean> {
-  const { error } = await supabase
-    .from('orders')
-    .update({ admin_memo: memo })
-    .eq('id', orderId);
+  const { data, error } = await supabase.rpc('admin_update_order_memo', {
+    p_order_id: orderId,
+    p_memo: memo,
+  });
 
   if (error) {
     console.error('[updateOrderMemo] 실패:', error);
     return false;
   }
-  return true;
+  return data === true;
 }
