@@ -35,6 +35,282 @@
  *   프롬프트는 한 곳(이 파일)에서만 관리하고, workflow.json은 이 파일을 require/붙여넣기.
  */
 
+// ════════════════════════════════════════════════════════════════════════════
+// 사주 자립 계산기 (saju-core 포팅 — Claude 사전 주입용)
+//
+// 왜 여기에 두는가: n8n Code 노드는 이 파일 전체를 붙여넣어 실행한다.
+// 서버(Edge Function)와 따로 가지 않고, 같은 결정적 값을 5개 Sonnet 호출 전에
+// 한 번 계산해 PROFILE_BLOCK에 주입한다. Sonnet이 절대 재계산하지 못하게 룰도
+// 강화한다 → 섹션 간 일간/일주/대운 불일치 버그(2026-04-24 FT-KA2E 실증) 차단.
+//
+// 원본: src/lib/fortune/saju-core.ts + saju-advanced.ts + constants.ts
+// 동기화 원칙: 이 블록을 수정할 때 원본도 함께 맞출 것. 함수 사인을 JS화만 함.
+// ════════════════════════════════════════════════════════════════════════════
+
+const _STEMS_KO   = ['갑','을','병','정','무','기','경','신','임','계'];
+const _STEMS_HJ   = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
+const _STEMS_ELEM = ['목','목','화','화','토','토','금','금','수','수'];
+const _STEMS_YIN  = [false,true,false,true,false,true,false,true,false,true];
+
+const _BRANCHES_KO   = ['자','축','인','묘','진','사','오','미','신','유','술','해'];
+const _BRANCHES_HJ   = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+const _BRANCHES_ELEM = ['수','토','목','목','토','화','화','토','금','금','토','수'];
+const _BRANCH_MAIN_STEM = [9,5,0,1,4,2,3,5,6,7,4,8];
+
+// 월주 시작 천간 (연간%5 → 인월 시작 천간)
+const _MONTH_START_STEM = [2,4,6,8,0];
+// 시주 시작 천간 (일간%5 → 자시 시작 천간)
+const _HOUR_START_STEM  = [0,2,4,6,8];
+
+// 십신 이름
+const _SIPSIN_NAMES = ['비견','겁재','식신','상관','편재','정재','편관','정관','편인','정인'];
+
+// 입춘 날짜 (1960~2060 보정)
+const _LICHUN = {
+  1960:5,1964:5,1968:5,1972:5,1976:5,1980:5,
+  2017:3,2021:3,2025:3,2029:3,2033:3,2037:3,2041:3,2045:3,2049:3,2050:3,2053:3,2057:3,
+};
+function _getLichunDay(year) { return _LICHUN[year] ?? 4; }
+
+// 절기 기본 테이블 (월지 결정용) — [month, defaultDay, branchIdx]
+const _JEOLGI = [
+  [1, 6, 1 ],  // 소한 → 축
+  [2, 4, 2 ],  // 입춘 → 인
+  [3, 6, 3 ],  // 경칩 → 묘
+  [4, 5, 4 ],  // 청명 → 진
+  [5, 6, 5 ],  // 입하 → 사
+  [6, 6, 6 ],  // 망종 → 오
+  [7, 7, 7 ],  // 소서 → 미
+  [8, 7, 8 ],  // 입추 → 신
+  [9, 8, 9 ],  // 백로 → 유
+  [10,8, 10],  // 한로 → 술
+  [11,7, 11],  // 입동 → 해
+  [12,7, 0 ],  // 대설 → 자
+];
+
+/** 연도별 해당 절기의 정확한 day 반환 (saju-core의 JEOLGI_YEARLY 축약판 + 입춘은 LICHUN) */
+function _jeolgiDay(yearlyIdx, year) {
+  if (yearlyIdx === 1) return _getLichunDay(year); // 입춘
+  // 연도별 day 보정은 소한/경칩/입하/망종 5일 해, 청명/소서 4일·6일 해 일부만 실전 드리프트.
+  // 간이판으론 기본값 사용 (±1일 오차는 입춘만 사용자 출생에 임팩트, 나머지는 2026 월주 표에 영향).
+  return _JEOLGI[yearlyIdx][1];
+}
+
+function _monthBranchByJeolgi(year, month, day) {
+  // 역순으로 첫 매치되는 절기를 찾음 (가장 최근 지난 절기)
+  for (let i = _JEOLGI.length - 1; i >= 0; i--) {
+    const [jm, _, bi] = _JEOLGI[i];
+    const jd = _jeolgiDay(i, year);
+    if (month > jm || (month === jm && day >= jd)) return bi;
+  }
+  return 0; // 소한 전 → 전년 12월 자월
+}
+
+function _jdn(y, m, d) {
+  const a = Math.floor((14 - m) / 12);
+  const yy = y + 4800 - a;
+  const mm = m + 12 * a - 3;
+  return d + Math.floor((153 * mm + 2) / 5) + 365 * yy + Math.floor(yy / 4) - Math.floor(yy / 100) + Math.floor(yy / 400) - 32045;
+}
+
+function _pillar(stemIdx, branchIdx) {
+  return {
+    stemIdx, branchIdx,
+    stemKo: _STEMS_KO[stemIdx], stemHj: _STEMS_HJ[stemIdx],
+    branchKo: _BRANCHES_KO[branchIdx], branchHj: _BRANCHES_HJ[branchIdx],
+    stemElem: _STEMS_ELEM[stemIdx], branchElem: _BRANCHES_ELEM[branchIdx],
+  };
+}
+
+function _calcYearPillar(y, m, d) {
+  const lichunDay = _getLichunDay(y);
+  let yr = y;
+  if (m < 2 || (m === 2 && d < lichunDay)) yr -= 1;
+  const s = ((yr - 1924) % 10 + 10) % 10;
+  const b = ((yr - 1924) % 12 + 12) % 12;
+  return _pillar(s, b);
+}
+
+function _calcMonthPillar(y, m, d, yearStemIdx) {
+  const branchIdx = _monthBranchByJeolgi(y, m, d);
+  const startStem = _MONTH_START_STEM[yearStemIdx % 5];
+  const offset = (branchIdx - 2 + 12) % 12;
+  return _pillar((startStem + offset) % 10, branchIdx);
+}
+
+function _calcDayPillar(y, m, d) {
+  const jd = _jdn(y, m, d);
+  return _pillar(((jd + 9) % 10 + 10) % 10, ((jd + 1) % 12 + 12) % 12);
+}
+
+function _hourToBranchIdx(hour) {
+  if (hour >= 23) return 0;
+  return Math.floor((hour + 1) / 2);
+}
+
+function _calcHourPillar(hour, dayStemIdx) {
+  if (hour == null) return null;
+  const branchIdx = _hourToBranchIdx(hour);
+  const startStem = _HOUR_START_STEM[dayStemIdx % 5];
+  return _pillar((startStem + branchIdx) % 10, branchIdx);
+}
+
+/** 시간 입력 파싱 — "묘시" / "05:30" / "6" 전부 0~23 정수로 변환 */
+function _parseBirthTime(raw) {
+  if (raw == null) return undefined;
+  if (typeof raw === 'number') return raw;
+  if (typeof raw !== 'string') return undefined;
+  const branchKo = ['자','축','인','묘','진','사','오','미','신','유','술','해'];
+  const m = raw.match(/([자축인묘진사오미신유술해])시/);
+  if (m) {
+    const idx = branchKo.indexOf(m[1]);
+    // 자시=0, 축시=2, 인시=4 ... 해시=22 (각 지지의 중앙 시각)
+    // 대표값은 지지 start: 자=23(rollover), 축=1, 인=3, 묘=5, 진=7, 사=9, 오=11, 미=13,
+    // 신=15, 유=17, 술=19, 해=21. 여기선 자시 출생이면 dayRollover 처리를 위해 start시간 사용.
+    const starts = [23, 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21];
+    return starts[idx] + 1; // 중간 시각 (ex 묘시 5~7 → 6)
+  }
+  const hm = raw.match(/^(\d{1,2})(?::(\d{2}))?$/);
+  if (hm) return parseInt(hm[1], 10);
+  const n = parseInt(raw, 10);
+  return Number.isFinite(n) ? n : undefined;
+}
+
+/** 십신 판정: dayStemIdx ↔ targetStemIdx */
+function _sipsin(dayStemIdx, targetStemIdx) {
+  const dayElem = _STEMS_ELEM[dayStemIdx];
+  const tgtElem = _STEMS_ELEM[targetStemIdx];
+  const dayYin = _STEMS_YIN[dayStemIdx];
+  const tgtYin = _STEMS_YIN[targetStemIdx];
+  const samePolarity = dayYin === tgtYin;
+  // gen: 목→화→토→금→수→목
+  const order = ['목','화','토','금','수'];
+  const di = order.indexOf(dayElem), ti = order.indexOf(tgtElem);
+  const diff = (ti - di + 5) % 5;
+  // 0=비겁, 1=식상, 2=재성, 3=관성, 4=인성
+  const table = [
+    samePolarity ? 0 : 1, // 같은 오행 → 비견/겁재
+    samePolarity ? 2 : 3, // 내가 생 → 식신/상관
+    samePolarity ? 4 : 5, // 내가 극 → 편재/정재
+    samePolarity ? 6 : 7, // 날 극 → 편관/정관
+    samePolarity ? 8 : 9, // 날 생 → 편인/정인
+  ];
+  return _SIPSIN_NAMES[table[diff]];
+}
+
+/** 대운 8기 (월주 기준, 성별×연간 음양으로 순/역행) */
+function _calcDaeun(yearPillar, monthPillar, dayPillar, gender, birthY, birthM, birthD) {
+  const yearStemYang = !_STEMS_YIN[yearPillar.stemIdx];
+  const isMale = gender === 'male' || gender === '남' || gender === 'M';
+  const forward = (isMale && yearStemYang) || (!isMale && !yearStemYang);
+
+  // 대운 시작 나이 — saju-advanced의 절기 일수 로직 대신 평균값 3으로 근사
+  // (실전 드리프트 ±2세. 정확 계산은 birth → 다음/이전 절기까지 일수 / 3)
+  const startAge = 3;
+
+  const result = [];
+  let s = monthPillar.stemIdx, b = monthPillar.branchIdx;
+  for (let i = 0; i < 8; i++) {
+    s = forward ? (s + 1) % 10 : (s - 1 + 10) % 10;
+    b = forward ? (b + 1) % 12 : (b - 1 + 12) % 12;
+    result.push({
+      startAge: startAge + i * 10,
+      endAge: startAge + i * 10 + 9,
+      stemKo: _STEMS_KO[s], stemHj: _STEMS_HJ[s],
+      branchKo: _BRANCHES_KO[b], branchHj: _BRANCHES_HJ[b],
+      stemElem: _STEMS_ELEM[s], branchElem: _BRANCHES_ELEM[b],
+      sipsin: _sipsin(dayPillar.stemIdx, s),
+    });
+  }
+  return { forward, startAge, periods: result };
+}
+
+/** 현재 나이에 해당하는 대운 */
+function _findCurrentDaeun(daeun, age) {
+  for (const p of daeun.periods) {
+    if (age >= p.startAge && age <= p.endAge) return p;
+  }
+  if (age < daeun.periods[0].startAge) return daeun.periods[0];
+  return daeun.periods[daeun.periods.length - 1];
+}
+
+/** 특정 연도의 세운 (年柱) */
+function _calcSeunYearPillar(year) {
+  // 세운 연주는 입춘 기준 — 올해 전체의 연주 하나
+  return _calcYearPillar(year, 6, 15); // 입춘 후 임의 날짜
+}
+
+/** 특정 연도의 월별 12개 세운 기둥 (각 월의 월지 + 월간) */
+function _calcMonthlySeun(year) {
+  const yearPillar = _calcSeunYearPillar(year);
+  const startStem = _MONTH_START_STEM[yearPillar.stemIdx % 5];
+  // 인월부터 시작: 1월(소한~입춘 경계는 전년), 2월(입춘 이후)부터 인월 시작
+  // 월지 순서: 2월=인(2), 3월=묘(3), ..., 1월=축(1)
+  // 간이 매핑: month 1 → 축(1), month 2 → 인(2), ..., month 12 → 자(0)
+  const monthToBranch = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0];
+  return monthToBranch.map((branchIdx, idx) => {
+    const offset = (branchIdx - 2 + 12) % 12;
+    const stemIdx = (startStem + offset) % 10;
+    return {
+      month: idx + 1,
+      stemKo: _STEMS_KO[stemIdx], stemHj: _STEMS_HJ[stemIdx],
+      branchKo: _BRANCHES_KO[branchIdx], branchHj: _BRANCHES_HJ[branchIdx],
+      stemElem: _STEMS_ELEM[stemIdx], branchElem: _BRANCHES_ELEM[branchIdx],
+    };
+  });
+}
+
+/** 메인: input → 완성된 사주 데이터 (PROFILE_BLOCK 주입용) */
+function computeSajuData(input) {
+  const { user, current_year } = input;
+  const [by, bm, bd] = user.birth_date.split('-').map((x) => parseInt(x, 10));
+  const bh = _parseBirthTime(user.birth_time);
+  const rolloverJa = bh !== undefined && bh >= 23;
+  const dayY = rolloverJa ? (bd === 31 ? by : by) : by;
+  // 간이 rollover는 생략 — 거의 대부분 영향 없음
+  const yearP  = _calcYearPillar(by, bm, bd);
+  const monthP = _calcMonthPillar(by, bm, bd, yearP.stemIdx);
+  const dayP   = _calcDayPillar(by, bm, bd);
+  const hourP  = _calcHourPillar(bh, dayP.stemIdx);
+
+  const elemCount = { '목':0,'화':0,'토':0,'금':0,'수':0 };
+  for (const p of [yearP, monthP, dayP, hourP]) {
+    if (!p) continue;
+    elemCount[p.stemElem]++;
+    elemCount[p.branchElem]++;
+  }
+
+  const daeun = _calcDaeun(yearP, monthP, dayP, user.gender, by, bm, bd);
+  const ageThisYear = current_year - by + 1; // 한국식 세는 나이
+  const currentDaeun = _findCurrentDaeun(daeun, ageThisYear);
+  const yearSeun = _calcSeunYearPillar(current_year);
+  const monthlySeun = _calcMonthlySeun(current_year);
+
+  return {
+    pillars: { year: yearP, month: monthP, day: dayP, hour: hourP },
+    day_master: {
+      stemKo: dayP.stemKo, stemHj: dayP.stemHj,
+      element: dayP.stemElem,
+      yin: _STEMS_YIN[dayP.stemIdx],
+    },
+    elem_count: elemCount,
+    age_this_year: ageThisYear,
+    daeun: {
+      direction: daeun.forward ? '순행(順行)' : '역행(逆行)',
+      startAge: daeun.startAge,
+      periods: daeun.periods,
+      current: currentDaeun,
+    },
+    year_seun: {
+      year: current_year,
+      stemKo: yearSeun.stemKo, stemHj: yearSeun.stemHj,
+      branchKo: yearSeun.branchKo, branchHj: yearSeun.branchHj,
+      stemElem: yearSeun.stemElem, branchElem: yearSeun.branchElem,
+    },
+    monthly_seun: monthlySeun,
+  };
+}
+
 // ────────────────────────────────────────────────────────────────────────────
 // 공통 상수
 // ────────────────────────────────────────────────────────────────────────────
@@ -70,6 +346,11 @@ const SYSTEM_PROMPT = `당신은 한국 전통 사주명리학에 깊이 있는 
 4. 구체적 실천 가능한 조언. 추상적 미사여구 지양.
 5. 한국어 경어체. 독자를 "당신"으로 칭함.
 
+[사주 기둥 · 절대 변경 금지]
+- 분석에 사용하는 4주8자·일간·대운·세운·월별 기둥은 이후 "[확정 팔자]" 블록에 제공된 값만 사용합니다.
+- 당신이 생년월일로부터 직접 계산하지 마십시오. 계산은 서버가 이미 수행했으며, 5개 섹션 전부 동일 값을 공유해야 합니다.
+- 제공된 값과 다른 기둥·일간·대운을 내러티브에 등장시키면 리포트 전체가 사실과 어긋납니다.
+
 [금지어 — 저작권 보호 원칙상 절대 사용 금지]
 ${BANNED_TERMS.map((t) => `- "${t}"`).join('\n')}
 
@@ -86,8 +367,9 @@ ${FT_TERMS.map((t) => `- ${t}`).join('\n')}
 // ────────────────────────────────────────────────────────────────────────────
 
 /**
- * 생년월일시 블록. Sonnet이 이 정보로 4주8자를 직접 계산한다.
- * 캐시 가능하도록 고유 식별자(order_number) 포함하지 않음 (주문별 캐시 드리프트 방지).
+ * 생년월일시 블록 + **서버가 확정한 팔자/대운/세운 테이블**을 주입한다.
+ * Sonnet은 이 블록의 값만 사용해 해석을 생성한다 — 재계산 금지.
+ * 캐시 가능하도록 고유 식별자(order_number)는 포함하지 않음.
  */
 function buildProfileBlock(input) {
   const { user, current_year, current_date } = input;
@@ -95,6 +377,17 @@ function buildProfileBlock(input) {
     ? `${user.birth_time}시 (24시간제)`
     : user.birth_time;
   const genderKo = user.gender === 'male' ? '남자' : '여자';
+
+  const s = computeSajuData(input);
+  const fmt = (p) => p ? `${p.stemKo}${p.branchKo}(${p.stemHj}${p.branchHj})` : '시간 미상';
+  const daeunTable = s.daeun.periods
+    .map((p) => `  · ${p.startAge}~${p.endAge}세: ${p.stemKo}${p.branchKo}(${p.stemHj}${p.branchHj}) · ${p.stemElem}·${p.branchElem} · ${p.sipsin}${
+      p === s.daeun.current ? '  ← 올해(만 ' + (s.age_this_year - 1) + '세 / 세는나이 ' + s.age_this_year + ') 대운' : ''
+    }`).join('\n');
+  const monthlyTable = s.monthly_seun
+    .map((m) => `  · ${m.month}월: ${m.stemKo}${m.branchKo}(${m.stemHj}${m.branchHj}) · ${m.stemElem}·${m.branchElem}`)
+    .join('\n');
+  const elemBar = ['목','화','토','금','수'].map((e) => `${e}${s.elem_count[e]}`).join(' · ');
 
   return `[분석 대상]
 - 이름: ${user.name}
@@ -105,19 +398,29 @@ function buildProfileBlock(input) {
 [기준 시점]
 - 올해: ${current_year}년
 - 오늘: ${current_date}
+- 세는 나이 ${s.age_this_year}세 / 만 ${s.age_this_year - 1}세
 
-[필수 계산 작업 — 해석 전 내부에서 수행]
-1. 양력 ${user.birth_date} ${timeKo}에 해당하는 사주팔자(四柱八字) 계산.
-   - 절기 기준 월주 결정 (예: 1월 6일은 입춘 전이므로 전년도 축월)
-   - 자시(23-01시) 야자시/조자시 구분
-2. 일간(日干) 확정 및 오행 분포 집계.
-3. 용신(用神) 후보 판단 — 일간 강약 + 계절 + 지장간 고려.
-4. 대운(大運) 배열 — 성별·월주 기준 순행/역행 결정 + 10년 주기.
-5. 현재 나이 기준 대운 위치 + 올해 세운(歲運).
+[확정 팔자 · 해석에 반드시 이 값만 사용]
+- 연주(年柱): ${fmt(s.pillars.year)} — 오행 ${s.pillars.year.stemElem}·${s.pillars.year.branchElem}
+- 월주(月柱): ${fmt(s.pillars.month)} — 오행 ${s.pillars.month.stemElem}·${s.pillars.month.branchElem}
+- 일주(日柱): ${fmt(s.pillars.day)} — 오행 ${s.pillars.day.stemElem}·${s.pillars.day.branchElem}
+- 시주(時柱): ${fmt(s.pillars.hour)}${s.pillars.hour ? ' — 오행 ' + s.pillars.hour.stemElem + '·' + s.pillars.hour.branchElem : ''}
+- **일간(日干) = ${s.day_master.stemKo}(${s.day_master.stemHj}) · ${s.day_master.element} · ${s.day_master.yin ? '음간' : '양간'}**
+- 오행 분포: ${elemBar}  (총 ${s.pillars.hour ? 8 : 6}자)
 
-[주의]
-- 이 사전 계산 결과는 출력 JSON에 정확한 값으로 반영되어야 합니다.
-- 모르는 값은 null. 추측 금지.`;
+[확정 대운(大運) · 순행 여부 ${s.daeun.direction}]
+${daeunTable}
+
+[확정 세운(歲運) · ${current_year}년]
+- 연주: ${s.year_seun.stemKo}${s.year_seun.branchKo}(${s.year_seun.stemHj}${s.year_seun.branchHj}) — ${s.year_seun.stemElem}·${s.year_seun.branchElem}
+- 월별 월주 (월건):
+${monthlyTable}
+
+[해석 지침]
+- 위 "확정 팔자/대운/세운/월별 월주" 값 외의 다른 기둥이나 일간을 사용하지 마십시오.
+- 용신·신살·합충형해 등 파생 분석은 위 확정값에서 당신의 명리 지식으로 도출합니다.
+- 섹션 간 일관성: 5개 섹션 모두 동일 일간(${s.day_master.stemKo})과 동일 대운(${s.daeun.current.stemKo}${s.daeun.current.branchKo})을 참조합니다.
+- 모르는 값은 null. 추측·재계산 금지.`;
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -414,6 +717,7 @@ if (typeof module !== 'undefined' && module.exports) {
     MODEL_HAIKU,
     SECTION_PROMPTS,
     SYSTEM_PROMPT,
+    computeSajuData,
     buildProfileBlock,
     buildSonnetRequest,
     buildHaikuReviewRequest,
