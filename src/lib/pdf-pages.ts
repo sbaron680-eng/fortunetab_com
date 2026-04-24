@@ -252,9 +252,10 @@ export function drawCover(
   ctx: CanvasRenderingContext2D,
   W: number, H: number,
   opts: PlannerOptions,
-) {
+): NavLink[] {
   const T = themeHolder.T;
   const CH = getCH(H);
+  const links: NavLink[] = [];
   const style = opts.coverStyle ?? (opts.mode === 'practice' ? 'practice' : 'fortune');
   const variant = getCoverVariant(style);
 
@@ -369,8 +370,44 @@ export function drawCover(
   ctx.fillStyle = '#fff8f0';
   ctx.fillText(T.kanji, sealX + (sealSize - ctx.measureText(T.kanji).width) / 2, sealY + sealSize - 20);
 
+  // ── 커버 하단 ACTIVE DESIGN shortcut pill (프리미엄만) ─────────────────
+  // 낙관 왼쪽 여백에 3 탭 가로 배열. opts.saju + opts.pages 가드.
+  if (opts.saju && opts.pages) {
+    const candidates: { type: PageType; label: string }[] = [
+      { type: 'saju-year-design',      label: '연간 설계' },
+      { type: 'saju-month-strategy',   label: '월간 전략' },
+      { type: 'saju-decision-canvas',  label: '결정 캔버스' },
+    ];
+    const active = candidates.filter(c => opts.pages!.includes(c.type));
+    if (active.length > 0) {
+      const pillH = 24;
+      const pillY = CH - PAD_V2 - pillH - 40;
+      const totalW = W - PAD_V2 * 2 - 120; // 우측 낙관 영역 피하기
+      const gap = 8;
+      const pillW = (totalW - gap * (active.length - 1)) / active.length;
+      ctx.save();
+      ctx.font = `400 10px ${SERIF}`;
+      ctx.fillStyle = INK_FAINT_V2;
+      const hint = 'ACTIVE DESIGN · 능동 설계';
+      ctx.fillText(hint, PAD_V2, pillY - 6);
+      active.forEach((c, i) => {
+        const px = PAD_V2 + i * (pillW + gap);
+        ctx.strokeStyle = T.accent; ctx.globalAlpha = 0.45; ctx.lineWidth = 0.7;
+        ctx.strokeRect(px, pillY, pillW, pillH);
+        ctx.globalAlpha = 1;
+        ctx.font = `400 11px ${SERIF}`;
+        ctx.fillStyle = INK_V2;
+        const tw = ctx.measureText(c.label).width;
+        ctx.fillText(c.label, px + (pillW - tw) / 2, pillY + 16);
+        links.push({ x: px, y: pillY, w: pillW, h: pillH, targetType: c.type, targetIdx: 0 });
+      });
+      ctx.restore();
+    }
+  }
+
   drawFooterV2(ctx, W, CH, '— COVER —');
   drawNavBar(ctx, W, H, 'cover', opts.pages);
+  return links;
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -587,7 +624,8 @@ export function drawMonthly(
   const CAL_H = CH - PAD_V2 - 40 - CAL_Y;
   const weekLinks = drawMonthCalendar(ctx, PAD_V2, CAL_Y, CAL_W, CAL_H, year, month);
   links.push(...weekLinks);
-  drawMonthSidebar(ctx, PAD_V2 + CAL_W + GAP, CAL_Y, SIDE_W, CAL_H, year, month, opts.mode, opts);
+  const sideLinks = drawMonthSidebar(ctx, PAD_V2 + CAL_W + GAP, CAL_Y, SIDE_W, CAL_H, year, month, opts.mode, opts);
+  links.push(...sideLinks);
 
   drawFooterV2(ctx, W, CH, `— ${mNum} · MONTHLY —`);
   drawNavBar(ctx, W, H, 'monthly', opts.pages);
@@ -694,7 +732,7 @@ function drawMonthSidebar(
   year: number, month: number,
   mode: PlannerOptions['mode'] = 'fortune',
   opts?: PlannerOptions,
-) {
+): NavLink[] {
   // 좌측 얇은 경계
   ctx.strokeStyle = INK_V2; ctx.globalAlpha = 0.15; ctx.lineWidth = 0.6;
   ctx.beginPath(); ctx.moveTo(x - 14, y); ctx.lineTo(x - 14, y + h); ctx.stroke();
@@ -702,9 +740,9 @@ function drawMonthSidebar(
 
   if (mode === 'practice') {
     drawMonthSidebarPractice(ctx, x, y, w, h);
-  } else {
-    drawMonthSidebarFortune(ctx, x, y, w, h, year, month, opts);
+    return [];
   }
+  return drawMonthSidebarFortune(ctx, x, y, w, h, year, month, opts);
 }
 
 function drawMonthSidebarFortune(
@@ -712,8 +750,9 @@ function drawMonthSidebarFortune(
   x: number, y: number, w: number, h: number,
   year: number, month: number,
   opts?: PlannerOptions,
-) {
+): NavLink[] {
   let cy = y;
+  const links: NavLink[] = [];
 
   // ── 0번 블록 (프리미엄): "나 × 이 달" 십신 배지 + 용신/기신 표시 ────
   // saju + dayPillar 파싱 성공 시에만. 무료 플래너에선 조용히 스킵.
@@ -727,6 +766,7 @@ function drawMonthSidebarFortune(
     const yongKi = stemVsYongsin(mStemIdx, opts.saju.yongsin);
 
     // 미니 블록 (높이 약 48px)
+    const lensTopY = cy;
     cy = drawSectionHeadV2(ctx, x, cy, w, '00', 'YOUR LENS', '내 사주 × 이 달');
     // 1행: [월주 간지] — [십신]
     ctx.font = `500 13px ${SERIF}`;
@@ -748,6 +788,24 @@ function drawMonthSidebarFortune(
     }
     // branchSipsin는 근사계산이라 로그만 남기고 UI엔 미노출 (정확히 하려면 지지 main stem 테이블 필요)
     void branchSipsin;
+
+    // 블록 전체가 월간 전략 페이지로 점프 (opts.pages에 포함된 경우만)
+    if (opts.pages?.includes('saju-month-strategy')) {
+      // 우상단에 "→ 월간 전략" 보조 라벨
+      ctx.save();
+      ctx.font = `300 10px ${SERIF}`;
+      ctx.fillStyle = INK_FAINT_V2;
+      const hint = '→ 월간 전략';
+      const hintW = ctx.measureText(hint).width;
+      ctx.fillText(hint, x + w - hintW, lensTopY + 10);
+      ctx.restore();
+      // rect (클릭 영역: YOUR LENS 블록 전체)
+      const blockH = cy + 56 - lensTopY;
+      links.push({
+        x, y: lensTopY, w, h: blockH,
+        targetType: 'saju-month-strategy', targetIdx: 0,
+      });
+    }
     cy += 56;
   }
 
@@ -791,6 +849,8 @@ function drawMonthSidebarFortune(
   const remain = (y + h) - cy - 8;
   const refLines = Math.max(3, Math.min(6, Math.floor(remain / LH)));
   drawMemoLinesV2(ctx, x, cy, w, refLines, 'dot');
+
+  return links;
 }
 
 function drawMonthSidebarPractice(
@@ -1050,9 +1110,10 @@ export function drawDaily(
   W: number, H: number,
   opts: PlannerOptions,
   dayOfYear = 0,  // 0 = Jan 1, ..., 364/365 = Dec 31
-) {
+): NavLink[] {
   const T = themeHolder.T;
   const CH = getCH(H);
+  const links: NavLink[] = [];
   // 365일 풀 모드 or 샘플 모드 모두 dayOfYear로 특정 날짜 렌더
   const d = new Date(opts.year, 0, 1 + dayOfYear);
   const dow = d.getDay();
@@ -1215,8 +1276,42 @@ export function drawDaily(
     drawDailyBottomBlock(ctx, PAD_V2 + colW * 2,  BOT_Y + 16, colW - GAP, '05', 'TOMORROW',    '내일 의도',    3);
   }
 
+  // ── 하단 미니 shortcut 바 (프리미엄만) — footer 바로 위 24px 띠 ─────────
+  // 왼쪽: "← 이번 주로" · 오른쪽: "→ 결정 캔버스"
+  // opts.pages에 대상 타입이 있는 경우에만 그려 링크 레이어와 정합 유지.
+  if (opts.mode !== 'practice' && opts.saju) {
+    const barH = 22;
+    const barY = CH - PAD_V2 - barH - 4;
+    const halfW = (W - PAD_V2 * 2) / 2 - 8;
+    ctx.save();
+    ctx.font = `300 10.5px ${SERIF}`;
+    if (opts.pages?.includes('weekly')) {
+      const label = '← 이번 주로';
+      ctx.fillStyle = INK_FAINT_V2;
+      ctx.fillText(label, PAD_V2, barY + 14);
+      // 구해진 주차 index (ISO week of this date)
+      const iso = getISOWeek(d);
+      links.push({
+        x: PAD_V2, y: barY, w: halfW, h: barH,
+        targetType: 'weekly', targetIdx: iso,
+      });
+    }
+    if (opts.pages?.includes('saju-decision-canvas')) {
+      const label = '→ 결정 캔버스';
+      ctx.fillStyle = INK_FAINT_V2;
+      const tw = ctx.measureText(label).width;
+      ctx.fillText(label, W - PAD_V2 - tw, barY + 14);
+      links.push({
+        x: W - PAD_V2 - halfW, y: barY, w: halfW, h: barH,
+        targetType: 'saju-decision-canvas', targetIdx: 0,
+      });
+    }
+    ctx.restore();
+  }
+
   drawFooterV2(ctx, W, CH, `— ${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${dayStr} · DAILY —`);
   drawNavBar(ctx, W, H, 'daily', opts.pages);
+  return links;
 }
 function drawDailyBottomBlock(
   ctx: CanvasRenderingContext2D,

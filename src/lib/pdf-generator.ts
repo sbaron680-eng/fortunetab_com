@@ -135,7 +135,7 @@ export async function generatePlannerPDF(opts: PlannerOptions): Promise<Blob | v
     let pageNavLinks: NavLink[] = [];
 
     if (page.type === 'cover') {
-      drawCover(ctx, CW, CH, opts);
+      pageNavLinks = drawCover(ctx, CW, CH, opts);
     } else if (page.type === 'year-index') {
       pageNavLinks = drawYearIndex(ctx, CW, CH, opts);
     } else if (page.type === 'monthly') {
@@ -143,7 +143,7 @@ export async function generatePlannerPDF(opts: PlannerOptions): Promise<Blob | v
     } else if (page.type === 'weekly') {
       pageNavLinks = drawWeekly(ctx, CW, CH, opts, page.idx!);
     } else if (page.type === 'daily') {
-      drawDaily(ctx, CW, CH, opts, page.idx);
+      pageNavLinks = drawDaily(ctx, CW, CH, opts, page.idx);
     } else {
       // 부록 페이지
       drawExtraPage(ctx, CW, CH, opts, page.type as ExtraPageType);
