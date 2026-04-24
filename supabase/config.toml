@@ -36,3 +36,12 @@ verify_jwt = true
 
 [functions.send-report-email]
 verify_jwt = true
+
+# toss-webhook: Toss Payments가 직접 호출하므로 JWT 없음. 인증은 함수 내부에서
+# Toss API 재조회로 검증(webhook body 스푸핑 방어).
+[functions.toss-webhook]
+verify_jwt = false
+
+# reconcile-orders: pg_cron이 service_role Bearer로 호출. gateway 검증 불필요.
+[functions.reconcile-orders]
+verify_jwt = false
