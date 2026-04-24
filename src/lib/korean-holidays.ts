@@ -136,6 +136,6 @@ const ALL_SOLAR_TERMS: Record<string, SolarTerm> = {
 };
 
 export function getSolarTerm(year: number, month: number, day: number): SolarTerm | null {
-  const key = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  const key = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
   return ALL_SOLAR_TERMS[key] ?? null;
 }
